@@ -2,7 +2,9 @@ import { useState } from 'react';
 import DashboardTemplate from '../components/Templates/DashboardTemplate';
 import StatsRow from '../components/Organisms/StatsRow';
 import WeeklyChart from '../components/Organisms/WeeklyChart';
-import RecentActivities from '../components/Organisms/RecentActivities';  // ← add
+import RecentActivities from '../components/Organisms/RecentActivities'; 
+
+
 
 export default function DashboardPage() {
   const [activePage, setActivePage] = useState('Dashboard');

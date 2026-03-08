@@ -1,45 +1,31 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';  // ← add this
+import { useNavigate } from 'react-router-dom';
 import InputField from '../Molecules/InputField';
 import Button from '../Atoms/Button';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();  // ← add this
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!email || !password) {
-      alert('Veuillez remplir tous les champs');
+      setError('Veuillez remplir tous les champs');
       return;
     }
 
-    try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    const emailLower = email.toLowerCase();
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || 'Login failed');
-        return;
-      }
-
-      // Save the token — you'll send this with every future request
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      navigate('/dashboard');
-
-    } catch (error) {
-      alert('Server error. Please try again.');
+    // ⚠️ TEMPORARY — replace with real API call when backend is ready
+    if (emailLower.includes('superadmin')) {
+      navigate('/superadmin/dashboard');   // → SuperAdmin
+    } else if (emailLower.includes('admin')) {
+      navigate('/dashboard');              // → Admin
+    } else {
+      navigate('/client/dashboard');       // → Client
     }
   };
-
-
 
   return (
     <div style={{ background: 'white', borderRadius: 12, padding: '32px 28px', width: '100%' }}>
@@ -47,41 +33,23 @@ export default function LoginForm() {
         Connexion
       </h2>
 
-      <InputField
-        label="Email"
-        type="email"
-        placeholder="votre@email.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <InputField label="Email" type="email" placeholder="votre@email.com"
+        value={email} onChange={e => { setEmail(e.target.value); setError(''); }} />
 
-      <InputField
-        label="Mot de passe"
-        type="password"
-        placeholder="••••••••"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <a
-        href="/forgot-password"
-        style={{
-          display: 'block',
-          textAlign: 'center',
-          color: '#888',
-          fontSize: 14,
-          margin: '12px 0 20px',
-          textDecoration: 'none',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-        onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
-      >
+      <InputField label="Mot de passe" type="password" placeholder="••••••••"
+        value={password} onChange={e => { setPassword(e.target.value); setError(''); }} />
+
+      {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>{error}</p>}
+
+      <a href="#" style={{ display: 'block', textAlign: 'center', color: '#888', fontSize: 14, margin: '12px 0 20px', textDecoration: 'none' }}>
         Mot de passe oublié ?
       </a>
 
-
-
-
       <Button label="Se connecter" onClick={handleLogin} />
+
+      <p style={{ textAlign: 'center', color: '#aaa', fontSize: 12, marginTop: 16 }}>
+        💡 "superadmin" → super dashboard | "admin" → admin | autre → client
+      </p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import Avatar from '../Atoms/Avatar';
 import RoleBadge from '../Atoms/RoleBadge';
 import UserActionMenu from '../Molecules/UserActionMenu';
@@ -22,12 +23,12 @@ const initialUsers: User[] = [
 ];
 
 export default function UsersTable() {
+
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
-  // ── Edit handlers ──────────────────────────────
   const handleEditClick = (user: User, index: number) => {
     setEditingUser({ ...user });
     setEditIndex(index);
@@ -36,7 +37,6 @@ export default function UsersTable() {
   const handleEditSave = () => {
     if (editingUser === null || editIndex === null) return;
     const updated = [...users];
-    // recalculate initials from name
     const parts = editingUser.name.trim().split(' ');
     const initials = parts.length >= 2
       ? parts[0][0] + parts[1][0]
@@ -47,7 +47,6 @@ export default function UsersTable() {
     setEditIndex(null);
   };
 
-  // ── Delete handlers ────────────────────────────
   const handleDeleteConfirm = () => {
     if (deleteIndex === null) return;
     setUsers(users.filter((_, i) => i !== deleteIndex));
@@ -61,7 +60,7 @@ export default function UsersTable() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#dbeafe' }}>
-              {['Avatar', 'Name', 'Email', 'Role', 'Last Login', 'Actions'].map(col => (
+              {[('avatar'), ('user'), ('email'), ('role'), ('lastLogin'), ('actions')].map(col => (
                 <th key={col} style={{ padding: '14px 18px', textAlign: 'left', color: '#1a3a6b', fontSize: 14, fontWeight: 700 }}>
                   {col}
                 </th>
@@ -105,26 +104,23 @@ export default function UsersTable() {
             padding: '36px 32px', width: 440,
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
           }}>
-            <h3 style={{ color: '#1a3a6b', marginBottom: 24, fontSize: 20 }}>Edit User</h3>
+            <h3 style={{ color: '#1a3a6b', marginBottom: 24, fontSize: 20 }}>{('editUser')}</h3>
 
-            {/* Name */}
-            <label style={labelStyle}>Full Name</label>
+            <label style={labelStyle}>{('fullName')}</label>
             <input
               value={editingUser.name}
               onChange={e => setEditingUser({ ...editingUser, name: e.target.value })}
               style={inputStyle}
             />
 
-            {/* Email */}
-            <label style={labelStyle}>Email</label>
+            <label style={labelStyle}>{('email')}</label>
             <input
               value={editingUser.email}
               onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
               style={inputStyle}
             />
 
-            {/* Role */}
-            <label style={labelStyle}>Role</label>
+            <label style={labelStyle}>{('role')}</label>
             <select
               value={editingUser.role}
               onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
@@ -134,19 +130,18 @@ export default function UsersTable() {
               <option value="Admin">Admin</option>
             </select>
 
-            {/* Buttons */}
             <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
               <button
                 onClick={() => setEditingUser(null)}
                 style={{ flex: 1, padding: 12, borderRadius: 8, border: '1.5px solid #ddd', background: 'white', cursor: 'pointer', fontSize: 14, color: '#555' }}
               >
-                Cancel
+                {('cancel')}
               </button>
               <button
                 onClick={handleEditSave}
                 style={{ flex: 1, padding: 12, borderRadius: 8, border: 'none', background: '#1a3a6b', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
               >
-                Save Changes
+                {('saveChanges')}
               </button>
             </div>
           </div>
@@ -167,22 +162,22 @@ export default function UsersTable() {
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🗑️</div>
-            <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>Delete User?</h3>
+            <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>{('deleteUser')}</h3>
             <p style={{ color: '#888', fontSize: 14, marginBottom: 28 }}>
-              Are you sure you want to delete <strong>{users[deleteIndex]?.name}</strong>? This action cannot be undone.
+              {('deleteConfirm')} <strong>{users[deleteIndex]?.name}</strong>? {('deleteWarning')}
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
               <button
                 onClick={() => setDeleteIndex(null)}
                 style={{ flex: 1, padding: 12, borderRadius: 8, border: '1.5px solid #ddd', background: 'white', cursor: 'pointer', fontSize: 14, color: '#555' }}
               >
-                Cancel
+                {('cancel')}
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 style={{ flex: 1, padding: 12, borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
               >
-                Delete
+                {('delete')}
               </button>
             </div>
           </div>
