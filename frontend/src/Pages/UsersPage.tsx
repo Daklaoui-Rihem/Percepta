@@ -251,7 +251,7 @@ export default function UsersPage() {
         {[
           { icon: '👥', value: String(users.length), label: `Total ${targetRoleLabel}s`, border: '#60a5fa' },
           { icon: '✅', value: String(activeCount), label: 'Active', border: '#22c55e' },
-          { icon: '🚫', value: String(suspendedCount), label: 'Suspended', border: '#ef4444' },
+        
         ].map(card => (
           <div key={card.label} style={{ background: 'white', borderRadius: 12, padding: '20px 24px', flex: 1, borderLeft: `4px solid ${card.border}`, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{card.icon}</div>
@@ -281,7 +281,7 @@ export default function UsersPage() {
         >
           <option>All Status</option>
           <option>Active</option>
-          <option>Suspended</option>
+       
         </select>
         <button
           onClick={fetchUsers}

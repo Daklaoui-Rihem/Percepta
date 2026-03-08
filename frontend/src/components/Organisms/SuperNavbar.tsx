@@ -31,7 +31,12 @@ export default function SuperNavbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <button style={navBtnStyle}>🌐 EN English</button>
         <button style={navBtnStyle}>⚙️ Settings</button>
-        <button style={navBtnStyle}>🏢 Tenant Management</button>
+        <button
+  onClick={() => navigate('/superadmin/tenants')}
+  style={navBtnStyle}
+>
+  🏢 Tenant Management
+</button>
         <button style={navBtnStyle}>📋 View System Logs</button>
       </div>
 
