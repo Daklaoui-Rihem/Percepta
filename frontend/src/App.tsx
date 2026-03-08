@@ -13,6 +13,10 @@ import ClientProfilePage from './Pages/ClientProfilePage';
 import AdminProfilePage from './Pages/AdminProfilePage';
 import SuperAdminProfilePage from './Pages/SuperAdminProfilePage';
 import ProtectedRoute from './components/Guards/ProtectedRoute';
+import TenantManagementPage from './Pages/TenantManagementPage'; // ← add
+
+// Inside <Routes> add:
+<Route path="/superadmin/tenants" element={<TenantManagementPage />} />
 
 export default function App() {
   return (
@@ -82,6 +86,7 @@ export default function App() {
             <SuperAdminProfilePage />
           </ProtectedRoute>
         } />
+        <Route path="/superadmin/tenants" element={<TenantManagementPage />} />
       </Routes>
     </BrowserRouter>
   );
