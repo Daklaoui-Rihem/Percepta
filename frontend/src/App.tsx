@@ -5,39 +5,84 @@ import DashboardPage from './Pages/DashboardPage';
 import UsersPage from './Pages/UsersPage';
 import ReportsPage from './Pages/ReportsPage';
 import AnalysesPage from './Pages/AnalysesPage';
-import ClientDashboardPage from './Pages/ClientDashboardPage'; //
-import NewTranscriptionPage from './Pages/NewTranscriptionPage';    // ← add
-import NewVideoAnalysisPage from './Pages/NewVideoAnalysisPage'; 
-import SuperAdminDashboardPage from './Pages/SuperAdminDashboardPage'; // ← add
-import ClientProfilePage from './Pages/ClientProfilePage'; // ← add
-import AdminProfilePage from './Pages/AdminProfilePage';           // ← add
-import SuperAdminProfilePage from './Pages/SuperAdminProfilePage'; // ← add
-
-
-
+import ClientDashboardPage from './Pages/ClientDashboardPage';
+import NewTranscriptionPage from './Pages/NewTranscriptionPage';
+import NewVideoAnalysisPage from './Pages/NewVideoAnalysisPage';
+import SuperAdminDashboardPage from './Pages/SuperAdminDashboardPage';
+import ClientProfilePage from './Pages/ClientProfilePage';
+import AdminProfilePage from './Pages/AdminProfilePage';
+import SuperAdminProfilePage from './Pages/SuperAdminProfilePage';
+import ProtectedRoute from './components/Guards/ProtectedRoute';
 
 export default function App() {
   return (
-  
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/analyses" element={<AnalysesPage />} />
-          <Route path="/client/dashboard" element={<ClientDashboardPage />} />
-          <Route path="/client/transcriptions/new" element={<NewTranscriptionPage />} />   {/* ← add */}
-          <Route path="/client/video-analysis/new" element={<NewVideoAnalysisPage />} />
-          <Route path="/superadmin/dashboard" element={<SuperAdminDashboardPage />} />   {/* ← add */}
-          <Route path="/client/profile" element={<ClientProfilePage />} />
-          
-            <Route path="/admin/profile" element={<AdminProfilePage />} />
-            <Route path="/superadmin/profile" element={<SuperAdminProfilePage />} />
-           
-        </Routes>
-      </BrowserRouter>
- 
+    <BrowserRouter>
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Admin routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/users" element={
+          <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
+            <UsersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/reports" element={
+          <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
+            <ReportsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/analyses" element={
+          <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
+            <AnalysesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/profile" element={
+          <ProtectedRoute allowedRoles={['Admin']}>
+            <AdminProfilePage />
+          </ProtectedRoute>
+        } />
+
+        {/* Client routes */}
+        <Route path="/client/dashboard" element={
+          <ProtectedRoute allowedRoles={['Client']}>
+            <ClientDashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/transcriptions/new" element={
+          <ProtectedRoute allowedRoles={['Client']}>
+            <NewTranscriptionPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/video-analysis/new" element={
+          <ProtectedRoute allowedRoles={['Client']}>
+            <NewVideoAnalysisPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/profile" element={
+          <ProtectedRoute allowedRoles={['Client']}>
+            <ClientProfilePage />
+          </ProtectedRoute>
+        } />
+
+        {/* SuperAdmin routes */}
+        <Route path="/superadmin/dashboard" element={
+          <ProtectedRoute allowedRoles={['SuperAdmin']}>
+            <SuperAdminDashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/superadmin/profile" element={
+          <ProtectedRoute allowedRoles={['SuperAdmin']}>
+            <SuperAdminProfilePage />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </BrowserRouter>
   );
 }

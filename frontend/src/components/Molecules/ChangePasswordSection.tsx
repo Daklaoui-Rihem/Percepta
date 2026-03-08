@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { userApi } from '../../services/api';
 
 export default function ChangePasswordSection() {
   const [open, setOpen] = useState(false);
-  const [current, setCurrent]   = useState('');
-  const [newPass, setNewPass]   = useState('');
-  const [confirm, setConfirm]   = useState('');
-  const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
+  const [current, setCurrent] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!current || !newPass || !confirm) {
       setError('Please fill all fields'); return;
     }
@@ -18,9 +20,20 @@ export default function ChangePasswordSection() {
     if (newPass.length < 6) {
       setError('Password must be at least 6 characters'); return;
     }
+
+    setSaving(true);
     setError('');
-    setSuccess('Password changed successfully!');
-    setCurrent(''); setNewPass(''); setConfirm('');
+    setSuccess('');
+
+    try {
+      await userApi.changeMyPassword(current, newPass);
+      setSuccess('Password changed successfully!');
+      setCurrent(''); setNewPass(''); setConfirm('');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -29,30 +42,23 @@ export default function ChangePasswordSection() {
       marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       overflow: 'hidden',
     }}>
-      {/* Header row — always visible, click to toggle */}
       <div
         onClick={() => { setOpen(!open); setError(''); setSuccess(''); }}
         style={{
           display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', padding: '24px 32px',
-          cursor: 'pointer',
+          alignItems: 'center', padding: '24px 32px', cursor: 'pointer',
         }}
       >
         <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 18, fontWeight: 700 }}>
-          Change Password
+          🔒 Change Password
         </h3>
-        {/* Arrow rotates when open */}
         <span style={{
           color: '#1a3a6b', fontSize: 18,
           transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s',
-          display: 'inline-block',
-        }}>
-          ›
-        </span>
+          transition: 'transform 0.2s', display: 'inline-block',
+        }}>›</span>
       </div>
 
-      {/* Expandable content */}
       {open && (
         <div style={{ padding: '0 32px 28px' }}>
           <div style={{ marginBottom: 16 }}>
@@ -67,15 +73,19 @@ export default function ChangePasswordSection() {
             <label style={labelStyle}>Confirm New Password</label>
             <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} style={inputStyle} />
           </div>
-          {error   && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 12 }}>{error}</p>}
           {success && <p style={{ color: '#16a34a', fontSize: 13, marginBottom: 12 }}>{success}</p>}
-          <button onClick={handleSave} style={{
-            background: '#1a3a6b', color: 'white',
-            border: 'none', borderRadius: 8,
-            padding: '12px 24px', fontSize: 14,
-            fontWeight: 600, cursor: 'pointer',
-          }}>
-            Update Password
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              background: saving ? '#93c5fd' : '#1a3a6b',
+              color: 'white', border: 'none', borderRadius: 8,
+              padding: '12px 24px', fontSize: 14,
+              fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {saving ? 'Updating...' : 'Update Password'}
           </button>
         </div>
       )}

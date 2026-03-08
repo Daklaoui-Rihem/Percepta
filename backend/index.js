@@ -1,41 +1,38 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config(); // loads your .env variables
-const userRoutes = require('./routes/users');
 
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const { seedSuperAdmin } = require('./controllers/authController');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// ─── MIDDLEWARE ────────────────────────────────────────────────────────────────
+// ── Middleware ─────────────────────────────────────────────────
 app.use(cors({
-  origin: 'http://localhost:5173', // your React app's address (Vite default)
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
-// ─── ROUTES ───────────────────────────────────────────────────────────────────
+// ── Routes ─────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// ─── EXAMPLE PROTECTED ROUTE ──────────────────────────────────────────────────
-const authMiddleware = require('./middleware/authMiddleware');
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.get('/api/protected', authMiddleware, (req, res) => {
-  res.json({ message: `Hello user ${req.user.id}, your role is ${req.user.role}` });
-});
+// ── DB + Server ─────────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
 
-// ─── CONNECT TO MONGODB THEN START SERVER ─────────────────────────────────────
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-    });
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ifbw')
+  .then(async () => {
+    console.log('✅ MongoDB connected');
+    await seedSuperAdmin(); // Create SuperAdmin if none exists
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   })
-  .catch((err) => {
-    console.error('❌ MongoDB connection failed:', err.message);
-    process.exit(1); // exit if DB fails — don't start a broken server
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
   });

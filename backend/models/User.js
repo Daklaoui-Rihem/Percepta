@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true,       // no two users can share the same email
+        unique: true,
         lowercase: true,
         trim: true,
     },
@@ -20,9 +20,22 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['Client', 'Admin'],  // only these two values are allowed
+        enum: ['Client', 'Admin', 'SuperAdmin'],
         default: 'Client',
     },
-}, { timestamps: true }); // adds createdAt and updatedAt automatically
+    // tenantId: for Clients, this is the Admin's _id who manages them
+    // for Admins, this is null (they are root-level under SuperAdmin)
+    // for SuperAdmin, null
+    tenantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+    },
+    department: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    adminLevel: { type: String, default: 'Administrator' },
+    photoUrl: { type: String, default: '' },
+    isActive: { type: Boolean, default: true },
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
