@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 // This is the shape of one tenant object
 export type Tenant = {
-  id: number;
+  id: string | number;
   name: string;
   email: string;
   license: 'Enterprise' | 'Professional' | 'Starter';
@@ -14,7 +14,7 @@ export type Tenant = {
 
 type Props = {
   onClose: () => void;
-  onSubmit: (tenant: Omit<Tenant, 'id' | 'status' | 'resource'>) => void;
+  onSubmit: (tenant: Omit<Tenant, 'id' | 'status' | 'resource'> & { password?: string }) => void;
   existingTenant?: Tenant | null; // if provided → edit mode
 }
 
@@ -22,21 +22,23 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
   const isEdit = !!existingTenant; // true if editing
 
   // Pre-fill fields if editing, empty if adding
-  const [name,    setName]    = useState(existingTenant?.name    || '');
-  const [email,   setEmail]   = useState(existingTenant?.email   || '');
+  const [name, setName] = useState(existingTenant?.name || '');
+  const [email, setEmail] = useState(existingTenant?.email || '');
   const [license, setLicense] = useState(existingTenant?.license || 'Professional');
-  const [users,   setUsers]   = useState(existingTenant?.users?.toString() || '10');
-  const [expiry,  setExpiry]  = useState(existingTenant?.expiry  || '');
-  const [error,   setError]   = useState('');
+  const [users, setUsers] = useState(existingTenant?.users?.toString() || '10');
+  const [expiry, setExpiry] = useState(existingTenant?.expiry || '');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = () => {
-    if (!name || !email || !expiry) {
-      setError('Please fill all required fields');
+    if (!name || !email || !expiry || (!isEdit && !password)) {
+      setError('Please fill all required fields, including password for new tenants');
       return;
     }
     onSubmit({
       name,
       email,
+      password: !isEdit ? password : undefined,
       license: license as Tenant['license'],
       users: parseInt(users) || 0,
       expiry,
@@ -103,6 +105,20 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
               style={inputStyle}
             />
           </div>
+
+          {/* Password (CREATE ONLY) */}
+          {!isEdit && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Temporary Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Secure password"
+                style={inputStyle}
+              />
+            </div>
+          )}
 
           {/* License Type */}
           <div style={{ marginBottom: 16 }}>
