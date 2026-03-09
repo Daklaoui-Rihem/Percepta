@@ -1,81 +1,123 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+
 import TenantManagementNavbar from '../components/Organisms/TenantManagementNavbar';
 import AddTenantModal, { type Tenant } from '../components/Organisms/AddTenantModal';
 import PlanBadge from '../components/Atoms/PlanBadge';
 import ResourceBar from '../components/Atoms/ResourceBar';
 
-// ─── Initial demo data ───────────────────────────────────────────
-const initialTenants: Tenant[] = [
-  { id: 1, name: 'Acme Corporation',    email: 'admin@acme.com',          license: 'Enterprise',   status: 'Suspended', users: 245, resource: 67, expiry: '2027-01-15' },
-  { id: 2, name: 'TechStart Inc.',      email: 'contact@techstart.com',   license: 'Professional', status: 'Active',    users: 89,  resource: 45, expiry: '2026-03-20' },
-  { id: 3, name: 'Global Services Ltd.',email: 'info@globalservices.com', license: 'Enterprise',   status: 'Active',    users: 512, resource: 89, expiry: '2026-11-10' },
-  { id: 4, name: 'Innovate Solutions',  email: 'hello@innovate.com',      license: 'Professional', status: 'Active',    users: 45,  resource: 48, expiry: '2026-08-01' },
-  { id: 5, name: 'Digital Ventures',   email: 'admin@digitalv.com',      license: 'Starter',      status: 'Active',    users: 28,  resource: 32, expiry: '2026-06-15' },
-];
+import { userApi } from '../services/api';
 
 export default function TenantManagementPage() {
-  const navigate = useNavigate();
 
   // ─── State ───────────────────────────────────────────────────────
-  const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
-  const [search,  setSearch]  = useState('');
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [filterLicense, setFilterLicense] = useState('All Licenses');
-  const [filterStatus,  setFilterStatus]  = useState('All Status');
+  const [filterStatus, setFilterStatus] = useState('All Status');
 
   // Modal state
-  const [showAddModal,  setShowAddModal]  = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
-  const [deletingId,    setDeletingId]    = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
 
   // ─── Computed stats (update live when tenants change) ────────────
-  const totalTenants    = tenants.length;
-  const activeTenants   = tenants.filter(t => t.status === 'Active').length;
-  const suspendedCount  = tenants.filter(t => t.status === 'Suspended').length;
-  const totalUsers      = tenants.reduce((sum, t) => sum + t.users, 0);
+  const totalTenants = tenants.length;
+  const activeTenants = tenants.filter(t => t.status === 'Active').length;
+  const suspendedCount = tenants.filter(t => t.status === 'Suspended').length;
+  const totalUsers = tenants.reduce((sum, t) => sum + t.users, 0);
 
   // ─── Actions ─────────────────────────────────────────────────────
 
+  // Generate a mock resource visually if needed, but here we can just map and keep standard
+  const fetchTenants = async () => {
+    setLoading(true);
+    try {
+      const users = await userApi.getAllUsers();
+      // Only "Admins" returned from getAllUsers (for SuperAdmin) act as Tenants
+      const mapped: Tenant[] = users.map(u => ({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+        license: (['Professional', 'Enterprise', 'Starter'].includes(u.department) ? u.department : 'Professional') as Tenant['license'],
+        status: u.isActive ? 'Active' : 'Suspended',
+        users: 10, // Mocked for UI, as user counts would require a separate aggregator
+        resource: 40,
+        expiry: '2027-01-01'
+      }));
+      setTenants(mapped);
+    } catch (err) {
+      console.error('Failed to load tenants', err);
+      alert('Failed to load tenants');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTenants();
+  }, []);
+
   // Add a brand new tenant
-  const handleAddTenant = (data: Omit<Tenant, 'id' | 'status' | 'resource'>) => {
-    const newTenant: Tenant = {
-      ...data,
-      id: Date.now(), // temporary unique id
-      status: 'Active',
-      resource: Math.floor(Math.random() * 40 + 20), // random resource for demo
-    };
-    setTenants(prev => [newTenant, ...prev]);
+  const handleAddTenant = async (data: Omit<Tenant, 'id' | 'status' | 'resource'> & { password?: string }) => {
+    try {
+      await userApi.createUser({
+        name: data.name,
+        email: data.email,
+        password: data.password || 'Temporary123!',
+        role: 'Admin', // SuperAdmin creating a Tenant means creating an 'Admin'
+        department: data.license // Saving license choice in department field
+      });
+      fetchTenants();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to create tenant');
+    }
   };
 
   // Save edits to existing tenant
-  const handleEditTenant = (data: Omit<Tenant, 'id' | 'status' | 'resource'>) => {
-    setTenants(prev => prev.map(t =>
-      t.id === editingTenant?.id ? { ...t, ...data } : t
-    ));
-    setEditingTenant(null);
+  const handleEditTenant = async (data: Omit<Tenant, 'id' | 'status' | 'resource'>) => {
+    if (!editingTenant) return;
+    try {
+      await userApi.updateUser(editingTenant.id.toString(), {
+        name: data.name,
+        email: data.email,
+        department: data.license
+      });
+      setEditingTenant(null);
+      fetchTenants();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to edit tenant');
+    }
   };
 
   // Toggle suspend/active
-  const handleToggleSuspend = (id: number) => {
-    setTenants(prev => prev.map(t =>
-      t.id === id
-        ? { ...t, status: t.status === 'Active' ? 'Suspended' : 'Active' }
-        : t
-    ));
+  const handleToggleSuspend = async (tenant: Tenant) => {
+    try {
+      const newStatus = tenant.status === 'Active' ? false : true;
+      await userApi.updateUser(tenant.id.toString(), { isActive: newStatus });
+      fetchTenants();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to toggle status');
+    }
   };
 
   // Delete tenant
-  const handleDelete = (id: number) => {
-    setTenants(prev => prev.filter(t => t.id !== id));
-    setDeletingId(null);
+  const handleDelete = async (id: string | number) => {
+    try {
+      await userApi.deleteUser(id.toString());
+      setDeletingId(null);
+      fetchTenants();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to delete tenant');
+    }
   };
 
   // ─── Filtered list ────────────────────────────────────────────────
   const filtered = tenants.filter(t => {
-    const matchSearch  = t.name.toLowerCase().includes(search.toLowerCase()) ||
-                         t.email.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
+      t.email.toLowerCase().includes(search.toLowerCase());
     const matchLicense = filterLicense === 'All Licenses' || t.license === filterLicense;
-    const matchStatus  = filterStatus  === 'All Status'   || t.status  === filterStatus;
+    const matchStatus = filterStatus === 'All Status' || t.status === filterStatus;
     return matchSearch && matchLicense && matchStatus;
   });
 
@@ -91,10 +133,10 @@ export default function TenantManagementPage() {
         {/* ── 4 Stat Cards ── */}
         <div style={{ display: 'flex', gap: 20, marginBottom: 28 }}>
           {[
-            { label: 'Total Tenants',   value: totalTenants,  icon: '🏢', color: '#3b82f6' },
-            { label: 'Active Tenants',  value: activeTenants, icon: '⚡', color: '#0d9488' },
-            { label: 'Suspended',       value: suspendedCount,icon: '⏸️', color: '#f97316' },
-            { label: 'Total Users',     value: totalUsers,    icon: '👥', color: '#6366f1' },
+            { label: 'Total Tenants', value: totalTenants, icon: '🏢', color: '#3b82f6' },
+            { label: 'Active Tenants', value: activeTenants, icon: '⚡', color: '#0d9488' },
+            { label: 'Suspended', value: suspendedCount, icon: '⏸️', color: '#f97316' },
+            { label: 'Total Users', value: totalUsers, icon: '👥', color: '#6366f1' },
           ].map(card => (
             <div key={card.label} style={{
               background: 'white', borderRadius: 16, padding: '20px 24px',
@@ -186,88 +228,92 @@ export default function TenantManagementPage() {
           </div>
 
           {/* Rows */}
-          {filtered.map(tenant => (
-            <div key={tenant.id} style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 2fr 1.2fr 1.2fr 0.8fr 1.5fr 1.2fr 1fr',
-              padding: '16px 24px',
-              borderBottom: '1px solid #f8f8f8',
-              alignItems: 'center',
-            }}>
-              {/* Name */}
-              <span style={{ fontWeight: 600, color: '#1a3a6b', fontSize: 14 }}>{tenant.name}</span>
-
-              {/* Email */}
-              <span style={{ color: '#555', fontSize: 13 }}>{tenant.email}</span>
-
-              {/* License badge */}
-              <span><PlanBadge plan={tenant.license} /></span>
-
-              {/* Status badge */}
-              <span>
-                <span style={{
-                  padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                  background: tenant.status === 'Active' ? '#dcfce7' : '#fff7ed',
-                  color: tenant.status === 'Active' ? '#16a34a' : '#c2410c',
-                  border: `1px solid ${tenant.status === 'Active' ? '#bbf7d0' : '#fed7aa'}`,
-                }}>
-                  {tenant.status === 'Active' ? '● Active' : '⏸ Suspended'}
-                </span>
-              </span>
-
-              {/* Users */}
-              <span style={{ color: '#555', fontSize: 14 }}>{tenant.users}</span>
-
-              {/* Resource bar + % */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <ResourceBar percent={tenant.resource} />
-                <span style={{ color: '#555', fontSize: 13 }}>{tenant.resource}%</span>
-              </div>
-
-              {/* Expiry */}
-              <span style={{ color: '#555', fontSize: 13 }}>{tenant.expiry}</span>
-
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: 8 }}>
-
-                {/* Edit button */}
-                <button
-                  onClick={() => setEditingTenant(tenant)}
-                  title="Edit tenant"
-                  style={actionBtnStyle('#dbeafe', '#1d4ed8')}
-                >
-                  ✏️
-                </button>
-
-                {/* Suspend / Resume button */}
-                <button
-                  onClick={() => handleToggleSuspend(tenant.id)}
-                  title={tenant.status === 'Active' ? 'Suspend tenant' : 'Resume tenant'}
-                  style={actionBtnStyle(
-                    tenant.status === 'Active' ? '#fff7ed' : '#dcfce7',
-                    tenant.status === 'Active' ? '#c2410c' : '#16a34a'
-                  )}
-                >
-                  {tenant.status === 'Active' ? '⏸' : '▶'}
-                </button>
-
-                {/* Delete button */}
-                <button
-                  onClick={() => setDeletingId(tenant.id)}
-                  title="Delete tenant"
-                  style={actionBtnStyle('#fee2e2', '#dc2626')}
-                >
-                  🗑️
-                </button>
-              </div>
+          {loading ? (
+            <div style={{ padding: '48px', textAlign: 'center', color: '#888' }}>
+              Loading tenants...
             </div>
-          ))}
-
-          {/* Empty state */}
-          {filtered.length === 0 && (
+          ) : filtered.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: '#888' }}>
               No tenants found matching your filters.
             </div>
+          ) : (
+            filtered.map(tenant => (
+              <div key={tenant.id} style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 2fr 1.2fr 1.2fr 0.8fr 1.5fr 1.2fr 1fr',
+                padding: '16px 24px',
+                borderBottom: '1px solid #f8f8f8',
+                alignItems: 'center',
+              }}>
+                {/* Name */}
+                <span style={{ fontWeight: 600, color: '#1a3a6b', fontSize: 14 }}>{tenant.name}</span>
+
+
+                {/* Email */}
+                <span style={{ color: '#555', fontSize: 13 }}>{tenant.email}</span>
+
+                {/* License badge */}
+                <span><PlanBadge plan={tenant.license} /></span>
+
+                {/* Status badge */}
+                <span>
+                  <span style={{
+                    padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    background: tenant.status === 'Active' ? '#dcfce7' : '#fff7ed',
+                    color: tenant.status === 'Active' ? '#16a34a' : '#c2410c',
+                    border: `1px solid ${tenant.status === 'Active' ? '#bbf7d0' : '#fed7aa'}`,
+                  }}>
+                    {tenant.status === 'Active' ? '● Active' : '⏸ Suspended'}
+                  </span>
+                </span>
+
+                {/* Users */}
+                <span style={{ color: '#555', fontSize: 14 }}>{tenant.users}</span>
+
+                {/* Resource bar + % */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ResourceBar percent={tenant.resource} />
+                  <span style={{ color: '#555', fontSize: 13 }}>{tenant.resource}%</span>
+                </div>
+
+                {/* Expiry */}
+                <span style={{ color: '#555', fontSize: 13 }}>{tenant.expiry}</span>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 8 }}>
+
+                  {/* Edit button */}
+                  <button
+                    onClick={() => setEditingTenant(tenant)}
+                    title="Edit tenant"
+                    style={actionBtnStyle('#dbeafe', '#1d4ed8')}
+                  >
+                    ✏️
+                  </button>
+
+                  {/* Suspend / Resume button */}
+                  <button
+                    onClick={() => handleToggleSuspend(tenant)}
+                    title={tenant.status === 'Active' ? 'Suspend tenant' : 'Resume tenant'}
+                    style={actionBtnStyle(
+                      tenant.status === 'Active' ? '#fff7ed' : '#dcfce7',
+                      tenant.status === 'Active' ? '#c2410c' : '#16a34a'
+                    )}
+                  >
+                    {tenant.status === 'Active' ? '⏸' : '▶'}
+                  </button>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => setDeletingId(tenant.id)}
+                    title="Delete tenant"
+                    style={actionBtnStyle('#fee2e2', '#dc2626')}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -340,7 +386,7 @@ export default function TenantManagementPage() {
           </div>
         </div>
       )}
-    </div>
+    </div >
   );
 }
 
