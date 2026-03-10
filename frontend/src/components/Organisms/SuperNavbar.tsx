@@ -1,6 +1,14 @@
 import { useNavigate } from 'react-router-dom';
+import {
+  Globe,
+  Settings,
+  Building2,
+  ClipboardList,
+  LogOut,
+  Bell
+} from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
-import logo from '../../assets/Logo.png';
+import Logo from '../Atoms/Logo';
 
 export default function SuperNavbar() {
   const navigate = useNavigate();
@@ -15,29 +23,39 @@ export default function SuperNavbar() {
 
   return (
     <nav style={{
-      background: '#0f2d6b', padding: '0 24px',
+      background: 'linear-gradient(90deg, #00338e 0%, #314a9c 100%)',
+      padding: '0 24px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       height: 64, position: 'sticky', top: 0, zIndex: 50,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <img src={logo} alt="IFBW Logo" style={{ height: 40, cursor: 'pointer' }} onClick={() => navigate('/superadmin/dashboard')} />
+        <div onClick={() => navigate('/superadmin/dashboard')}>
+          <Logo size="medium" light />
+        </div>
+        <div style={{ height: 24, width: 1, background: 'rgba(255,255,255,0.2)', margin: '0 4px' }} />
         <div>
-          <div style={{ color: 'white', fontWeight: 800, fontSize: 16 }}>IFBW Infrastructure</div>
-          <div style={{ color: '#93c5fd', fontSize: 12 }}>SuperAdmin Dashboard</div>
+          <div style={{ color: 'white', fontWeight: 700, fontSize: 14, letterSpacing: '0.5px' }}>Infrastructure</div>
+          <div style={{ color: '#c6eaff', fontSize: 11, fontWeight: 500 }}>SuperAdmin Console</div>
         </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button style={navBtnStyle}>🌐 EN English</button>
-        <button style={navBtnStyle}>⚙️ Settings</button>
+        <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Globe size={16} /> EN English
+        </button>
+        <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Settings size={16} /> Settings
+        </button>
         <button
-  onClick={() => navigate('/superadmin/tenants')}
-  style={navBtnStyle}
->
-  🏢 Tenant Management
-</button>
-        <button style={navBtnStyle}>📋 View System Logs</button>
+          onClick={() => navigate('/superadmin/tenants')}
+          style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}
+        >
+          <Building2 size={16} /> Tenant Management
+        </button>
+        <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ClipboardList size={16} /> View System Logs
+        </button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -50,16 +68,30 @@ export default function SuperNavbar() {
           <div style={{ color: '#93c5fd', fontSize: 12 }}>{email}</div>
         </div>
 
-        <div style={{ background: '#3b82f6', color: 'white', padding: '4px 12px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}>
-          SuperAdmin
+        <button
+          style={{
+            background: 'transparent', border: 'none', color: '#93c5fd',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}
+          title="Notifications"
+        >
+          <Bell size={20} />
+        </button>
+
+        <div style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 700, border: '1px solid rgba(255,255,255,0.2)' }}>
+          SUPERADMIN
         </div>
 
         <button
           onClick={handleLogout}
-          style={{ background: 'transparent', border: '1px solid #93c5fd', color: '#93c5fd', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 16 }}
+          style={{
+            background: 'transparent', border: '1px solid #93c5fd', color: '#93c5fd',
+            borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}
           title="Logout"
         >
-          →
+          <LogOut size={18} />
         </button>
       </div>
     </nav>

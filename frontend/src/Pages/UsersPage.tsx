@@ -1,4 +1,16 @@
 import { useState, useEffect } from 'react';
+import {
+  Plus,
+  Users,
+  CheckCircle,
+  Search,
+  RefreshCw,
+  Pencil,
+  Trash2,
+  X,
+  Pause,
+  Play
+} from 'lucide-react';
 import DashboardTemplate from '../components/Templates/DashboardTemplate';
 import { userApi, getSession } from '../services/api';
 import type { UserProfile } from '../services/api';
@@ -59,7 +71,9 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
           <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 22, fontWeight: 700 }}>
             {mode === 'create' ? `Create New ${targetRole}` : `Edit ${targetRole}`}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#888' }}>
+            <X size={20} />
+          </button>
         </div>
 
         {/* Name */}
@@ -106,8 +120,8 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
           </div>
         )}
 
-        {/* Active toggle (edit only) */}
-        {mode === 'edit' && (
+        {/* Active toggle (edit only for Admins) */}
+        {mode === 'edit' && targetRole === 'Admin' && (
           <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
             <label style={{ ...labelStyle, marginBottom: 0 }}>Account Status</label>
             <button
@@ -119,7 +133,10 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
                 color: isActive ? '#16a34a' : '#dc2626',
               }}
             >
-              {isActive ? '✅ Active' : '🚫 Suspended'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {isActive ? <CheckCircle size={14} /> : <X size={14} />}
+                {isActive ? 'Active' : 'Suspended'}
+              </div>
             </button>
           </div>
         )}
@@ -160,7 +177,9 @@ function DeleteModal({ user, onClose, onConfirm }: { user: UserProfile; onClose:
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
     >
       <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 16, padding: '36px 32px', width: 380, textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🗑️</div>
+        <div style={{ color: '#dc2626', marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+          <Trash2 size={48} strokeWidth={1.5} />
+        </div>
         <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>Delete User</h3>
         <p style={{ color: '#888', fontSize: 14, marginBottom: 28 }}>
           Are you sure you want to delete <strong>{user.name}</strong>? This action cannot be undone.
@@ -219,6 +238,15 @@ export default function UsersPage() {
     }
   };
 
+  const handleToggleStatus = async (user: UserProfile) => {
+    try {
+      await userApi.updateUser(user._id, { isActive: !user.isActive });
+      fetchUsers();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Toggle failed');
+    }
+  };
+
   // Filter
   const filtered = users.filter(u => {
     const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
@@ -229,65 +257,68 @@ export default function UsersPage() {
   });
 
   const activeCount = users.filter(u => u.isActive).length;
-  const suspendedCount = users.filter(u => !u.isActive).length;
 
   return (
     <DashboardTemplate active={activePage} onNavigate={setActivePage}>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-        <h2 style={{ color: '#1a3a6b', margin: 0, fontSize: 24, fontWeight: 700 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+        <h2 style={{ color: '#1a3f5f', margin: 0, fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px' }}>
           {targetRoleLabel} Management
         </h2>
         <button
           onClick={() => setShowCreate(true)}
           style={{ background: '#1a3a6b', color: 'white', border: 'none', borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
         >
-          + New {targetRoleLabel}
+          <Plus size={18} /> New {targetRoleLabel}
         </button>
       </div>
 
       {/* Stats cards */}
       <div style={{ display: 'inline-flex', gap: 20, marginBottom: 28 }}>
         {[
-          { icon: '👥', value: String(users.length), label: `Total ${targetRoleLabel}s`, border: '#60a5fa' },
-          { icon: '✅', value: String(activeCount), label: 'Active', border: '#22c55e' },
-        
+          { icon: Users, value: String(users.length), label: `Total ${targetRoleLabel}s`, border: '#60a5fa' },
+          ...(targetRoleLabel === 'Admin' ? [{ icon: CheckCircle, value: String(activeCount), label: 'Active', border: '#22c55e' }] : []),
+
         ].map(card => (
-          <div key={card.label} style={{ background: 'white', borderRadius: 12, padding: '20px 24px', flex: 1, borderLeft: `4px solid ${card.border}`, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{card.icon}</div>
+          <div key={card.label} style={{ background: 'white', borderRadius: 16, padding: '24px', flex: 1, border: '1px solid rgba(198, 234, 255, 0.4)', borderLeft: `5px solid ${card.border}`, boxShadow: '0 4px 15px rgba(26, 63, 95, 0.05)', display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: `${card.border}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.border }}>
+              <card.icon size={26} strokeWidth={2.5} />
+            </div>
             <div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#1a3a6b' }}>{card.value}</div>
-              <div style={{ fontSize: 13, color: '#888' }}>{card.label}</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: '#1a3f5f', lineHeight: 1, marginBottom: 4 }}>{card.value}</div>
+              <div style={{ fontSize: 13, color: '#4a7090', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{card.label}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Search + filter */}
-      <div style={{ background: 'white', borderRadius: 12, padding: '16px 20px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 12 }}>
-        <div style={{ flex: 2, display: 'flex', alignItems: 'center', border: '1.5px solid #d0e4f0', borderRadius: 8, padding: '10px 14px', gap: 8 }}>
-          <span style={{ color: '#aaa' }}>🔍</span>
+      <div style={{ background: 'white', borderRadius: 16, padding: '20px', marginBottom: 24, boxShadow: '0 4px 15px rgba(26, 63, 95, 0.05)', display: 'flex', gap: 16, border: '1px solid rgba(198, 234, 255, 0.4)' }}>
+        <div style={{ flex: 2, display: 'flex', alignItems: 'center', background: '#f8fbff', border: '1.5px solid #dff5ff', borderRadius: 10, padding: '12px 16px', gap: 12 }}>
+          <Search size={20} color="#6ab7e4" />
           <input
             placeholder={`Search ${targetRoleLabel.toLowerCase()}s by name or email...`}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ border: 'none', outline: 'none', fontSize: 14, width: '100%' }}
+            style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 14, width: '100%', color: '#1a3f5f', fontWeight: 500 }}
           />
         </div>
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-          style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #d0e4f0', borderRadius: 8, fontSize: 14, color: '#444', cursor: 'pointer' }}
-        >
-          <option>All Status</option>
-          <option>Active</option>
-       
-        </select>
+        {targetRoleLabel === 'Admin' && (
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #d0e4f0', borderRadius: 8, fontSize: 14, color: '#444', cursor: 'pointer' }}
+          >
+            <option>All Status</option>
+            <option>Active</option>
+            <option>Suspended</option>
+          </select>
+        )}
         <button
           onClick={fetchUsers}
-          style={{ padding: '10px 18px', background: '#eff6ff', border: '1.5px solid #d0e4f0', borderRadius: 8, cursor: 'pointer', fontSize: 14, color: '#1a3a6b', fontWeight: 600 }}
+          style={{ padding: '10px 18px', background: '#eff6ff', border: '1.5px solid #d0e4f0', borderRadius: 8, cursor: 'pointer', fontSize: 14, color: '#1a3a6b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}
         >
-          🔄 Refresh
+          <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
@@ -301,7 +332,7 @@ export default function UsersPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#dbeafe' }}>
-                {['Name', 'Email', 'Status', ...(targetRoleLabel === 'Admin' ? ['Level'] : []), 'Phone', 'Created', 'Actions'].map(col => (
+                {['Name', 'Email', ...(targetRoleLabel === 'Admin' ? ['Status', 'Level'] : []), 'Phone', 'Created', 'Actions'].map(col => (
                   <th key={col} style={{ padding: '14px 18px', textAlign: 'left', color: '#1a3a6b', fontSize: 14, fontWeight: 700 }}>{col}</th>
                 ))}
               </tr>
@@ -327,15 +358,17 @@ export default function UsersPage() {
                     </div>
                   </td>
                   <td style={{ padding: '14px 18px', color: '#555', fontSize: 14 }}>{u.email}</td>
-                  <td style={{ padding: '14px 18px' }}>
-                    <span style={{
-                      background: u.isActive ? '#dcfce7' : '#fee2e2',
-                      color: u.isActive ? '#16a34a' : '#dc2626',
-                      padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                    }}>
-                      {u.isActive ? 'Active' : 'Suspended'}
-                    </span>
-                  </td>
+                  {targetRoleLabel === 'Admin' && (
+                    <td style={{ padding: '14px 18px' }}>
+                      <span style={{
+                        background: u.isActive ? '#dcfce7' : '#fee2e2',
+                        color: u.isActive ? '#16a34a' : '#dc2626',
+                        padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                      }}>
+                        {u.isActive ? 'Active' : 'Suspended'}
+                      </span>
+                    </td>
+                  )}
                   {targetRoleLabel === 'Admin' && (
                     <td style={{ padding: '14px 18px', color: '#555', fontSize: 13 }}>{u.adminLevel || '—'}</td>
                   )}
@@ -347,15 +380,24 @@ export default function UsersPage() {
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button
                         onClick={() => setEditUser(u)}
-                        style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d0e4f0', background: 'white', cursor: 'pointer', fontSize: 13, color: '#1a3a6b', fontWeight: 600 }}
+                        style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d0e4f0', background: 'white', cursor: 'pointer', fontSize: 13, color: '#1a3a6b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
                       >
-                        ✏️ Edit
+                        <Pencil size={12} /> Edit
                       </button>
+                      {targetRoleLabel === 'Admin' && (
+                        <button
+                          onClick={() => handleToggleStatus(u)}
+                          title={u.isActive ? 'Suspend User' : 'Activate User'}
+                          style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: u.isActive ? '#fff7ed' : '#dcfce7', cursor: 'pointer', fontSize: 13, color: u.isActive ? '#c2410c' : '#16a34a', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          {u.isActive ? <Pause size={12} /> : <Play size={12} />}
+                        </button>
+                      )}
                       <button
                         onClick={() => setDeleteUser(u)}
-                        style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#fee2e2', cursor: 'pointer', fontSize: 13, color: '#dc2626', fontWeight: 600 }}
+                        style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#fee2e2', cursor: 'pointer', fontSize: 13, color: '#dc2626', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
-                        🗑️
+                        <Trash2 size={12} />
                       </button>
                     </div>
                   </td>

@@ -1,6 +1,7 @@
+import { useState } from 'react';
+import { Home, Music, AudioLines } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
-import { useState } from 'react';
 
 export default function NewTranscriptionForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -9,7 +10,7 @@ export default function NewTranscriptionForm() {
     <div>
       {/* Breadcrumb: Home > Transcriptions > New */}
       <Breadcrumb items={[
-        { label: 'Home',           path: '/client/dashboard', icon: '🏠' },
+        { label: 'Home', path: '/client/dashboard', icon: Home },
         { label: 'Transcriptions', path: '/client/transcriptions' },
         { label: 'New' }, // last item — no path, not clickable
       ]} />
@@ -31,7 +32,7 @@ export default function NewTranscriptionForm() {
           accept=".wav,.mp3,.m4a,.ogg"
           maxSizeMB={100}
           formatLabel="WAV, MP3, M4A, OGG"
-          icon="🎵"
+          icon={Music}
           onFileSelected={(f) => setFile(f)}
         />
 
@@ -49,7 +50,9 @@ export default function NewTranscriptionForm() {
             fontWeight: 700,
             cursor: 'pointer',
           }}>
-            🎵 Start Transcription
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <AudioLines size={20} /> Start Transcription
+            </div>
           </button>
         )}
       </div>

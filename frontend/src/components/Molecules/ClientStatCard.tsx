@@ -1,11 +1,13 @@
+import type { LucideIcon } from 'lucide-react';
+
 type Props = {
-  icon: string;
+  icon: LucideIcon;
   value: string;
   label: string;
   change: string;
 }
 
-export default function ClientStatCard({ icon, value, label, change }: Props) {
+export default function ClientStatCard({ icon: Icon, value, label, change }: Props) {
   const isPositive = !change.startsWith('-');
 
   return (
@@ -19,7 +21,9 @@ export default function ClientStatCard({ icon, value, label, change }: Props) {
     }}>
       {/* Top row: icon + change badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <span style={{ fontSize: 28, color: '#1a3a6b' }}>{icon}</span>
+        <div style={{ color: '#1a3a6b' }}>
+          <Icon size={28} strokeWidth={2} />
+        </div>
         <span style={{ color: isPositive ? '#22c55e' : '#ef4444', fontSize: 13, fontWeight: 600 }}>
           {change}
         </span>

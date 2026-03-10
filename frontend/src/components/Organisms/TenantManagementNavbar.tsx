@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Globe, PlusCircle, Bell, Star } from 'lucide-react';
 
 type Props = {
   onAddTenant: () => void; // called when "+ Add New Tenant" is clicked
@@ -31,10 +32,10 @@ export default function TenantManagementNavbar({ onAddTenant }: Props) {
             border: '1px solid rgba(255,255,255,0.2)',
             color: 'white', borderRadius: 8,
             padding: '8px 14px', cursor: 'pointer',
-            fontSize: 14, display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
           }}
         >
-          ← Back to Dashboard
+          <ArrowLeft size={16} /> Back to Dashboard
         </button>
 
         {/* Vertical divider */}
@@ -55,7 +56,14 @@ export default function TenantManagementNavbar({ onAddTenant }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
 
         {/* Language */}
-        <button style={btnStyle}>🌐 GB English</button>
+        <button style={{ ...btnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Globe size={16} /> GB English
+        </button>
+
+        {/* Notifications */}
+        <button style={{ ...btnStyle, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Bell size={18} />
+        </button>
 
         {/* Add New Tenant */}
         <button
@@ -65,9 +73,12 @@ export default function TenantManagementNavbar({ onAddTenant }: Props) {
             background: '#1d4ed8',
             border: '1px solid #1d4ed8',
             fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
           }}
         >
-          + Add New Tenant
+          <PlusCircle size={16} /> Add New Tenant
         </button>
 
         {/* SuperAdmin badge */}
@@ -75,8 +86,9 @@ export default function TenantManagementNavbar({ onAddTenant }: Props) {
           background: '#1d4ed8', color: 'white',
           padding: '6px 14px', borderRadius: 8,
           fontSize: 13, fontWeight: 700,
+          display: 'flex', alignItems: 'center', gap: 8
         }}>
-          SuperAdmin
+          <Star size={14} fill="white" /> SuperAdmin
         </div>
       </div>
     </nav>

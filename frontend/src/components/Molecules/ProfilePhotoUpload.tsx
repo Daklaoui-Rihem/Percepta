@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { User, Camera } from 'lucide-react';
 
 export default function ProfilePhotoUpload() {
   const [photo, setPhoto] = useState<string | null>(null);
@@ -43,8 +44,7 @@ export default function ProfilePhotoUpload() {
             // Show selected photo
             <img src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            // Show default person icon
-            <span style={{ fontSize: 48, color: 'white' }}>👤</span>
+            <User size={60} color="white" strokeWidth={1.5} />
           )}
         </div>
 
@@ -55,13 +55,13 @@ export default function ProfilePhotoUpload() {
             position: 'absolute', bottom: 0, right: 0,
             width: 32, height: 32, borderRadius: '50%',
             background: '#1a3a6b', border: '2px solid white',
-            cursor: 'pointer', fontSize: 14,
+            cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'white',
           }}
           title="Change photo"
         >
-          📷
+          <Camera size={16} />
         </button>
       </div>
 

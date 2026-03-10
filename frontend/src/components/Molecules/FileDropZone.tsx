@@ -1,14 +1,16 @@
 import { useState, useRef } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { Upload, CheckCircle } from 'lucide-react';
 
 type Props = {
   accept: string;        // e.g. ".wav,.mp3,.mp4"
   maxSizeMB: number;     // e.g. 100
   formatLabel: string;   // e.g. "WAV, MP3, M4A, OGG"
-  icon: string;          // e.g. "🎵" for audio, "🎥" for video
+  icon: LucideIcon;      // e.g. Music for audio, Film for video
   onFileSelected: (file: File) => void;
 }
 
-export default function FileDropZone({ accept, maxSizeMB, formatLabel, icon, onFileSelected }: Props) {
+export default function FileDropZone({ accept, maxSizeMB, formatLabel, icon: Icon, onFileSelected }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState('');
@@ -86,9 +88,11 @@ export default function FileDropZone({ accept, maxSizeMB, formatLabel, icon, onF
         {selectedFile ? (
           // File selected — show its name
           <div>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>{icon}</div>
-            <p style={{ color: '#1a3a6b', fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
-              ✅ {selectedFile.name}
+            <div style={{ color: '#1a3a6b', marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+              <Icon size={48} strokeWidth={1.5} />
+            </div>
+            <p style={{ color: '#1a3a6b', fontWeight: 700, fontSize: 16, marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <CheckCircle size={18} color="#22c55e" /> {selectedFile.name}
             </p>
             <p style={{ color: '#888', fontSize: 13 }}>
               {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
@@ -101,7 +105,9 @@ export default function FileDropZone({ accept, maxSizeMB, formatLabel, icon, onF
           // No file yet — show upload prompt
           <div>
             {/* Upload arrow icon */}
-            <div style={{ fontSize: 48, color: '#1a3a6b', marginBottom: 16 }}>⬆</div>
+            <div style={{ color: '#1a3a6b', marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+              <Upload size={48} strokeWidth={1.5} />
+            </div>
             <p style={{ color: '#1a3a6b', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>
               Drag your file here or click to browse
             </p>

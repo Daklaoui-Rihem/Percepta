@@ -1,3 +1,4 @@
+import { Home } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import ProfilePhotoUpload from '../Molecules/ProfilePhotoUpload';
 import ProfileInfoForm from '../Molecules/ProfileInfoForm';
@@ -18,7 +19,7 @@ export default function AdminProfileForm({ role = 'Admin' }: Props) {
         {
           label: 'Dashboard',
           path: role === 'SuperAdmin' ? '/superadmin/dashboard' : '/dashboard',
-          icon: '🏠'
+          icon: Home
         },
         { label: 'My Profile' },
       ]} />

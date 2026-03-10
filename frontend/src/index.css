@@ -1,22 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body, #root {
-  width: 100%;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-}
-
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Color Palette */
+  --color-danger: #ad1b1b;
+  --color-dark-blue: #1a3f5f;
+  --color-royal-blue: #00338e;
+  --color-bright-blue: #003bdf;
+  --color-logo-blue: #4a7090;
+  --color-indigo: #3c4a9d;
+  --color-teal: #16757a;
+  --color-sky-blue: #6ab7e4;
+  --color-pale-blue: #c6eaff;
+  --color-ice-blue: #dff5ff;
+  --color-white: #ffffff;
+
+  /* Theme Defaults */
+  --primary: var(--color-royal-blue);
+  --secondary: var(--color-indigo);
+  --accent: var(--color-bright-blue);
+  --bg-main: var(--color-ice-blue);
+  --bg-card: var(--color-white);
+  --text-main: var(--color-dark-blue);
+  --text-muted: var(--color-logo-blue);
+
+  /* Font Families */
+  --font-main: 'Montserrat', sans-serif;
+  --font-logo-ifbw: 'Cavolini', cursive, sans-serif;
+  --font-logo-innovation: 'Chalkduster', fantasy, cursive;
+
+  font-family: var(--font-main);
   line-height: 1.5;
   font-weight: 400;
-  font-synthesis: none;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+}
+
+/* Common UI Enhancements */
+button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, var(--color-royal-blue) 0%, var(--color-indigo) 100%);
 }

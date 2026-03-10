@@ -1,13 +1,13 @@
 import { useState } from 'react';
+import { BarChart3, FileText, RefreshCw, Trash2, Download } from 'lucide-react';
 import DashboardTemplate from '../components/Templates/DashboardTemplate';
-import StatsRow from '../components/Organisms/StatsRow';
 import ReportsTable from '../components/Organisms/ReportsTable';
 
 const reportStats = [
-  { icon: '📊', value: '12',  label: 'Total Reports', change: '+2',     borderColor: '#60a5fa' },
-  { icon: '📄', value: '10',  label: 'Completed',     change: '+2',     borderColor: '#22c55e' },
-  { icon: '🔄', value: '1',   label: 'Processing',    change: '0',      borderColor: '#2563eb' },
-  { icon: '🗑️', value: '1',   label: 'Failed',        change: '-0.5%',  borderColor: '#dc2626' },
+  { icon: BarChart3, value: '12', label: 'Total Reports', change: '+2', borderColor: '#60a5fa' },
+  { icon: FileText, value: '10', label: 'Completed', change: '+2', borderColor: '#22c55e' },
+  { icon: RefreshCw, value: '1', label: 'Processing', change: '0', borderColor: '#2563eb' },
+  { icon: Trash2, value: '1', label: 'Failed', change: '-0.5%', borderColor: '#dc2626' },
 ];
 
 export default function ReportsPage() {
@@ -24,7 +24,7 @@ export default function ReportsPage() {
           fontWeight: 600, cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          📋 Export to CSV
+          <Download size={18} /> Export to CSV
         </button>
       </div>
 
@@ -37,8 +37,8 @@ export default function ReportsPage() {
             borderLeft: `4px solid ${s.borderColor}`,
             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 24 }}>{s.icon}</span>
+            <div style={{ color: s.borderColor, marginBottom: 10 }}>
+              <s.icon size={24} strokeWidth={2} />
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#1a3a6b' }}>{s.value}</div>
             <div style={{ fontSize: 14, color: '#888', marginTop: 4 }}>{s.label}</div>

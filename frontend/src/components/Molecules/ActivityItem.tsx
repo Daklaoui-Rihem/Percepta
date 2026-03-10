@@ -1,11 +1,13 @@
+import type { LucideIcon } from 'lucide-react';
+
 type Props = {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   tenant: string;
   time: string;
 }
 
-export default function ActivityItem({ icon, title, tenant, time }: Props) {
+export default function ActivityItem({ icon: Icon, title, tenant, time }: Props) {
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start',
@@ -17,9 +19,9 @@ export default function ActivityItem({ icon, title, tenant, time }: Props) {
         width: 40, height: 40, borderRadius: '50%',
         background: '#eff6ff', flexShrink: 0,
         display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontSize: 18,
+        justifyContent: 'center', color: '#1a3a6b'
       }}>
-        {icon}
+        <Icon size={18} strokeWidth={2} />
       </div>
 
       {/* Text */}

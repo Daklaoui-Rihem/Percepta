@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
+import { Home, FileText, Video, BarChart3 } from 'lucide-react';
 import NavLink from '../Atoms/NavLink';
 import ClientProfile from '../Molecules/ClientProfile';
-import logo from '../../assets/Logo.png';
+import Logo from '../Atoms/Logo';
 
 type Props = {
   activePage: string;
@@ -12,17 +13,15 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
   const navigate = useNavigate();
 
   const navItems = [
-    { icon: '', label: '',             path: '' },
-    { icon: '🏠', label: 'Home',             path: '/client/dashboard' },
-    { icon: '📄', label: 'Transcriptions',   path: '/client/transcriptions' },
-    { icon: '🎥', label: 'Video Analysis',   path: '/client/video-analysis' },
-    { icon: '📊', label: 'Reports',          path: '/client/reports' },
-    { icon: '👤', label: 'Profile',          path: '/client/profile' },
+    { icon: Home, label: 'Home', path: '/client/dashboard' },
+    { icon: FileText, label: 'Transcriptions', path: '/client/transcriptions' },
+    { icon: Video, label: 'Video Analysis', path: '/client/video-analysis' },
+    { icon: BarChart3, label: 'Reports', path: '/client/reports' },
   ];
 
   return (
     <nav style={{
-      background: '#1a3a6b',
+      background: 'linear-gradient(90deg, #1a3f5f 0%, #3c4a9d 100%)',
       padding: '0 32px',
       display: 'flex',
       alignItems: 'center',
@@ -31,23 +30,15 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     }}>
 
       {/* Left side: Logo placeholder + nav links */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
-        {/* Logo placeholder — you'll add your logo here later */}
-        <img
-          src={logo}
-          alt="IFBW Logo"
-          style={{
-            height: 40,        // ← adjust if too big or too small
-            marginRight: 24,
-            cursor: 'pointer',
-          }}
-          onClick={() => navigate('/client/dashboard')}
-        />
+        <div onClick={() => navigate('/client/dashboard')} style={{ marginRight: 24 }}>
+          <Logo size="medium" light />
+        </div>
 
         {/* Nav links */}
         {navItems.map(item => (

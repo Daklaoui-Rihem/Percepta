@@ -1,11 +1,13 @@
+import type { LucideIcon } from 'lucide-react';
+
 type Props = {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   active?: boolean;
   onClick?: () => void;
 }
 
-export default function NavLink({ icon, label, active, onClick }: Props) {
+export default function NavLink({ icon: Icon, label, active, onClick }: Props) {
   return (
     <div
       onClick={onClick}
@@ -30,7 +32,7 @@ export default function NavLink({ icon, label, active, onClick }: Props) {
         if (!active) e.currentTarget.style.background = 'transparent';
       }}
     >
-      <span>{icon}</span>
+      <Icon size={18} strokeWidth={2} />
       {label}
     </div>
   );

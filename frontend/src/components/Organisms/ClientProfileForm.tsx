@@ -1,3 +1,4 @@
+import { Home } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import ProfilePhotoUpload from '../Molecules/ProfilePhotoUpload';
 import ProfileInfoForm from '../Molecules/ProfileInfoForm';
@@ -9,7 +10,7 @@ export default function ClientProfileForm() {
     <div>
       {/* Breadcrumb: Home > My Profile */}
       <Breadcrumb items={[
-        { label: 'Home', path: '/client/dashboard', icon: '🏠' },
+        { label: 'Home', path: '/client/dashboard', icon: Home },
         { label: 'My Profile' },
       ]} />
 

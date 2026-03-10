@@ -40,9 +40,23 @@ export default function LoginForm() {
   };
 
   return (
-    <div style={{ background: 'white', borderRadius: 12, padding: '32px 28px', width: '100%' }}>
-      <h2 style={{ color: '#1a3a6b', marginBottom: 24, textAlign: 'center' }}>
-        Connexion
+    <div style={{
+      background: 'white',
+      borderRadius: 16,
+      padding: '40px 32px',
+      width: '100%',
+      boxShadow: '0 10px 25px rgba(26, 63, 95, 0.1)',
+      border: '1px solid rgba(198, 234, 255, 0.4)'
+    }}>
+      <h2 style={{
+        color: '#1a3f5f',
+        marginBottom: 32,
+        textAlign: 'center',
+        fontSize: 28,
+        fontWeight: 800,
+        letterSpacing: '-0.5px'
+      }}>
+        Bienvenue
       </h2>
 
       <InputField
@@ -69,7 +83,15 @@ export default function LoginForm() {
 
       <a
         href="#"
-        style={{ display: 'block', textAlign: 'center', color: '#888', fontSize: 14, margin: '12px 0 20px', textDecoration: 'none' }}
+        style={{
+          display: 'block',
+          textAlign: 'right',
+          color: '#4a7090',
+          fontSize: 13,
+          margin: '-8px 0 24px',
+          textDecoration: 'none',
+          fontWeight: 500
+        }}
       >
         Mot de passe oublié ?
       </a>
