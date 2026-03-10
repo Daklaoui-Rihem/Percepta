@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
 
 export default function ClientProfile() {
@@ -21,34 +22,41 @@ export default function ClientProfile() {
           {initials}
         </div>
         <span style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>{name}</span>
-        <span style={{ color: 'white', fontSize: 12 }}>▾</span>
+        <ChevronDown
+          size={16}
+          style={{
+            color: 'white',
+            transition: 'transform 0.2s',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
       </div>
 
       {open && (
         <div style={{ position: 'absolute', top: 50, right: 0, background: 'white', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', width: 180, zIndex: 100, overflow: 'hidden' }}>
           <div
             onClick={() => { setOpen(false); navigate('/client/profile'); }}
-            style={{ padding: '14px 20px', fontSize: 14, color: '#1a3a6b', cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}
+            style={{ padding: '14px 20px', fontSize: 14, color: '#1a3a6b', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 10 }}
             onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            👤 Mon Profil
+            <User size={16} /> Mon Profil
           </div>
           <div
             onClick={() => setOpen(false)}
-            style={{ padding: '14px 20px', fontSize: 14, color: '#1a3a6b', cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}
+            style={{ padding: '14px 20px', fontSize: 14, color: '#1a3a6b', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 10 }}
             onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            ⚙️ Paramètres
+            <Settings size={16} /> Paramètres
           </div>
           <div
             onClick={handleLogout}
-            style={{ padding: '14px 20px', fontSize: 14, color: '#dc2626', cursor: 'pointer', fontWeight: 600 }}
+            style={{ padding: '14px 20px', fontSize: 14, color: '#dc2626', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}
             onMouseEnter={e => (e.currentTarget.style.background = '#fff5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            🚪 Déconnexion
+            <LogOut size={16} /> Déconnexion
           </div>
         </div>
       )}

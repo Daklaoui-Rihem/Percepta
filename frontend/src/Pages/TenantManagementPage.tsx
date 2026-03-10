@@ -1,4 +1,14 @@
 import { useState, useEffect } from 'react';
+import {
+  Building2,
+  Zap,
+  Pause,
+  Users,
+  Search,
+  Pencil,
+  Trash2,
+  Play
+} from 'lucide-react';
 
 import TenantManagementNavbar from '../components/Organisms/TenantManagementNavbar';
 import AddTenantModal, { type Tenant } from '../components/Organisms/AddTenantModal';
@@ -59,7 +69,7 @@ export default function TenantManagementPage() {
   }, []);
 
   // Add a brand new tenant
-  const handleAddTenant = async (data: Omit<Tenant, 'id' | 'status' | 'resource'> & { password?: string }) => {
+  const handleAddTenant = async (data: Omit<Tenant, 'id' | 'resource'> & { password?: string }) => {
     try {
       await userApi.createUser({
         name: data.name,
@@ -75,13 +85,14 @@ export default function TenantManagementPage() {
   };
 
   // Save edits to existing tenant
-  const handleEditTenant = async (data: Omit<Tenant, 'id' | 'status' | 'resource'>) => {
+  const handleEditTenant = async (data: Omit<Tenant, 'id' | 'resource'>) => {
     if (!editingTenant) return;
     try {
       await userApi.updateUser(editingTenant.id.toString(), {
         name: data.name,
         email: data.email,
-        department: data.license
+        department: data.license,
+        isActive: data.status === 'Active'
       });
       setEditingTenant(null);
       fetchTenants();
@@ -133,26 +144,29 @@ export default function TenantManagementPage() {
         {/* ── 4 Stat Cards ── */}
         <div style={{ display: 'flex', gap: 20, marginBottom: 28 }}>
           {[
-            { label: 'Total Tenants', value: totalTenants, icon: '🏢', color: '#3b82f6' },
-            { label: 'Active Tenants', value: activeTenants, icon: '⚡', color: '#0d9488' },
-            { label: 'Suspended', value: suspendedCount, icon: '⏸️', color: '#f97316' },
-            { label: 'Total Users', value: totalUsers, icon: '👥', color: '#6366f1' },
+            { label: 'Total Tenants', value: totalTenants, icon: Building2, color: '#3b82f6' },
+            { label: 'Active Tenants', value: activeTenants, icon: Zap, color: '#0d9488' },
+            { label: 'Suspended', value: suspendedCount, icon: Pause, color: '#f97316' },
+            { label: 'Total Users', value: totalUsers, icon: Users, color: '#6366f1' },
           ].map(card => (
             <div key={card.label} style={{
-              background: 'white', borderRadius: 16, padding: '20px 24px',
-              flex: 1, boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              background: 'white', borderRadius: 20, padding: '24px',
+              flex: 1, boxShadow: '0 8px 30px rgba(26, 63, 95, 0.08)',
+              border: '1px solid rgba(198, 234, 255, 0.5)',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              position: 'relative', overflow: 'hidden'
             }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: card.color }} />
               <div>
-                <div style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>{card.label}</div>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#1a3a6b' }}>{card.value}</div>
+                <div style={{ color: '#4a7090', fontSize: 13, fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{card.label}</div>
+                <div style={{ fontSize: 36, fontWeight: 800, color: '#1a3f5f', letterSpacing: '-1px' }}>{card.value}</div>
               </div>
               <div style={{
-                width: 52, height: 52, borderRadius: 12,
-                background: '#eff6ff', fontSize: 24,
+                width: 56, height: 56, borderRadius: 16,
+                background: `${card.color}15`, fontSize: 24,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {card.icon}
+                <card.icon size={28} color={card.color} strokeWidth={2.5} />
               </div>
             </div>
           ))}
@@ -173,7 +187,7 @@ export default function TenantManagementPage() {
               border: '1.5px solid #e0eaf4', borderRadius: 8,
               padding: '10px 14px', gap: 8, background: '#f8fbff',
             }}>
-              <span style={{ color: '#aaa' }}>🔍</span>
+              <Search size={18} color="#aaa" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -288,10 +302,9 @@ export default function TenantManagementPage() {
                     title="Edit tenant"
                     style={actionBtnStyle('#dbeafe', '#1d4ed8')}
                   >
-                    ✏️
+                    <Pencil size={14} />
                   </button>
 
-                  {/* Suspend / Resume button */}
                   <button
                     onClick={() => handleToggleSuspend(tenant)}
                     title={tenant.status === 'Active' ? 'Suspend tenant' : 'Resume tenant'}
@@ -300,16 +313,15 @@ export default function TenantManagementPage() {
                       tenant.status === 'Active' ? '#c2410c' : '#16a34a'
                     )}
                   >
-                    {tenant.status === 'Active' ? '⏸' : '▶'}
+                    {tenant.status === 'Active' ? <Pause size={14} /> : <Play size={14} />}
                   </button>
 
-                  {/* Delete button */}
                   <button
                     onClick={() => setDeletingId(tenant.id)}
                     title="Delete tenant"
                     style={actionBtnStyle('#fee2e2', '#dc2626')}
                   >
-                    🗑️
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -355,7 +367,9 @@ export default function TenantManagementPage() {
               boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
             }}
           >
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🗑️</div>
+            <div style={{ color: '#dc2626', marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+              <Trash2 size={48} strokeWidth={1.5} />
+            </div>
             <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>Delete Tenant?</h3>
             <p style={{ color: '#888', marginBottom: 28, fontSize: 14 }}>
               This action cannot be undone. The tenant and all their data will be permanently removed.

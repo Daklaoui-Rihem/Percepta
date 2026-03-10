@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Pencil, PlusCircle, X, CheckCircle, XCircle } from 'lucide-react';
 
 // This is the shape of one tenant object
 export type Tenant = {
@@ -14,7 +15,7 @@ export type Tenant = {
 
 type Props = {
   onClose: () => void;
-  onSubmit: (tenant: Omit<Tenant, 'id' | 'status' | 'resource'> & { password?: string }) => void;
+  onSubmit: (tenant: Omit<Tenant, 'id' | 'resource'> & { password?: string }) => void;
   existingTenant?: Tenant | null; // if provided → edit mode
 }
 
@@ -27,6 +28,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
   const [license, setLicense] = useState(existingTenant?.license || 'Professional');
   const [users, setUsers] = useState(existingTenant?.users?.toString() || '10');
   const [expiry, setExpiry] = useState(existingTenant?.expiry || '');
+  const [status, setStatus] = useState<Tenant['status']>(existingTenant?.status || 'Active');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -42,6 +44,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
       license: license as Tenant['license'],
       users: parseInt(users) || 0,
       expiry,
+      status, // include status in update
     });
     onClose();
   };
@@ -69,8 +72,9 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <div>
-            <h3 style={{ color: '#1a3a6b', margin: '0 0 6px', fontSize: 22, fontWeight: 700 }}>
-              {isEdit ? '✏️ Edit Tenant' : 'Add New Tenant'}
+            <h3 style={{ color: '#1a3a6b', margin: '0 0 6px', fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
+              {isEdit ? <Pencil size={22} /> : <PlusCircle size={22} />}
+              {isEdit ? 'Edit Tenant' : 'Add New Tenant'}
             </h3>
             <p style={{ color: '#60a5fa', fontSize: 13, margin: 0 }}>
               {isEdit
@@ -78,7 +82,15 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
                 : 'Create a new tenant account. Fill in all required information.'}
             </p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>✕</button>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', color: '#888',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+          >
+            <X size={24} />
+          </button>
         </div>
 
         <div style={{ marginTop: 24 }}>
@@ -133,6 +145,29 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
               <option value="Starter">Starter</option>
             </select>
           </div>
+
+          {/* Status (EDIT ONLY) */}
+          {isEdit && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Tenant Status</label>
+              <button
+                onClick={() => setStatus(status === 'Active' ? 'Suspended' : 'Active')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 16px', borderRadius: 8,
+                  border: '1.5px solid',
+                  background: status === 'Active' ? '#f0fdf4' : '#fef2f2',
+                  borderColor: status === 'Active' ? '#bbf7d0' : '#fecaca',
+                  color: status === 'Active' ? '#16a34a' : '#dc2626',
+                  cursor: 'pointer', fontWeight: 600, fontSize: 14,
+                  width: '100%',
+                }}
+              >
+                {status === 'Active' ? <CheckCircle size={18} /> : <XCircle size={18} />}
+                {status === 'Active' ? 'Active / Operations Enabled' : 'Suspended / Operations Disabled'}
+              </button>
+            </div>
+          )}
 
           {/* Initial User Count */}
           <div style={{ marginBottom: 16 }}>

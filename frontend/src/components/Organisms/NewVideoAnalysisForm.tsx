@@ -1,6 +1,7 @@
+import { useState } from 'react';
+import { Home, Video, PlayCircle } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
-import { useState } from 'react';
 
 export default function NewVideoAnalysisForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -9,7 +10,7 @@ export default function NewVideoAnalysisForm() {
     <div>
       {/* Breadcrumb: Home > Video Analysis > New */}
       <Breadcrumb items={[
-        { label: 'Home',          path: '/client/dashboard', icon: '🏠' },
+        { label: 'Home', path: '/client/dashboard', icon: Home },
         { label: 'Video Analysis', path: '/client/video-analysis' },
         { label: 'New' },
       ]} />
@@ -31,7 +32,7 @@ export default function NewVideoAnalysisForm() {
           accept=".mp4,.avi,.mov,.mkv,.webm"
           maxSizeMB={500}
           formatLabel="MP4, AVI, MOV, MKV, WEBM"
-          icon="🎥"
+          icon={Video}
           onFileSelected={(f) => setFile(f)}
         />
 
@@ -49,7 +50,9 @@ export default function NewVideoAnalysisForm() {
             fontWeight: 700,
             cursor: 'pointer',
           }}>
-            🎥 Start Video Analysis
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <PlayCircle size={20} /> Start Video Analysis
+            </div>
           </button>
         )}
       </div>

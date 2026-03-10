@@ -1,7 +1,5 @@
-import SearchBar from '../Molecules/SearchBar';
+import { Bell, Globe } from 'lucide-react';
 import AdminProfile from '../Molecules/AdminProfile';
-
-
 
 export default function TopBar() {
   return (
@@ -11,16 +9,33 @@ export default function TopBar() {
       padding: '16px 28px',
       background: 'white',
       borderBottom: '1px solid #eee',
+      position: 'sticky',
+      top: 0,
+      zIndex: 40,
     }}>
-      <SearchBar />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        {/* ← added here */}
-         
-        <span style={{ fontSize: 20, cursor: 'pointer' }}>🔔</span>
+      <div style={{ flex: 1 }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+
+        {/* Language Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#64748b', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
+          <Globe size={18} />
+          <span>EN</span>
+        </div>
+
+        {/* Notifications */}
+        <button
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b'
+          }}
+          title="Notifications"
+        >
+          <Bell size={20} />
+        </button>
+
+        <div style={{ width: 1, height: 24, background: '#e2e8f0' }} />
+
         <AdminProfile />
-
-      
-
       </div>
     </div>
   );

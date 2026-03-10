@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Building2, Star } from 'lucide-react';
 import { userApi } from '../../services/api';
 
 type Props = {
@@ -43,8 +44,8 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
       padding: '28px 32px', marginBottom: 24,
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
-      <h3 style={{ color: '#1a3a6b', marginBottom: 24, fontSize: 18, fontWeight: 700 }}>
-        🏢 Admin Information
+      <h3 style={{ color: '#1a3a6b', marginBottom: 24, fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Building2 size={20} /> Admin Information
       </h3>
 
       <div style={{ display: 'flex', gap: 20, marginBottom: 20 }}>
@@ -76,7 +77,7 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
             background: '#f8fbff', color: '#1a3a6b',
             fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            ⭐ SuperAdmin
+            <Star size={16} fill="#fbbf24" color="#fbbf24" /> SuperAdmin
             <span style={{
               background: '#dbeafe', color: '#1d4ed8',
               fontSize: 12, padding: '2px 10px',

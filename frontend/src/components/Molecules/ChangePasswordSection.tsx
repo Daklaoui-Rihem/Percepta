@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Lock, ChevronDown } from 'lucide-react';
 import { userApi } from '../../services/api';
 
 export default function ChangePasswordSection() {
@@ -49,14 +50,17 @@ export default function ChangePasswordSection() {
           alignItems: 'center', padding: '24px 32px', cursor: 'pointer',
         }}
       >
-        <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 18, fontWeight: 700 }}>
-          🔒 Change Password
+        <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Lock size={20} /> Change Password
         </h3>
-        <span style={{
-          color: '#1a3a6b', fontSize: 18,
-          transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s', display: 'inline-block',
-        }}>›</span>
+        <ChevronDown
+          size={20}
+          style={{
+            color: '#1a3a6b',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s',
+          }}
+        />
       </div>
 
       {open && (

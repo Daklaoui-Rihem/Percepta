@@ -1,29 +1,45 @@
+import type { LucideIcon } from 'lucide-react';
 import Badge from '../Atoms/Badge';
 
 type Props = {
-  icon: string;
+  icon: LucideIcon;
   value: string;
   label: string;
   change: string;
   borderColor: string;
 }
 
-export default function StatCard({ icon, value, label, change, borderColor }: Props) {
+export default function StatCard({ icon: Icon, value, label, change, borderColor }: Props) {
   return (
     <div style={{
       background: 'white',
-      borderRadius: 12,
-      padding: '20px 24px',
+      borderRadius: 16,
+      padding: '24px',
       flex: 1,
-      borderLeft: `4px solid ${borderColor}`,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      border: '1px solid rgba(198, 234, 255, 0.4)',
+      boxShadow: '0 4px 15px rgba(26, 63, 95, 0.05)',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ fontSize: 24 }}>{icon}</span>
+      {/* Accent bar */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, bottom: 0, width: 4,
+        background: borderColor
+      }} />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: `${borderColor}15`, // Add opacity to hex
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: borderColor
+        }}>
+          <Icon size={22} strokeWidth={2.5} />
+        </div>
         <Badge value={change} />
       </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: '#1a3a6b' }}>{value}</div>
-      <div style={{ fontSize: 14, color: '#888', marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 32, fontWeight: 800, color: '#1a3f5f', letterSpacing: '-1px' }}>{value}</div>
+      <div style={{ fontSize: 13, color: '#4a7090', marginTop: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
     </div>
   );
 }

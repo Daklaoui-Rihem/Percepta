@@ -1,11 +1,13 @@
+import type { LucideIcon } from 'lucide-react';
+
 type Props = {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   active?: boolean;
   onClick?: () => void;
 }
 
-export default function NavItem({ icon, label, active, onClick }: Props) {
+export default function NavItem({ icon: Icon, label, active, onClick }: Props) {
   return (
     <div onClick={onClick} style={{
       display: 'flex',
@@ -19,7 +21,7 @@ export default function NavItem({ icon, label, active, onClick }: Props) {
       fontSize: 15,
       fontWeight: active ? 600 : 400,
     }}>
-      <span style={{ fontSize: 18 }}>{icon}</span>
+      <Icon size={18} strokeWidth={2} />
       {label}
     </div>
   );

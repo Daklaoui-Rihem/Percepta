@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // Each item has a label and optional path (last item has no path = not clickable)
 type BreadcrumbItem = {
   label: string;
   path?: string;
-  icon?: string;
+  icon?: LucideIcon;
 }
 
 type Props = {
@@ -34,7 +36,7 @@ export default function Breadcrumb({ items }: Props) {
               onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
               onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
             >
-              {item.icon && <span>{item.icon}</span>}
+              {item.icon && <item.icon size={14} strokeWidth={2.5} />}
               {item.label}
             </span>
           ) : (
@@ -46,7 +48,7 @@ export default function Breadcrumb({ items }: Props) {
 
           {/* Arrow separator — don't show after last item */}
           {index < items.length - 1 && (
-            <span style={{ color: '#aaa', fontSize: 12 }}>›</span>
+            <ChevronRight size={14} style={{ color: '#aaa' }} />
           )}
         </div>
       ))}
