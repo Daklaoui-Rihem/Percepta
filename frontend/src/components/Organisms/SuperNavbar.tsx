@@ -26,7 +26,7 @@ export default function SuperNavbar() {
       background: 'linear-gradient(90deg, #00338e 0%, #314a9c 100%)',
       padding: '0 24px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      height: 64, position: 'sticky', top: 0, zIndex: 50,
+      height: 88, position: 'sticky', top: 0, zIndex: 50,
       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

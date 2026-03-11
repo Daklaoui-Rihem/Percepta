@@ -1,40 +1,34 @@
 
 
+import logo from '../../assets/Logo.png';
+
 interface LogoProps {
     size?: 'small' | 'medium' | 'large';
     light?: boolean;
 }
 
 export default function Logo({ size = 'medium', light = false }: LogoProps) {
-    const baseSize = size === 'small' ? 20 : size === 'large' ? 40 : 28;
-
-    const textColor = light ? '#ffffff' : '#4a7090';
+    const height = size === 'small' ? 85 : size === 'large' ? 100 : 70;
 
     return (
         <div style={{
             display: 'flex',
-            alignItems: 'baseline',
-            gap: 4,
-            userSelect: 'none',
-            cursor: 'pointer'
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            userSelect: 'none'
         }}>
-            <span style={{
-                fontFamily: 'var(--font-logo-ifbw)',
-                fontSize: baseSize,
-                fontWeight: 800,
-                color: textColor,
-                letterSpacing: '-1px'
-            }}>
-                IFBW
-            </span>
-            <span style={{
-                fontFamily: 'var(--font-logo-innovation)',
-                fontSize: baseSize * 0.7,
-                color: textColor,
-                opacity: 0.9
-            }}>
-                Innovation
-            </span>
+            <img
+                src={logo}
+                alt="Percepta Logo"
+                style={{
+                    height: height,
+                    width: 'auto',
+                    objectFit: 'contain',
+                    filter: light ? 'brightness(0) invert(1)' : 'none'
+                }}
+            />
         </div>
     );
 }
+
