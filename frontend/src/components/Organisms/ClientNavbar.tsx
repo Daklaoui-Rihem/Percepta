@@ -26,7 +26,7 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      height: 64,
+      height: 88,
       position: 'sticky',
       top: 0,
       zIndex: 50,
