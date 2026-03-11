@@ -81,20 +81,17 @@ export default function LoginForm() {
         </p>
       )}
 
-      <a
-        href="#"
+      <p
+        onClick={() => navigate('/forgot-password')}
         style={{
-          display: 'block',
-          textAlign: 'right',
-          color: '#4a7090',
-          fontSize: 13,
-          margin: '-8px 0 24px',
-          textDecoration: 'none',
-          fontWeight: 500
+          display: 'block', textAlign: 'right',
+          color: '#4a7090', fontSize: 13,
+          margin: '-8px 0 24px', cursor: 'pointer',
+          fontWeight: 500,
         }}
       >
         Mot de passe oublié ?
-      </a>
+      </p>
 
       <Button
         label={loading ? 'Connexion...' : 'Se connecter'}

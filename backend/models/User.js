@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema({
     adminLevel: { type: String, default: 'Administrator' },
     photoUrl: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
+
+    resetCode: { type: String, default: undefined },
+    resetCodeExpiry: { type: Date, default: undefined },
+    resetCodeUsed: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
