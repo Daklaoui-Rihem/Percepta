@@ -3,6 +3,8 @@ import { Home, FileText, Video, BarChart3 } from 'lucide-react';
 import NavLink from '../Atoms/NavLink';
 import ClientProfile from '../Molecules/ClientProfile';
 import Logo from '../Atoms/Logo';
+import LanguageSwitcher from '../Atoms/LanguageSwitcher';
+import { useTranslation } from '../../context/TranslationContext';
 
 type Props = {
   activePage: string;
@@ -11,12 +13,14 @@ type Props = {
 
 export default function ClientNavbar({ activePage, onNavigate }: Props) {
   const navigate = useNavigate();
+  const { t } = useTranslation(); // ← only addition
 
+  // Labels now use t() — icons are untouched
   const navItems = [
-    { icon: Home, label: 'Home', path: '/client/dashboard' },
-    { icon: FileText, label: 'Transcriptions', path: '/client/transcriptions' },
-    { icon: Video, label: 'Video Analysis', path: '/client/video-analysis' },
-    { icon: BarChart3, label: 'Reports', path: '/client/reports' },
+    { icon: Home,     label: 'Home',          translatedLabel: t('home'),          path: '/client/dashboard'        },
+    { icon: FileText, label: 'Transcriptions', translatedLabel: t('transcriptions'), path: '/client/transcriptions'   },
+    { icon: Video,    label: 'Video Analysis', translatedLabel: t('videoAnalysis'),  path: '/client/video-analysis'   },
+    { icon: BarChart3,label: 'Reports',        translatedLabel: t('reports'),        path: '/client/reports'          },
   ];
 
   return (
@@ -33,20 +37,19 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     }}>
 
-      {/* Left side: Logo placeholder + nav links */}
+      {/* Left side: Logo + nav links — unchanged */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
         <div onClick={() => navigate('/client/dashboard')} style={{ marginRight: 24 }}>
           <Logo size="medium" light />
         </div>
 
-        {/* Nav links */}
         {navItems.map(item => (
           <NavLink
             key={item.label}
             icon={item.icon}
-            label={item.label}
-            active={activePage === item.label}
+            label={item.translatedLabel} 
+            active={activePage === item.label} 
             onClick={() => {
               onNavigate(item.label);
               navigate(item.path);
@@ -55,8 +58,12 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
         ))}
       </div>
 
-      {/* Right side: Client profile dropdown */}
-      <ClientProfile />
+      {/* Right side: Language switcher + Client profile — unchanged */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <LanguageSwitcher />  {/* ← added here so it's always visible */}
+        <ClientProfile />
+      </div>
+
     </nav>
   );
 }
