@@ -80,26 +80,6 @@ export interface CreateUserPayload {
     adminLevel?: string;
 }
 
-export interface SmtpSettings {
-    smtpHost: string;
-    smtpPort: number;
-    smtpUser: string;
-    smtpPass: string;
-    smtpFrom: string;
-    smtpSecure: string;
-}
-
-export const settingsApi = {
-    getSmtp: () =>
-        request<SmtpSettings>('GET', '/settings/smtp'),
-
-    saveSmtp: (data: SmtpSettings) =>
-        request<{ message: string }>('PUT', '/settings/smtp', data),
-
-    testSmtp: (testEmail: string) =>
-        request<{ message: string }>('POST', '/settings/smtp/test', { testEmail }),
-};
-
 export interface UpdateUserPayload {
     name?: string;
     email?: string;
@@ -133,6 +113,93 @@ export const userApi = {
 
     deleteUser: (id: string) =>
         request<{ message: string }>('DELETE', `/users/${id}`),
+};
+
+// ── Settings ───────────────────────────────────────────────────
+export interface SmtpSettings {
+    smtpHost: string;
+    smtpPort: number;
+    smtpUser: string;
+    smtpPass: string;
+    smtpFrom: string;
+    smtpSecure: string;
+}
+
+export const settingsApi = {
+    getSmtp: () =>
+        request<SmtpSettings>('GET', '/settings/smtp'),
+
+    saveSmtp: (data: SmtpSettings) =>
+        request<{ message: string }>('PUT', '/settings/smtp', data),
+
+    testSmtp: (testEmail: string) =>
+        request<{ message: string }>('POST', '/settings/smtp/test', { testEmail }),
+};
+
+// ── Analyses ───────────────────────────────────────────────────
+export interface AnalysisRecord {
+    _id: string;
+    originalName: string;
+    size: number;
+    type: 'audio' | 'video';
+    status: 'pending' | 'processing' | 'done' | 'error';
+    createdAt: string;
+    transcription?: string;
+    summary?: string;
+    errorMessage?: string;
+}
+
+export const analysisApi = {
+    // Upload audio file
+    uploadAudio: (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return fetch(`${BASE_URL}/analyses/upload/audio`, {
+            method: 'POST',
+            headers: {
+                // NO Content-Type here — browser sets it automatically with boundary
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: formData,
+        }).then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Upload failed');
+            return data;
+        });
+    },
+
+    // Upload video file
+    uploadVideo: (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return fetch(`${BASE_URL}/analyses/upload/video`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: formData,
+        }).then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Upload failed');
+            return data;
+        });
+    },
+
+    // Get current user's analyses (history)
+    getMyAnalyses: () =>
+        request<AnalysisRecord[]>('GET', '/analyses'),
+
+    // Get single analysis by id
+    getAnalysisById: (id: string) =>
+        request<AnalysisRecord>('GET', `/analyses/${id}`),
+
+    // Delete analysis
+    deleteAnalysis: (id: string) =>
+        request<{ message: string }>('DELETE', `/analyses/${id}`),
+
+    // Admin — get all analyses for their clients
+    getAllAnalyses: () =>
+        request<AnalysisRecord[]>('GET', '/analyses/admin/all'),
 };
 
 // ── Auth helpers ───────────────────────────────────────────────
