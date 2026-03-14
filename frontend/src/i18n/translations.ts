@@ -237,6 +237,30 @@ const translations = {
   adminLevelManager:     { fr: 'Manager',                                     en: 'Manager',                             ar: 'مدير'                                 },
   departmentPlaceholder: { fr: 'ex: IT',                                      en: 'e.g. IT',                             ar: 'مثال: تقنية المعلومات'                 },
 
+  // ── Settings ─────────────────────────────────────────────────
+  settingsTitle:         { fr: 'Paramètres',                                  en: 'Settings',                            ar: 'الإعدادات'                            },
+  platformConfig:        { fr: 'Configuration de la plateforme',              en: 'Platform configuration',              ar: 'تكوين المنصة'                         },
+  tabGeneral:            { fr: 'Général',                                     en: 'General',                             ar: 'عام'                                  },
+  tabSmtp:               { fr: 'SMTP',                                        en: 'SMTP',                                ar: 'SMTP'                                 },
+  tabSecurity:           { fr: 'Sécurité',                                    en: 'Security',                            ar: 'الأمان'                               },
+  smtpServer:            { fr: 'Serveur SMTP',                                en: 'SMTP Server',                         ar: 'خادم SMTP'                            },
+  smtpHost:              { fr: 'Hôte SMTP *',                                 en: 'SMTP Host *',                         ar: 'مضيف SMTP *'                          },
+  portLabel:             { fr: 'Port *',                                      en: 'Port *',                              ar: 'المنفذ *'                             },
+  smtpUser:              { fr: 'Utilisateur SMTP *',                          en: 'SMTP User *',                         ar: 'مستخدم SMTP *'                        },
+  smtpPassLabel:         { fr: 'Mot de passe SMTP *',                         en: 'SMTP Password *',                     ar: 'كلمة مرور SMTP *'                     },
+  senderEmail:           { fr: 'Email expéditeur',                            en: 'Sender Email',                        ar: 'البريد الإلكتروني للمرسل'             },
+  emptyUseSmtpUser:      { fr: 'Vide = utiliser l\'utilisateur SMTP',         en: 'Empty = use SMTP User',               ar: 'فارغ = استخدام مستخدم SMTP'            },
+  securityLabel:         { fr: 'Sécurité',                                    en: 'Security',                            ar: 'الأمان'                               },
+  noneOption:            { fr: 'Aucune',                                      en: 'None',                                ar: 'لا يوجد'                              },
+  saveBtn:               { fr: 'Enregistrer',                                 en: 'Save',                                ar: 'حفظ'                                  },
+  testEmailCard:         { fr: 'Email de test',                               en: 'Test Email',                          ar: 'بريد الاختبار'                        },
+  yourEmailPlaceholder:  { fr: 'votre@email.com',                             en: 'your@email.com',                      ar: 'your@email.com'                       },
+  sendingBtn:            { fr: 'Envoi...',                                    en: 'Sending...',                          ar: 'إرسال...'                             },
+  sendBtn:               { fr: 'Envoyer',                                     en: 'Send',                                ar: 'إرسال'                                },
+  comingSoonGeneral:     { fr: 'Paramètres généraux — bientôt disponibles',   en: 'General settings — coming soon',      ar: 'الإعدادات العامة — قريباً'            },
+  comingSoonSecurity:    { fr: 'Paramètres de sécurité — bientôt disponibles',en: 'Security settings — coming soon',     ar: 'إعدادات الأمان — قريباً'              },
+
+
 } as const;
 
 export default translations;

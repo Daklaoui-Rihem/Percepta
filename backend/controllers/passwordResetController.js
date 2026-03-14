@@ -2,25 +2,27 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Settings = require('../models/Settings');
 
-// ── Email transporter ──────────────────────────────────────────
-// Uses SMTP credentials from .env
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false,
-    },
-});
+// ── Dynamic transporter from DB settings ──────────────────────
+async function getTransporter() {
+    const settings = await Settings.findOne();
+    return nodemailer.createTransport({
+        host: settings?.smtpHost || process.env.SMTP_HOST,
+        port: settings?.smtpPort || 587,
+        secure: false,
+        auth: {
+            user: settings?.smtpUser || process.env.SMTP_USER,
+            pass: settings?.smtpPass || process.env.SMTP_PASS,
+        },
+        tls: {
+            rejectUnauthorized: false,
+        },
+    });
+}
 
 // ── Generate a 6-digit code ────────────────────────────────────
 function generateCode() {
-    // Cryptographically random 6-digit code
     return Math.floor(100000 + crypto.randomInt(900000)).toString();
 }
 
@@ -39,26 +41,25 @@ exports.forgotPassword = async (req, res) => {
 
         const user = await User.findOne({ email: email.toLowerCase() });
 
-        // IMPORTANT: always return success even if user not found
-        // This prevents attackers from discovering which emails exist
         if (!user) {
             return res.json({
                 message: 'If this email exists, a reset code has been sent.'
             });
         }
 
-        // Generate code and set 15-minute expiry
         const code = generateCode();
-        const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
         user.resetCode = code;
         user.resetCodeExpiry = expiry;
         user.resetCodeUsed = false;
         await user.save();
 
-        // Send email
+        // ── Get transporter from DB settings ──
+        const transporter = await getTransporter();
+
         await transporter.sendMail({
-            from: `"Percepta Platform" <${process.env.SMTP_USER || 'superadmin@ifbw.net'}>`,
+            from: `"Percepta Platform" <${(await Settings.findOne())?.smtpFrom || process.env.SMTP_USER || 'superadmin@ifbw.net'}>`,
             to: user.email,
             subject: 'Votre code de réinitialisation de mot de passe',
             html: `
@@ -123,17 +124,14 @@ exports.verifyResetCode = async (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired code' });
         }
 
-        // Check if already used
         if (user.resetCodeUsed) {
             return res.status(400).json({ message: 'This code has already been used' });
         }
 
-        // Check expiry
         if (new Date() > user.resetCodeExpiry) {
             return res.status(400).json({ message: 'Code has expired. Please request a new one.' });
         }
 
-        // Check code matches
         if (user.resetCode !== code.trim()) {
             return res.status(400).json({ message: 'Incorrect code. Please try again.' });
         }
@@ -181,9 +179,8 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ message: 'Invalid code' });
         }
 
-        // All checks passed — update password
         user.password = await bcrypt.hash(newPassword, 10);
-        user.resetCodeUsed = true; // mark as used so it can't be reused
+        user.resetCodeUsed = true;
         user.resetCode = undefined;
         user.resetCodeExpiry = undefined;
         await user.save();

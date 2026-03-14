@@ -15,11 +15,18 @@ import AdminProfilePage from './Pages/AdminProfilePage';
 import SuperAdminProfilePage from './Pages/SuperAdminProfilePage';
 import ProtectedRoute from './components/Guards/ProtectedRoute';
 import TenantManagementPage from './Pages/TenantManagementPage';
+import SettingsPage from './Pages/SettingsPage';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/settings" element={
+          <ProtectedRoute allowedRoles={['SuperAdmin']}>
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
+
         {/* Public */}
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<LoginPage />} />
