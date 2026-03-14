@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, KeyRound, Lock, CheckCircle, RefreshCw } from 'lucide-react';
 import Logo from '../components/Atoms/Logo';
+import LanguageSwitcher from '../components/Atoms/LanguageSwitcher';
+import { useTranslation } from '../context/TranslationContext';
 
 // ── API calls for password reset ──────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -45,13 +47,11 @@ function CodeInput({ value, onChange }: { value: string; onChange: (v: string) =
     };
 
     const handleChange = (i: number, char: string) => {
-        if (!/^\d*$/.test(char)) return; // digits only
+        if (!/^\d*$/.test(char)) return;
         const arr = value.split('');
-        arr[i] = char.slice(-1); // take last character typed
+        arr[i] = char.slice(-1);
         const next = arr.join('').padEnd(6, '').slice(0, 6);
-        onChange(next.trimEnd()); // remove trailing spaces
-
-        // Move focus to next box if a digit was entered
+        onChange(next.trimEnd());
         if (char && i < 5) {
             inputs.current[i + 1]?.focus();
         }
@@ -61,7 +61,6 @@ function CodeInput({ value, onChange }: { value: string; onChange: (v: string) =
         e.preventDefault();
         const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
         onChange(pasted);
-        // Focus the last filled box
         const lastIdx = Math.min(pasted.length, 5);
         inputs.current[lastIdx]?.focus();
     };
@@ -100,6 +99,7 @@ function CodeInput({ value, onChange }: { value: string; onChange: (v: string) =
 // ── Main Page ─────────────────────────────────────────────────
 export default function ForgotPasswordPage() {
     const navigate = useNavigate();
+    const { t, isRTL } = useTranslation();
 
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [email, setEmail] = useState('');
@@ -110,6 +110,7 @@ export default function ForgotPasswordPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [resendTimer, setResendTimer] = useState(0);
+    const [done, setDone] = useState(false);
 
     // Start a 60s countdown after sending a code
     const startResendTimer = () => {
@@ -124,8 +125,7 @@ export default function ForgotPasswordPage() {
 
     // ── Step 1: Send code ──────────────────────────────────────
     const handleSendCode = async () => {
-        if (!email.trim()) { setError('Please enter your email address'); return; }
-        if (!/\S+@\S+\.\S+/.test(email)) { setError('Please enter a valid email address'); return; }
+        if (!email.trim()) { setError(t('fillAllFields')); return; }
 
         setLoading(true);
         setError('');
@@ -134,7 +134,7 @@ export default function ForgotPasswordPage() {
             setStep(2);
             startResendTimer();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to send code');
+            setError(err instanceof Error ? err.message : t('sendingCode'));
         } finally {
             setLoading(false);
         }
@@ -142,7 +142,7 @@ export default function ForgotPasswordPage() {
 
     // ── Step 2: Verify code ────────────────────────────────────
     const handleVerifyCode = async () => {
-        if (code.length !== 6) { setError('Please enter the complete 6-digit code'); return; }
+        if (code.length !== 6) { setError(t('fillAllFields')); return; }
 
         setLoading(true);
         setError('');
@@ -150,7 +150,7 @@ export default function ForgotPasswordPage() {
             await apiPost('/auth/verify-reset-code', { email, code });
             setStep(3);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Invalid code');
+            setError(err instanceof Error ? err.message : t('invalidCredentials'));
         } finally {
             setLoading(false);
         }
@@ -166,49 +166,16 @@ export default function ForgotPasswordPage() {
             await apiPost('/auth/forgot-password', { email });
             startResendTimer();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to resend code');
+            setError(err instanceof Error ? err.message : t('sendingCode'));
         } finally {
             setLoading(false);
         }
     };
 
     // ── Step 3: Reset password ─────────────────────────────────
-    const handleResetPassword = async () => {
-        if (!newPassword) { setError('Please enter a new password'); return; }
-        if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
-        if (newPassword !== confirmPassword) { setError('Passwords do not match'); return; }
-
-        setLoading(true);
-        setError('');
-        try {
-            await apiPost('/auth/reset-password', { email, code, newPassword });
-            setStep(3); // keep on step 3 but show success
-            setTimeout(() => navigate('/login'), 3000);
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to reset password');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // ── Password strength indicator ────────────────────────────
-    const getStrength = (p: string) => {
-        if (!p) return null;
-        if (p.length < 6) return { label: 'Too short', color: '#dc2626', width: '20%' };
-        if (p.length < 8) return { label: 'Weak', color: '#f97316', width: '40%' };
-        if (p.length < 10) return { label: 'Fair', color: '#eab308', width: '60%' };
-        if (/[A-Z]/.test(p) && /[0-9]/.test(p)) return { label: 'Strong', color: '#16a34a', width: '100%' };
-        return { label: 'Good', color: '#22c55e', width: '80%' };
-    };
-    const strength = getStrength(newPassword);
-
-    // ── Success screen (after step 3 submit) ──────────────────
-    const [done, setDone] = useState(false);
-
     const handleFinalSubmit = async () => {
-        if (!newPassword) { setError('Please enter a new password'); return; }
-        if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
-        if (newPassword !== confirmPassword) { setError('Passwords do not match'); return; }
+        if (!newPassword) { setError(t('fillAllFields')); return; }
+        if (newPassword !== confirmPassword) { setError(t('passwordMismatch')); return; }
 
         setLoading(true);
         setError('');
@@ -217,11 +184,22 @@ export default function ForgotPasswordPage() {
             setDone(true);
             setTimeout(() => navigate('/login'), 3000);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to reset password');
+            setError(err instanceof Error ? err.message : t('savingPassword'));
         } finally {
             setLoading(false);
         }
     };
+
+    // ── Password strength indicator ────────────────────────────
+    const getStrength = (p: string) => {
+        if (!p) return null;
+        if (p.length < 6) return { label: t('pwStrengthTooShort'), color: '#dc2626', width: '20%' };
+        if (p.length < 8) return { label: t('pwStrengthWeak'),    color: '#f97316', width: '40%' };
+        if (p.length < 10) return { label: t('pwStrengthFair'),   color: '#eab308', width: '60%' };
+        if (/[A-Z]/.test(p) && /[0-9]/.test(p)) return { label: t('pwStrengthStrong'), color: '#16a34a', width: '100%' };
+        return { label: t('pwStrengthGood'), color: '#22c55e', width: '80%' };
+    };
+    const strength = getStrength(newPassword);
 
     return (
         <div style={{
@@ -230,10 +208,16 @@ export default function ForgotPasswordPage() {
             background: 'linear-gradient(135deg, #dff5ff 0%, #c6eaff 100%)',
             flexDirection: 'column', padding: '24px',
             position: 'relative', overflow: 'hidden',
+            direction: isRTL ? 'rtl' : 'ltr',
         }}>
             {/* Background decorations */}
             <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '40%', height: '40%', background: 'radial-gradient(circle, #6ab7e4 0%, transparent 70%)', opacity: 0.1, pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', bottom: '-10%', left: '-5%', width: '40%', height: '40%', background: 'radial-gradient(circle, #3c4a9d 0%, transparent 70%)', opacity: 0.05, pointerEvents: 'none' }} />
+
+            {/* Language switcher */}
+            <div style={{ position: 'absolute', top: 20, right: isRTL ? 'auto' : 20, left: isRTL ? 20 : 'auto' }}>
+                <LanguageSwitcher />
+            </div>
 
             {/* Logo */}
             <div style={{ marginBottom: 28, zIndex: 1 }}>
@@ -258,7 +242,7 @@ export default function ForgotPasswordPage() {
                         color: '#4a7090', fontSize: 13, marginBottom: 20, padding: 0,
                     }}
                 >
-                    <ArrowLeft size={15} /> Retour à la connexion
+                    <ArrowLeft size={15} /> {t('backToLogin')}
                 </button>
 
                 {/* Step dots */}
@@ -271,17 +255,16 @@ export default function ForgotPasswordPage() {
                             <CheckCircle size={64} color="#16a34a" strokeWidth={1.5} />
                         </div>
                         <h2 style={{ color: '#1a3f5f', marginBottom: 12, fontSize: 22, fontWeight: 800 }}>
-                            Mot de passe modifié !
+                            {t('passwordChanged')}
                         </h2>
                         <p style={{ color: '#555', fontSize: 14, marginBottom: 8 }}>
-                            Votre mot de passe a été réinitialisé avec succès.
+                            {t('passwordChangedDesc')}
                         </p>
                         <p style={{ color: '#60a5fa', fontSize: 13 }}>
-                            Redirection automatique dans 3 secondes...
+                            {t('redirecting')}
                         </p>
                     </div>
                 ) : (
-
                     <>
                         {/* ── STEP 1: Email ── */}
                         {step === 1 && (
@@ -293,21 +276,21 @@ export default function ForgotPasswordPage() {
                                         </div>
                                     </div>
                                     <h2 style={{ color: '#1a3f5f', margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>
-                                        Mot de passe oublié ?
+                                        {t('forgotPasswordTitle')}
                                     </h2>
                                     <p style={{ color: '#555', fontSize: 14, margin: 0 }}>
-                                        Entrez votre email et nous vous enverrons un code de vérification.
+                                        {t('forgotPasswordDesc')}
                                     </p>
                                 </div>
 
                                 <div style={{ marginBottom: 20 }}>
-                                    <label style={labelStyle}>Adresse email</label>
+                                    <label style={labelStyle}>{t('emailAddress')}</label>
                                     <input
                                         type="email"
                                         value={email}
                                         onChange={e => { setEmail(e.target.value); setError(''); }}
                                         onKeyDown={e => e.key === 'Enter' && handleSendCode()}
-                                        placeholder="votre@email.com"
+                                        placeholder={t('emailPlaceholder')}
                                         style={inputStyle}
                                         autoFocus
                                     />
@@ -320,7 +303,7 @@ export default function ForgotPasswordPage() {
                                     disabled={loading}
                                     style={{ ...btnStyle, background: loading ? '#93c5fd' : '#1a3a6b' }}
                                 >
-                                    {loading ? 'Envoi en cours...' : 'Envoyer le code'}
+                                    {loading ? t('sendingCode') : t('sendCode')}
                                 </button>
                             </>
                         )}
@@ -335,10 +318,10 @@ export default function ForgotPasswordPage() {
                                         </div>
                                     </div>
                                     <h2 style={{ color: '#1a3f5f', margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>
-                                        Vérification
+                                        {t('verificationTitle')}
                                     </h2>
                                     <p style={{ color: '#555', fontSize: 14, margin: 0 }}>
-                                        Un code à 6 chiffres a été envoyé à
+                                        {t('verificationDesc')}
                                     </p>
                                     <p style={{ color: '#1a3a6b', fontSize: 14, fontWeight: 700, margin: '4px 0 0' }}>
                                         {email}
@@ -358,7 +341,7 @@ export default function ForgotPasswordPage() {
                                         cursor: (loading || code.length < 6) ? 'not-allowed' : 'pointer',
                                     }}
                                 >
-                                    {loading ? 'Vérification...' : 'Vérifier le code'}
+                                    {loading ? t('verifying') : t('verifyCode')}
                                 </button>
 
                                 {/* Resend */}
@@ -375,8 +358,8 @@ export default function ForgotPasswordPage() {
                                     >
                                         <RefreshCw size={13} />
                                         {resendTimer > 0
-                                            ? `Renvoyer le code dans ${resendTimer}s`
-                                            : 'Renvoyer le code'}
+                                            ? `${t('resendIn')} ${resendTimer}s`
+                                            : t('resendCode')}
                                     </button>
                                 </div>
 
@@ -389,7 +372,7 @@ export default function ForgotPasswordPage() {
                                             color: '#4a7090', fontSize: 13,
                                         }}
                                     >
-                                        Changer l'adresse email
+                                        {t('changeEmail')}
                                     </button>
                                 </div>
                             </>
@@ -405,20 +388,20 @@ export default function ForgotPasswordPage() {
                                         </div>
                                     </div>
                                     <h2 style={{ color: '#1a3f5f', margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>
-                                        Nouveau mot de passe
+                                        {t('newPasswordTitle')}
                                     </h2>
                                     <p style={{ color: '#555', fontSize: 14, margin: 0 }}>
-                                        Choisissez un mot de passe sécurisé.
+                                        {t('newPasswordDesc')}
                                     </p>
                                 </div>
 
                                 <div style={{ marginBottom: 16 }}>
-                                    <label style={labelStyle}>Nouveau mot de passe</label>
+                                    <label style={labelStyle}>{t('newPassword')}</label>
                                     <input
                                         type="password"
                                         value={newPassword}
                                         onChange={e => { setNewPassword(e.target.value); setError(''); }}
-                                        placeholder="Minimum 6 caractères"
+                                        placeholder={t('newPasswordPlaceholder')}
                                         style={inputStyle}
                                         autoFocus
                                     />
@@ -434,20 +417,20 @@ export default function ForgotPasswordPage() {
                                 </div>
 
                                 <div style={{ marginBottom: 20 }}>
-                                    <label style={labelStyle}>Confirmer le mot de passe</label>
+                                    <label style={labelStyle}>{t('confirmPassword')}</label>
                                     <input
                                         type="password"
                                         value={confirmPassword}
                                         onChange={e => { setConfirmPassword(e.target.value); setError(''); }}
                                         onKeyDown={e => e.key === 'Enter' && handleFinalSubmit()}
-                                        placeholder="Répétez le mot de passe"
+                                        placeholder={t('repeatPassword')}
                                         style={{
                                             ...inputStyle,
                                             borderColor: confirmPassword && confirmPassword !== newPassword ? '#dc2626' : '#d0e4f0',
                                         }}
                                     />
                                     {confirmPassword && confirmPassword !== newPassword && (
-                                        <p style={{ color: '#dc2626', fontSize: 12, marginTop: 4 }}>Les mots de passe ne correspondent pas</p>
+                                        <p style={{ color: '#dc2626', fontSize: 12, marginTop: 4 }}>{t('passwordMismatch')}</p>
                                     )}
                                 </div>
 
@@ -458,7 +441,7 @@ export default function ForgotPasswordPage() {
                                     disabled={loading}
                                     style={{ ...btnStyle, background: loading ? '#93c5fd' : '#1a3a6b' }}
                                 >
-                                    {loading ? 'Enregistrement...' : 'Enregistrer le nouveau mot de passe'}
+                                    {loading ? t('savingPassword') : t('savePassword')}
                                 </button>
                             </>
                         )}
@@ -467,7 +450,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             <p style={{ textAlign: 'center', color: '#666', fontSize: 13, marginTop: 20, zIndex: 1 }}>
-                © 2026 IFBW Platform
+                {t('copyright')}
             </p>
         </div>
     );

@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function ClientProfile() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const session = getSession();
-  const name = session?.name || 'Client User';
+  const name = session?.name || t('clientUser');
   const initials = name.split(' ').map((p: string) => p[0]).join('').substring(0, 2).toUpperCase();
 
   const handleLogout = () => {
@@ -40,7 +42,7 @@ export default function ClientProfile() {
             onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            <User size={16} /> Mon Profil
+            <User size={16} /> {t('myProfileMenu')}
           </div>
           <div
             onClick={() => setOpen(false)}
@@ -48,7 +50,7 @@ export default function ClientProfile() {
             onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            <Settings size={16} /> Paramètres
+            <Settings size={16} /> {t('settings')}
           </div>
           <div
             onClick={handleLogout}
@@ -56,7 +58,7 @@ export default function ClientProfile() {
             onMouseEnter={e => (e.currentTarget.style.background = '#fff5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            <LogOut size={16} /> Déconnexion
+            <LogOut size={16} /> {t('logout')}
           </div>
         </div>
       )}

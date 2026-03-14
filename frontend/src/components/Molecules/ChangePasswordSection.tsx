@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Lock, ChevronDown } from 'lucide-react';
 import { userApi } from '../../services/api';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function ChangePasswordSection() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState('');
   const [newPass, setNewPass] = useState('');
@@ -13,13 +15,13 @@ export default function ChangePasswordSection() {
 
   const handleSave = async () => {
     if (!current || !newPass || !confirm) {
-      setError('Please fill all fields'); return;
+      setError(t('fillAllFields')); return;
     }
     if (newPass !== confirm) {
-      setError('Passwords do not match'); return;
+      setError(t('passwordMismatch')); return;
     }
     if (newPass.length < 6) {
-      setError('Password must be at least 6 characters'); return;
+      setError(t('newPasswordPlaceholder')); return;
     }
 
     setSaving(true);
@@ -28,10 +30,10 @@ export default function ChangePasswordSection() {
 
     try {
       await userApi.changeMyPassword(current, newPass);
-      setSuccess('Password changed successfully!');
+      setSuccess(t('passwordChanged'));
       setCurrent(''); setNewPass(''); setConfirm('');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
+      setError(err instanceof Error ? err.message : t('failed'));
     } finally {
       setSaving(false);
     }
@@ -51,7 +53,7 @@ export default function ChangePasswordSection() {
         }}
       >
         <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Lock size={20} /> Change Password
+          <Lock size={20} /> {t('changePassword')}
         </h3>
         <ChevronDown
           size={20}
@@ -66,15 +68,15 @@ export default function ChangePasswordSection() {
       {open && (
         <div style={{ padding: '0 32px 28px' }}>
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Current Password</label>
+            <label style={labelStyle}>{t('currentPassword')}</label>
             <input type="password" value={current} onChange={e => setCurrent(e.target.value)} style={inputStyle} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>New Password</label>
+            <label style={labelStyle}>{t('newPasswordLabel')}</label>
             <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} style={inputStyle} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Confirm New Password</label>
+            <label style={labelStyle}>{t('confirmNewPassword')}</label>
             <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} style={inputStyle} />
           </div>
           {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 12 }}>{error}</p>}
@@ -89,7 +91,7 @@ export default function ChangePasswordSection() {
               fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
             }}
           >
-            {saving ? 'Updating...' : 'Update Password'}
+            {saving ? t('updating') : t('updatePassword')}
           </button>
         </div>
       )}

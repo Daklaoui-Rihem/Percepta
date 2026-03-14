@@ -14,6 +14,7 @@ import {
 import DashboardTemplate from '../components/Templates/DashboardTemplate';
 import { userApi, getSession } from '../services/api';
 import type { UserProfile } from '../services/api';
+import { useTranslation } from '../context/TranslationContext';
 
 // ── New/Edit User Modal ─────────────────────────────────────────
 interface ModalProps {
@@ -25,7 +26,9 @@ interface ModalProps {
 }
 
 function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalProps) {
+  const { t } = useTranslation();
   const targetRole = currentUserRole === 'SuperAdmin' ? 'Admin' : 'Client';
+  const targetRoleText = targetRole === 'Admin' ? t('adminRole') : t('clientRole');
 
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -39,7 +42,7 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
 
   const handleSubmit = async () => {
     if (!name || !email || (mode === 'create' && !password)) {
-      setError('Name, email and password are required'); return;
+      setError(t('fillAllFields')); return;
     }
     setSaving(true);
     setError('');
@@ -52,7 +55,7 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to save user');
+      setError(err instanceof Error ? err.message : t('saving'));
     } finally {
       setSaving(false);
     }
@@ -69,7 +72,7 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
           <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 22, fontWeight: 700 }}>
-            {mode === 'create' ? `Create New ${targetRole}` : `Edit ${targetRole}`}
+            {mode === 'create' ? `${t('createUser')} (${targetRoleText})` : `${t('edit')} ${targetRoleText}`}
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#888' }}>
             <X size={20} />
@@ -78,32 +81,32 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
 
         {/* Name */}
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Full Name</label>
-          <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder="Full name" />
+          <label style={labelStyle}>{t('fullName')}</label>
+          <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder={t('fullName')} />
         </div>
 
         {/* Email */}
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Email</label>
+          <label style={labelStyle}>{t('email')}</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} placeholder="email@example.com" />
         </div>
 
         {/* Password (create only) */}
         {mode === 'create' && (
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Temporary Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} placeholder="Min 6 characters" />
+            <label style={labelStyle}>{t('temporaryPassword')}</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} placeholder={t('newPasswordPlaceholder')} />
           </div>
         )}
 
         {/* Department + Phone */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
           <div style={{ flex: 1 }}>
-            <label style={labelStyle}>Department</label>
-            <input value={department} onChange={e => setDepartment(e.target.value)} style={inputStyle} placeholder="e.g. IT" />
+            <label style={labelStyle}>{t('department')}</label>
+            <input value={department} onChange={e => setDepartment(e.target.value)} style={inputStyle} placeholder={t('departmentPlaceholder')} />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={labelStyle}>Phone</label>
+            <label style={labelStyle}>{t('phone')}</label>
             <input value={phone} onChange={e => setPhone(e.target.value)} style={inputStyle} placeholder="+33 6 00 00 00 00" />
           </div>
         </div>
@@ -111,11 +114,11 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
         {/* Admin Level (only for Admin creation by SuperAdmin) */}
         {targetRole === 'Admin' && (
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Admin Level</label>
+            <label style={labelStyle}>{t('adminLevel')}</label>
             <select value={adminLevel} onChange={e => setAdminLevel(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-              <option value="Administrator">Administrator</option>
-              <option value="Senior Administrator">Senior Administrator</option>
-              <option value="Manager">Manager</option>
+              <option value="Administrator">{t('adminLevelAdmin')}</option>
+              <option value="Senior Administrator">{t('adminLevelSenior')}</option>
+              <option value="Manager">{t('adminLevelManager')}</option>
             </select>
           </div>
         )}
@@ -123,7 +126,7 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
         {/* Active toggle (edit only for Admins) */}
         {mode === 'edit' && targetRole === 'Admin' && (
           <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <label style={{ ...labelStyle, marginBottom: 0 }}>Account Status</label>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>{t('accountStatus')}</label>
             <button
               onClick={() => setIsActive(!isActive)}
               style={{
@@ -135,7 +138,7 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 {isActive ? <CheckCircle size={14} /> : <X size={14} />}
-                {isActive ? 'Active' : 'Suspended'}
+                {isActive ? t('active') : t('suspended')}
               </div>
             </button>
           </div>
@@ -148,14 +151,14 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
             onClick={onClose}
             style={{ flex: 1, padding: '13px', borderRadius: 8, border: '1.5px solid #ddd', background: 'white', cursor: 'pointer', fontSize: 15, fontWeight: 600, color: '#555' }}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
             style={{ flex: 1, padding: '13px', borderRadius: 8, border: 'none', background: saving ? '#93c5fd' : '#1a3a6b', color: 'white', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 700 }}
           >
-            {saving ? 'Saving...' : mode === 'create' ? 'Create User' : 'Save Changes'}
+            {saving ? t('saving') : mode === 'create' ? t('createUser') : t('saveChanges')}
           </button>
         </div>
       </div>
@@ -165,6 +168,7 @@ function UserModal({ mode, user, currentUserRole, onClose, onSuccess }: ModalPro
 
 // ── Delete Confirm Modal ────────────────────────────────────────
 function DeleteModal({ user, onClose, onConfirm }: { user: UserProfile; onClose: () => void; onConfirm: () => void }) {
+  const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
   const handleConfirm = async () => {
     setDeleting(true);
@@ -180,14 +184,14 @@ function DeleteModal({ user, onClose, onConfirm }: { user: UserProfile; onClose:
         <div style={{ color: '#dc2626', marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
           <Trash2 size={48} strokeWidth={1.5} />
         </div>
-        <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>Delete User</h3>
+        <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>{t('deleteUser')}</h3>
         <p style={{ color: '#888', fontSize: 14, marginBottom: 28 }}>
-          Are you sure you want to delete <strong>{user.name}</strong>? This action cannot be undone.
+          {t('deleteUserConfirm')} <strong>{user.name}</strong>? {t('deleteCannotUndo')}
         </p>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 8, border: '1.5px solid #ddd', background: 'white', cursor: 'pointer', fontSize: 14, color: '#555' }}>Cancel</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 8, border: '1.5px solid #ddd', background: 'white', cursor: 'pointer', fontSize: 14, color: '#555' }}>{t('cancel')}</button>
           <button onClick={handleConfirm} disabled={deleting} style={{ flex: 1, padding: 12, borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>
-            {deleting ? 'Deleting...' : 'Delete'}
+            {deleting ? t('deleting') : t('delete')}
           </button>
         </div>
       </div>
@@ -197,6 +201,7 @@ function DeleteModal({ user, onClose, onConfirm }: { user: UserProfile; onClose:
 
 // ── Main Page ───────────────────────────────────────────────────
 export default function UsersPage() {
+  const { t } = useTranslation();
   const [activePage, setActivePage] = useState('Users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,7 +215,10 @@ export default function UsersPage() {
 
   const session = getSession();
   const currentRole = session?.role || 'Admin';
-  const targetRoleLabel = currentRole === 'SuperAdmin' ? 'Admin' : 'Client';
+  const targetRole = currentRole === 'SuperAdmin' ? 'Admin' : 'Client';
+  const managementText = currentRole === 'SuperAdmin' ? t('adminManagement') : t('clientManagement');
+  const targetRoleText = currentRole === 'SuperAdmin' ? t('adminRole') : t('clientRole');
+  const targetRolePlural = currentRole === 'SuperAdmin' ? t('admins') : t('clients');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -219,7 +227,7 @@ export default function UsersPage() {
       const data = await userApi.getAllUsers();
       setUsers(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load users');
+      setError(err instanceof Error ? err.message : t('failed'));
     } finally {
       setLoading(false);
     }
@@ -234,7 +242,7 @@ export default function UsersPage() {
       setDeleteUser(null);
       fetchUsers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Delete failed');
+      alert(err instanceof Error ? err.message : t('failed'));
     }
   };
 
@@ -243,7 +251,7 @@ export default function UsersPage() {
       await userApi.updateUser(user._id, { isActive: !user.isActive });
       fetchUsers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Toggle failed');
+      alert(err instanceof Error ? err.message : t('failed'));
     }
   };
 
@@ -263,22 +271,21 @@ export default function UsersPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
         <h2 style={{ color: '#1a3f5f', margin: 0, fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px' }}>
-          {targetRoleLabel} Management
+          {managementText}
         </h2>
         <button
           onClick={() => setShowCreate(true)}
           style={{ background: '#1a3a6b', color: 'white', border: 'none', borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
         >
-          <Plus size={18} /> New {targetRoleLabel}
+          <Plus size={18} /> {t('createUser')} ({targetRoleText})
         </button>
       </div>
 
       {/* Stats cards */}
       <div style={{ display: 'inline-flex', gap: 20, marginBottom: 28 }}>
         {[
-          { icon: Users, value: String(users.length), label: `Total ${targetRoleLabel}s`, border: '#60a5fa' },
-          ...(targetRoleLabel === 'Admin' ? [{ icon: CheckCircle, value: String(activeCount), label: 'Active', border: '#22c55e' }] : []),
-
+          { icon: Users, value: String(users.length), label: `${t('totalUsers')} (${targetRolePlural})`, border: '#60a5fa' },
+          ...(targetRole === 'Admin' ? [{ icon: CheckCircle, value: String(activeCount), label: t('active'), border: '#22c55e' }] : []),
         ].map(card => (
           <div key={card.label} style={{ background: 'white', borderRadius: 16, padding: '24px', flex: 1, border: '1px solid rgba(198, 234, 255, 0.4)', borderLeft: `5px solid ${card.border}`, boxShadow: '0 4px 15px rgba(26, 63, 95, 0.05)', display: 'flex', alignItems: 'center', gap: 20 }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, background: `${card.border}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.border }}>
@@ -297,42 +304,42 @@ export default function UsersPage() {
         <div style={{ flex: 2, display: 'flex', alignItems: 'center', background: '#f8fbff', border: '1.5px solid #dff5ff', borderRadius: 10, padding: '12px 16px', gap: 12 }}>
           <Search size={20} color="#6ab7e4" />
           <input
-            placeholder={`Search ${targetRoleLabel.toLowerCase()}s by name or email...`}
+            placeholder={`${t('fullName')} / ${t('email')}...`}
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 14, width: '100%', color: '#1a3f5f', fontWeight: 500 }}
           />
         </div>
-        {targetRoleLabel === 'Admin' && (
+        {targetRole === 'Admin' && (
           <select
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value)}
             style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #d0e4f0', borderRadius: 8, fontSize: 14, color: '#444', cursor: 'pointer' }}
           >
-            <option>All Status</option>
-            <option>Active</option>
-            <option>Suspended</option>
+            <option value="All Status">{t('allStatus')}</option>
+            <option value="Active">{t('active')}</option>
+            <option value="Suspended">{t('suspended')}</option>
           </select>
         )}
         <button
           onClick={fetchUsers}
           style={{ padding: '10px 18px', background: '#eff6ff', border: '1.5px solid #d0e4f0', borderRadius: 8, cursor: 'pointer', fontSize: 14, color: '#1a3a6b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}
         >
-          <RefreshCw size={14} /> Refresh
+          <RefreshCw size={14} /> {t('refresh')}
         </button>
       </div>
 
       {/* Table */}
       <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Loading {targetRoleLabel.toLowerCase()}s...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>{t('loadingProfile')}...</div>
         ) : error ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#dc2626' }}>{error}</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#dbeafe' }}>
-                {['Name', 'Email', ...(targetRoleLabel === 'Admin' ? ['Status', 'Level'] : []), 'Phone', 'Created', 'Actions'].map(col => (
+                {[t('name'), t('email'), ...(targetRole === 'Admin' ? [t('status'), t('adminLevel')] : []), t('phone'), t('created'), t('actions')].map(col => (
                   <th key={col} style={{ padding: '14px 18px', textAlign: 'left', color: '#1a3a6b', fontSize: 14, fontWeight: 700 }}>{col}</th>
                 ))}
               </tr>
@@ -341,7 +348,7 @@ export default function UsersPage() {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#888' }}>
-                    No {targetRoleLabel.toLowerCase()}s found
+                    {t('noTenantsFound')}
                   </td>
                 </tr>
               ) : filtered.map(u => (
@@ -358,23 +365,27 @@ export default function UsersPage() {
                     </div>
                   </td>
                   <td style={{ padding: '14px 18px', color: '#555', fontSize: 14 }}>{u.email}</td>
-                  {targetRoleLabel === 'Admin' && (
+                  {targetRole === 'Admin' && (
                     <td style={{ padding: '14px 18px' }}>
                       <span style={{
                         background: u.isActive ? '#dcfce7' : '#fee2e2',
                         color: u.isActive ? '#16a34a' : '#dc2626',
                         padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
                       }}>
-                        {u.isActive ? 'Active' : 'Suspended'}
+                        {u.isActive ? t('active') : t('suspended')}
                       </span>
                     </td>
                   )}
-                  {targetRoleLabel === 'Admin' && (
-                    <td style={{ padding: '14px 18px', color: '#555', fontSize: 13 }}>{u.adminLevel || '—'}</td>
+                  {targetRole === 'Admin' && (
+                    <td style={{ padding: '14px 18px', color: '#555', fontSize: 13 }}>
+                      {u.adminLevel === 'Administrator' ? t('adminLevelAdmin') :
+                       u.adminLevel === 'Senior Administrator' ? t('adminLevelSenior') :
+                       u.adminLevel === 'Manager' ? t('adminLevelManager') : '—'}
+                    </td>
                   )}
                   <td style={{ padding: '14px 18px', color: '#555', fontSize: 13 }}>{u.phone || '—'}</td>
                   <td style={{ padding: '14px 18px', color: '#888', fontSize: 13 }}>
-                    {new Date(u.createdAt).toLocaleDateString('fr-FR')}
+                    {new Date(u.createdAt).toLocaleDateString()}
                   </td>
                   <td style={{ padding: '14px 18px' }}>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -382,12 +393,12 @@ export default function UsersPage() {
                         onClick={() => setEditUser(u)}
                         style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d0e4f0', background: 'white', cursor: 'pointer', fontSize: 13, color: '#1a3a6b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
                       >
-                        <Pencil size={12} /> Edit
+                        <Pencil size={12} /> {t('edit')}
                       </button>
-                      {targetRoleLabel === 'Admin' && (
+                      {targetRole === 'Admin' && (
                         <button
                           onClick={() => handleToggleStatus(u)}
-                          title={u.isActive ? 'Suspend User' : 'Activate User'}
+                          title={u.isActive ? t('suspended') : t('active')}
                           style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: u.isActive ? '#fff7ed' : '#dcfce7', cursor: 'pointer', fontSize: 13, color: u.isActive ? '#c2410c' : '#16a34a', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           {u.isActive ? <Pause size={12} /> : <Play size={12} />}

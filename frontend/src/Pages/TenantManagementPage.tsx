@@ -16,8 +16,10 @@ import PlanBadge from '../components/Atoms/PlanBadge';
 import ResourceBar from '../components/Atoms/ResourceBar';
 
 import { userApi } from '../services/api';
+import { useTranslation } from '../context/TranslationContext';
 
 export default function TenantManagementPage() {
+  const { t } = useTranslation();
 
   // ─── State ───────────────────────────────────────────────────────
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -38,20 +40,17 @@ export default function TenantManagementPage() {
   const totalUsers = tenants.reduce((sum, t) => sum + t.users, 0);
 
   // ─── Actions ─────────────────────────────────────────────────────
-
-  // Generate a mock resource visually if needed, but here we can just map and keep standard
   const fetchTenants = async () => {
     setLoading(true);
     try {
       const users = await userApi.getAllUsers();
-      // Only "Admins" returned from getAllUsers (for SuperAdmin) act as Tenants
       const mapped: Tenant[] = users.map(u => ({
         id: u._id,
         name: u.name,
         email: u.email,
         license: (['Professional', 'Enterprise', 'Starter'].includes(u.department) ? u.department : 'Professional') as Tenant['license'],
         status: u.isActive ? 'Active' : 'Suspended',
-        users: 10, // Mocked for UI, as user counts would require a separate aggregator
+        users: 10,
         resource: 40,
         expiry: '2027-01-01'
       }));
@@ -68,15 +67,14 @@ export default function TenantManagementPage() {
     fetchTenants();
   }, []);
 
-  // Add a brand new tenant
   const handleAddTenant = async (data: Omit<Tenant, 'id' | 'resource'> & { password?: string }) => {
     try {
       await userApi.createUser({
         name: data.name,
         email: data.email,
         password: data.password || 'Temporary123!',
-        role: 'Admin', // SuperAdmin creating a Tenant means creating an 'Admin'
-        department: data.license // Saving license choice in department field
+        role: 'Admin',
+        department: data.license
       });
       fetchTenants();
     } catch (err: unknown) {
@@ -84,7 +82,6 @@ export default function TenantManagementPage() {
     }
   };
 
-  // Save edits to existing tenant
   const handleEditTenant = async (data: Omit<Tenant, 'id' | 'resource'>) => {
     if (!editingTenant) return;
     try {
@@ -101,7 +98,6 @@ export default function TenantManagementPage() {
     }
   };
 
-  // Toggle suspend/active
   const handleToggleSuspend = async (tenant: Tenant) => {
     try {
       const newStatus = tenant.status === 'Active' ? false : true;
@@ -112,7 +108,6 @@ export default function TenantManagementPage() {
     }
   };
 
-  // Delete tenant
   const handleDelete = async (id: string | number) => {
     try {
       await userApi.deleteUser(id.toString());
@@ -144,10 +139,10 @@ export default function TenantManagementPage() {
         {/* ── 4 Stat Cards ── */}
         <div style={{ display: 'flex', gap: 20, marginBottom: 28 }}>
           {[
-            { label: 'Total Tenants', value: totalTenants, icon: Building2, color: '#3b82f6' },
-            { label: 'Active Tenants', value: activeTenants, icon: Zap, color: '#0d9488' },
-            { label: 'Suspended', value: suspendedCount, icon: Pause, color: '#f97316' },
-            { label: 'Total Users', value: totalUsers, icon: Users, color: '#6366f1' },
+            { label: t('totalTenants'),   value: totalTenants,   icon: Building2, color: '#3b82f6' },
+            { label: t('activeTenants'),  value: activeTenants,  icon: Zap,       color: '#0d9488' },
+            { label: t('suspended'),      value: suspendedCount, icon: Pause,     color: '#f97316' },
+            { label: t('totalUsers'),     value: totalUsers,     icon: Users,     color: '#6366f1' },
           ].map(card => (
             <div key={card.label} style={{
               background: 'white', borderRadius: 20, padding: '24px',
@@ -178,7 +173,7 @@ export default function TenantManagementPage() {
           padding: '20px 24px', marginBottom: 24,
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         }}>
-          <h4 style={{ color: '#1a3a6b', margin: '0 0 16px', fontSize: 15 }}>Search & Filters</h4>
+          <h4 style={{ color: '#1a3a6b', margin: '0 0 16px', fontSize: 15 }}>{t('searchFilters')}</h4>
           <div style={{ display: 'flex', gap: 16 }}>
 
             {/* Search input */}
@@ -191,7 +186,7 @@ export default function TenantManagementPage() {
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search tenants..."
+                placeholder={t('searchTenants')}
                 style={{ border: 'none', outline: 'none', fontSize: 14, background: 'transparent', width: '100%' }}
               />
             </div>
@@ -202,7 +197,7 @@ export default function TenantManagementPage() {
               onChange={e => setFilterLicense(e.target.value)}
               style={selectStyle}
             >
-              <option>All Licenses</option>
+              <option value="All Licenses">{t('allLicenses')}</option>
               <option>Enterprise</option>
               <option>Professional</option>
               <option>Starter</option>
@@ -214,9 +209,9 @@ export default function TenantManagementPage() {
               onChange={e => setFilterStatus(e.target.value)}
               style={selectStyle}
             >
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Suspended</option>
+              <option value="All Status">{t('allStatus')}</option>
+              <option value="Active">{t('active')}</option>
+              <option value="Suspended">{t('suspended')}</option>
             </select>
           </div>
         </div>
@@ -228,15 +223,15 @@ export default function TenantManagementPage() {
         }}>
           {/* Table header */}
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0f4f8', display: 'flex', justifyContent: 'space-between' }}>
-            <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 16, fontWeight: 700 }}>All Tenants</h3>
+            <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 16, fontWeight: 700 }}>{t('allTenants')}</h3>
             <span style={{ color: '#888', fontSize: 13 }}>
-              Showing {filtered.length} of {tenants.length} tenants
+              {t('showing')} {filtered.length} {t('of')} {tenants.length} {t('tenants')}
             </span>
           </div>
 
           {/* Column headers */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1.2fr 1.2fr 0.8fr 1.5fr 1.2fr 1fr', padding: '12px 24px', background: '#f8fbff', borderBottom: '1px solid #f0f4f8' }}>
-            {['Tenant Name', 'Email', 'License', 'Status', 'Users', 'Resource Usage', 'Expiry Date', 'Action'].map(h => (
+            {[t('tenantName'), t('email'), t('license'), t('status'), t('users'), t('resourceUsage'), t('expiryDate'), t('action')].map(h => (
               <span key={h} style={{ fontSize: 13, fontWeight: 700, color: '#1a3a6b' }}>{h}</span>
             ))}
           </div>
@@ -244,11 +239,11 @@ export default function TenantManagementPage() {
           {/* Rows */}
           {loading ? (
             <div style={{ padding: '48px', textAlign: 'center', color: '#888' }}>
-              Loading tenants...
+              {t('loadingTenants')}
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: '#888' }}>
-              No tenants found matching your filters.
+              {t('noTenantsFound')}
             </div>
           ) : (
             filtered.map(tenant => (
@@ -261,7 +256,6 @@ export default function TenantManagementPage() {
               }}>
                 {/* Name */}
                 <span style={{ fontWeight: 600, color: '#1a3a6b', fontSize: 14 }}>{tenant.name}</span>
-
 
                 {/* Email */}
                 <span style={{ color: '#555', fontSize: 13 }}>{tenant.email}</span>
@@ -277,7 +271,7 @@ export default function TenantManagementPage() {
                     color: tenant.status === 'Active' ? '#16a34a' : '#c2410c',
                     border: `1px solid ${tenant.status === 'Active' ? '#bbf7d0' : '#fed7aa'}`,
                   }}>
-                    {tenant.status === 'Active' ? '● Active' : '⏸ Suspended'}
+                    {tenant.status === 'Active' ? `● ${t('active')}` : `⏸ ${t('suspended')}`}
                   </span>
                 </span>
 
@@ -295,11 +289,9 @@ export default function TenantManagementPage() {
 
                 {/* Action buttons */}
                 <div style={{ display: 'flex', gap: 8 }}>
-
-                  {/* Edit button */}
                   <button
                     onClick={() => setEditingTenant(tenant)}
-                    title="Edit tenant"
+                    title={t('edit')}
                     style={actionBtnStyle('#dbeafe', '#1d4ed8')}
                   >
                     <Pencil size={14} />
@@ -307,7 +299,7 @@ export default function TenantManagementPage() {
 
                   <button
                     onClick={() => handleToggleSuspend(tenant)}
-                    title={tenant.status === 'Active' ? 'Suspend tenant' : 'Resume tenant'}
+                    title={tenant.status === 'Active' ? t('suspended') : t('active')}
                     style={actionBtnStyle(
                       tenant.status === 'Active' ? '#fff7ed' : '#dcfce7',
                       tenant.status === 'Active' ? '#c2410c' : '#16a34a'
@@ -318,7 +310,7 @@ export default function TenantManagementPage() {
 
                   <button
                     onClick={() => setDeletingId(tenant.id)}
-                    title="Delete tenant"
+                    title={t('delete')}
                     style={actionBtnStyle('#fee2e2', '#dc2626')}
                   >
                     <Trash2 size={14} />
@@ -338,7 +330,7 @@ export default function TenantManagementPage() {
         />
       )}
 
-      {/* ── Edit Tenant Modal — same component, pre-filled ── */}
+      {/* ── Edit Tenant Modal ── */}
       {editingTenant && (
         <AddTenantModal
           onClose={() => setEditingTenant(null)}
@@ -370,9 +362,9 @@ export default function TenantManagementPage() {
             <div style={{ color: '#dc2626', marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
               <Trash2 size={48} strokeWidth={1.5} />
             </div>
-            <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>Delete Tenant?</h3>
+            <h3 style={{ color: '#1a3a6b', marginBottom: 8 }}>{t('deleteTenant')}</h3>
             <p style={{ color: '#888', marginBottom: 28, fontSize: 14 }}>
-              This action cannot be undone. The tenant and all their data will be permanently removed.
+              {t('deleteTenantDesc')}
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
               <button
@@ -383,7 +375,7 @@ export default function TenantManagementPage() {
                   cursor: 'pointer', fontSize: 14, fontWeight: 600,
                 }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={() => handleDelete(deletingId)}
@@ -394,7 +386,7 @@ export default function TenantManagementPage() {
                   fontSize: 14, fontWeight: 700,
                 }}
               >
-                Delete
+                {t('delete')}
               </button>
             </div>
           </div>

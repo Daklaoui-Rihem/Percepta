@@ -1,4 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer ,Legend } from 'recharts';
+import { useTranslation } from '../../context/TranslationContext';
 
 const data = [
   { day: 'Mon', transcriptions: 85, analyses: 60, reports: 50 },
@@ -11,11 +12,13 @@ const data = [
 ];
 
 export default function WeeklyChart() {
+  const { t } = useTranslation();
+
   return (
     <div style={{ background: 'white', borderRadius: 12, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h3 style={{ color: '#1a3a6b', margin: 0 }}>Weekly Activity Overview</h3>
-        <span style={{ color: '#22c55e', fontSize: 14 }}>↗ +15.3% vs last week</span>
+        <h3 style={{ color: '#1a3a6b', margin: 0 }}>{t('weeklyActivityOverview')}</h3>
+        <span style={{ color: '#22c55e', fontSize: 14 }}>↗ +15.3% {t('vsLastWeek')}</span>
       </div>
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={data}>
@@ -23,10 +26,10 @@ export default function WeeklyChart() {
           <XAxis dataKey="day" tick={{ fontSize: 13 }} />
           <YAxis tick={{ fontSize: 13 }} />
           <Tooltip />
-          <Legend />   {/* ← add this line */}
-          <Line type="monotone" dataKey="transcriptions" stroke="#93c5fd" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="analyses"       stroke="#1a3a9f" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="reports"        stroke="#60a5fa" strokeWidth={2} dot={false} />
+          <Legend />
+          <Line name={t('transcriptions')} type="monotone" dataKey="transcriptions" stroke="#93c5fd" strokeWidth={2} dot={false} />
+          <Line name={t('analyses')} type="monotone" dataKey="analyses"       stroke="#1a3a9f" strokeWidth={2} dot={false} />
+          <Line name={t('reportsGlobalView')} type="monotone" dataKey="reports"        stroke="#60a5fa" strokeWidth={2} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>

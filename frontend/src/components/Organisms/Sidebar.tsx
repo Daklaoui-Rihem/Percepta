@@ -3,19 +3,23 @@ import { LayoutDashboard, Users, Zap, BarChart3, Monitor, Settings } from 'lucid
 
 import NavItem from '../Atoms/NavItem';
 import Logo from '../Atoms/Logo';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function Sidebar({ active, onNavigate }: { active: string; onNavigate: (page: string) => void }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
 
 
   const items = [
-    { icon: LayoutDashboard, label: ('dashboard'), path: '/dashboard' },
-    { icon: Users, label: ('users'), path: '/users' },
-    { icon: Zap, label: ('analyses'), path: '/analyses' },
-    { icon: BarChart3, label: ('reports'), path: '/reports' },
-    { icon: Monitor, label: ('system'), path: '/system' },
-    { icon: Settings, label: ('settings'), path: '/settings' },
+    { icon: LayoutDashboard, label: t('dashboard'), path: '/dashboard' },
+    { icon: Users, label: t('users'), path: '/users' },
+    { icon: Zap, label: t('analyses'), path: '/analyses' },
+    { icon: BarChart3, label: t('reports'), path: '/reports' },
+    { icon: Monitor, label: t('system'), path: '/system' },
+    { icon: Settings, label: t('settings'), path: '/settings' },
   ];
+
 
   return (
     <div style={{
@@ -41,6 +45,7 @@ export default function Sidebar({ active, onNavigate }: { active: string; onNavi
       <div style={{ marginTop: 'auto', color: '#c6eaff', fontSize: 11, padding: '0 8px', opacity: 0.7, fontWeight: 500 }}>
         © 2026 IFBW Platform<br />Infrastructure v1.2
       </div>
+
     </div>
   );
 }

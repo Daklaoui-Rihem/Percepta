@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Building2, Star } from 'lucide-react';
 import { userApi } from '../../services/api';
+import { useTranslation } from '../../context/TranslationContext';
 
 type Props = {
   role?: 'Admin' | 'SuperAdmin';
 }
 
 export default function AdminInfoSection({ role = 'Admin' }: Props) {
+  const { t } = useTranslation();
   const [department, setDepartment] = useState('');
   const [phone, setPhone] = useState('');
   const [adminLevel, setAdminLevel] = useState(role === 'SuperAdmin' ? 'SuperAdmin' : 'Administrator');
@@ -30,9 +32,9 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
     setSuccess('');
     try {
       await userApi.updateMyProfile({ department, phone, adminLevel });
-      setSuccess('Admin info saved!');
+      setSuccess(t('saveChanges') + ' ✓');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+      setError(err instanceof Error ? err.message : t('failed'));
     } finally {
       setSaving(false);
     }
@@ -45,12 +47,12 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
       <h3 style={{ color: '#1a3a6b', marginBottom: 24, fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Building2 size={20} /> Admin Information
+        <Building2 size={20} /> {t('adminInfo')}
       </h3>
 
       <div style={{ display: 'flex', gap: 20, marginBottom: 20 }}>
         <div style={{ flex: 1 }}>
-          <label style={labelStyle}>Department</label>
+          <label style={labelStyle}>{t('department')}</label>
           <input
             value={department}
             onChange={e => setDepartment(e.target.value)}
@@ -59,7 +61,7 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
           />
         </div>
         <div style={{ flex: 1 }}>
-          <label style={labelStyle}>Phone Number</label>
+          <label style={labelStyle}>{t('phoneNumber')}</label>
           <input
             value={phone}
             onChange={e => setPhone(e.target.value)}
@@ -70,7 +72,7 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>Admin Level</label>
+        <label style={labelStyle}>{t('adminLevel')}</label>
         {role === 'SuperAdmin' ? (
           <div style={{
             ...inputStyle,
@@ -83,7 +85,7 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
               fontSize: 12, padding: '2px 10px',
               borderRadius: 20, fontWeight: 600,
             }}>
-              Highest Level
+              {t('highestLevel')}
             </span>
           </div>
         ) : (
@@ -113,7 +115,7 @@ export default function AdminInfoSection({ role = 'Admin' }: Props) {
           cursor: (saving || role === 'SuperAdmin') ? 'not-allowed' : 'pointer',
         }}
       >
-        {saving ? 'Saving...' : 'Save Admin Info'}
+        {saving ? t('saving') : t('saveAdminInfo')}
       </button>
     </div>
   );

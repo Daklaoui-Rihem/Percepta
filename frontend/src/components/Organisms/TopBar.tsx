@@ -1,5 +1,7 @@
-import { Bell, Globe } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import AdminProfile from '../Molecules/AdminProfile';
+import LanguageSwitcher from '../Atoms/LanguageSwitcher';
+
 
 export default function TopBar() {
   return (
@@ -17,10 +19,7 @@ export default function TopBar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
 
         {/* Language Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#64748b', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
-          <Globe size={18} />
-          <span>EN</span>
-        </div>
+        <LanguageSwitcher />
 
         {/* Notifications */}
         <button

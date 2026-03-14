@@ -2,22 +2,24 @@ import { useState } from 'react';
 import { Home, Music, AudioLines } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function NewTranscriptionForm() {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
 
   return (
     <div>
       {/* Breadcrumb: Home > Transcriptions > New */}
       <Breadcrumb items={[
-        { label: 'Home', path: '/client/dashboard', icon: Home },
-        { label: 'Transcriptions', path: '/client/transcriptions' },
-        { label: 'New' }, // last item — no path, not clickable
+        { label: t('home'), path: '/client/dashboard', icon: Home },
+        { label: t('transcriptions'), path: '/client/transcriptions' },
+        { label: t('breadcrumbNew') },
       ]} />
 
       {/* Page title */}
       <h2 style={{ color: '#1a3a6b', marginBottom: 28, fontSize: 26, fontWeight: 700 }}>
-        New Audio Transcription
+        {t('newAudioTranscription')}
       </h2>
 
       {/* White card wrapper */}
@@ -51,7 +53,7 @@ export default function NewTranscriptionForm() {
             cursor: 'pointer',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <AudioLines size={20} /> Start Transcription
+              <AudioLines size={20} /> {t('startTranscription')}
             </div>
           </button>
         )}

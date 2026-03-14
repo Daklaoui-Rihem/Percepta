@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, User, Monitor, LogOut } from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function AdminProfile() {
+  const { t } = useTranslation();
+
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const session = getSession();
@@ -23,7 +26,11 @@ export default function AdminProfile() {
         </div>
         <div>
           <div style={{ fontWeight: 600, fontSize: 14, color: '#1a3a6b' }}>{name}</div>
-          <div style={{ fontSize: 12, color: '#888' }}>{session?.role || 'Administrator'}</div>
+          <div style={{ fontSize: 12, color: '#888' }}>
+            {session?.role === 'SuperAdmin' ? t('adminRole') :
+             session?.role === 'Admin' ? t('adminRole') :
+             session?.role === 'Client' ? t('clientRole') : t('adminRole')}
+          </div>
         </div>
         <ChevronDown
           size={16}
@@ -43,7 +50,7 @@ export default function AdminProfile() {
             onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            <User size={16} /> Profile Settings
+            <User size={16} /> {t('myProfileMenu')}
           </div>
           <div
             onClick={() => setOpen(false)}
@@ -51,7 +58,7 @@ export default function AdminProfile() {
             onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            <Monitor size={16} /> System Logs
+            <Monitor size={16} /> {t('viewSystemLogs')}
           </div>
           <div
             onClick={handleLogout}
@@ -59,7 +66,7 @@ export default function AdminProfile() {
             onMouseEnter={e => (e.currentTarget.style.background = '#fff5f5')}
             onMouseLeave={e => (e.currentTarget.style.background = 'white')}
           >
-            <LogOut size={16} /> Logout
+            <LogOut size={16} /> {t('logout')}
           </div>
         </div>
       )}
