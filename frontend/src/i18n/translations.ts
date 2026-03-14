@@ -201,6 +201,11 @@ const translations = {
   clickToChange:         { fr: 'Cliquer pour changer le fichier',             en: 'Click to change file',                ar: 'انقر لتغيير الملف'                    },
   fileTooLarge:          { fr: 'Fichier trop grand. Taille max :',            en: 'File too large. Max size is',         ar: 'الملف كبير جداً. الحد الأقصى:'        },
   breadcrumbNew:         { fr: 'Nouveau',                                     en: 'New',                                 ar: 'جديد'                                 },
+  uploadAudioSuccess:    { fr: "Transcription lancée ! Suivez l'avancement dans votre historique.", en: 'Transcription started! Track progress in your history.', ar: 'تم بدء النص! تابع التقدم في تاريخك.' },
+  uploadVideoSuccess:    { fr: "Analyse vidéo lancée ! Suivez l'avancement dans votre historique.", en: 'Video analysis started! Track progress in your history.', ar: 'تم بدء تحليل الفيديو! تابع التقدم في تاريخك.' },
+  uploadFailed:          { fr: 'Upload échoué. Réessayez.',                   en: 'Upload failed. Try again.',           ar: 'فشل الرفع. حاول مرة أخرى.'            },
+  uploadAnotherAudio:    { fr: '⊕ Uploader un autre fichier',                 en: '⊕ Upload another file',               ar: '⊕ رفع ملف آخر'                        },
+  uploadAnotherVideo:    { fr: '▷ Analyser une autre vidéo',                  en: '▷ Analyze another video',             ar: '▷ تحليل فيديو آخر'                    },
 
   // ── Profile page ─────────────────────────────────────────────
   myProfile:             { fr: 'Mon Profil',                                  en: 'My Profile',                          ar: 'ملفي الشخصي'                          },

@@ -8,6 +8,10 @@ const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
 const { seedSuperAdmin } = require('./controllers/authController');
 
+const analysesRoutes = require('./routes/analyses');
+
+const path = require('path');
+
 const app = express();
 
 // ── Middleware — MUST BE FIRST ─────────────────────────────────
@@ -18,6 +22,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
+
+app.use('/api/analyses', analysesRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Routes ─────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
