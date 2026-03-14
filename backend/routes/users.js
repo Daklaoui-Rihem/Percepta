@@ -2,21 +2,8 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
+const { adminOrAbove, superAdminOnly } = require('../middleware/roleMiddleware');
 
-// ── Role guards ────────────────────────────────────────────────
-function adminOrAbove(req, res, next) {
-    if (req.user.role !== 'Admin' && req.user.role !== 'SuperAdmin') {
-        return res.status(403).json({ message: 'Admin access required' });
-    }
-    next();
-}
-
-function superAdminOnly(req, res, next) {
-    if (req.user.role !== 'SuperAdmin') {
-        return res.status(403).json({ message: 'SuperAdmin access required' });
-    }
-    next();
-}
 
 // ── My Profile (any authenticated user) ───────────────────────
 router.get('/me', authMiddleware, userController.getMyProfile);
