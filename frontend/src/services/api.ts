@@ -80,6 +80,26 @@ export interface CreateUserPayload {
     adminLevel?: string;
 }
 
+export interface SmtpSettings {
+    smtpHost: string;
+    smtpPort: number;
+    smtpUser: string;
+    smtpPass: string;
+    smtpFrom: string;
+    smtpSecure: string;
+}
+
+export const settingsApi = {
+    getSmtp: () =>
+        request<SmtpSettings>('GET', '/settings/smtp'),
+
+    saveSmtp: (data: SmtpSettings) =>
+        request<{ message: string }>('PUT', '/settings/smtp', data),
+
+    testSmtp: (testEmail: string) =>
+        request<{ message: string }>('POST', '/settings/smtp/test', { testEmail }),
+};
+
 export interface UpdateUserPayload {
     name?: string;
     email?: string;

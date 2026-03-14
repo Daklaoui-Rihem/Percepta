@@ -44,7 +44,7 @@ export default function SuperNavbar() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <LanguageSwitcher />
-        <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button onClick={() => navigate('/settings')} style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Settings size={16} /> {t('settings')}
         </button>
         <button
