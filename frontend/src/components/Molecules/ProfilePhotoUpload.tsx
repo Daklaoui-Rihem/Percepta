@@ -1,15 +1,16 @@
 import { useState, useRef } from 'react';
 import { User, Camera } from 'lucide-react';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function ProfilePhotoUpload() {
+  const { t } = useTranslation();
   const [photo, setPhoto] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // When user picks a photo → convert it to a URL we can display
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file); // creates a temporary URL for preview
+      const url = URL.createObjectURL(file);
       setPhoto(url);
     }
   };
@@ -21,7 +22,6 @@ export default function ProfilePhotoUpload() {
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       marginBottom: 24,
     }}>
-      {/* Hidden file input — only accepts images */}
       <input
         ref={inputRef}
         type="file"
@@ -30,10 +30,8 @@ export default function ProfilePhotoUpload() {
         style={{ display: 'none' }}
       />
 
-      {/* Avatar circle + camera button */}
       <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
 
-        {/* The avatar — shows photo if selected, otherwise default icon */}
         <div style={{
           width: 100, height: 100, borderRadius: '50%',
           background: '#60a5fa',
@@ -41,14 +39,12 @@ export default function ProfilePhotoUpload() {
           overflow: 'hidden',
         }}>
           {photo ? (
-            // Show selected photo
             <img src={photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             <User size={60} color="white" strokeWidth={1.5} />
           )}
         </div>
 
-        {/* Camera icon button — positioned bottom right of avatar */}
         <button
           onClick={() => inputRef.current?.click()}
           style={{
@@ -66,7 +62,7 @@ export default function ProfilePhotoUpload() {
       </div>
 
       <p style={{ color: '#888', fontSize: 14, margin: 0 }}>
-        Click the camera icon to change your photo
+        {t('clickToChangePhoto') || 'Click the camera icon to change your photo'}
       </p>
     </div>
   );

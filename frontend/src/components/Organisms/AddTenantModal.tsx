@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pencil, PlusCircle, X, CheckCircle, XCircle } from 'lucide-react';
+import { useTranslation } from '../../context/TranslationContext';
 
 // This is the shape of one tenant object
 export type Tenant = {
@@ -16,13 +17,13 @@ export type Tenant = {
 type Props = {
   onClose: () => void;
   onSubmit: (tenant: Omit<Tenant, 'id' | 'resource'> & { password?: string }) => void;
-  existingTenant?: Tenant | null; // if provided → edit mode
+  existingTenant?: Tenant | null;
 }
 
 export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Props) {
-  const isEdit = !!existingTenant; // true if editing
+  const { t } = useTranslation();
+  const isEdit = !!existingTenant;
 
-  // Pre-fill fields if editing, empty if adding
   const [name, setName] = useState(existingTenant?.name || '');
   const [email, setEmail] = useState(existingTenant?.email || '');
   const [license, setLicense] = useState(existingTenant?.license || 'Professional');
@@ -34,7 +35,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
 
   const handleSubmit = () => {
     if (!name || !email || !expiry || (!isEdit && !password)) {
-      setError('Please fill all required fields, including password for new tenants');
+      setError(t('fillAllFields'));
       return;
     }
     onSubmit({
@@ -44,13 +45,12 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
       license: license as Tenant['license'],
       users: parseInt(users) || 0,
       expiry,
-      status, // include status in update
+      status,
     });
     onClose();
   };
 
   return (
-    // Dark overlay
     <div
       onClick={onClose}
       style={{
@@ -62,7 +62,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
     >
       {/* Modal box */}
       <div
-        onClick={e => e.stopPropagation()} // prevent closing when clicking inside
+        onClick={e => e.stopPropagation()}
         style={{
           background: 'white', borderRadius: 16,
           padding: '36px 32px', width: 540,
@@ -74,12 +74,10 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
           <div>
             <h3 style={{ color: '#1a3a6b', margin: '0 0 6px', fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
               {isEdit ? <Pencil size={22} /> : <PlusCircle size={22} />}
-              {isEdit ? 'Edit Tenant' : 'Add New Tenant'}
+              {isEdit ? t('editTenantTitle') : t('addTenantTitle')}
             </h3>
             <p style={{ color: '#60a5fa', fontSize: 13, margin: 0 }}>
-              {isEdit
-                ? 'Modify tenant information and save changes.'
-                : 'Create a new tenant account. Fill in all required information.'}
+              {isEdit ? t('editTenantDesc') : t('addTenantDesc')}
             </p>
           </div>
           <button
@@ -97,7 +95,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
 
           {/* Tenant Name */}
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Tenant Name</label>
+            <label style={labelStyle}>{t('tenantName')}</label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
@@ -108,7 +106,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
 
           {/* Email */}
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Email Address</label>
+            <label style={labelStyle}>{t('emailAddress')}</label>
             <input
               type="email"
               value={email}
@@ -121,7 +119,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
           {/* Password (CREATE ONLY) */}
           {!isEdit && (
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Temporary Password</label>
+              <label style={labelStyle}>{t('temporaryPassword')}</label>
               <input
                 type="password"
                 value={password}
@@ -134,7 +132,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
 
           {/* License Type */}
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>License Type</label>
+            <label style={labelStyle}>{t('licenseType')}</label>
             <select
               value={license}
               onChange={e => setLicense(e.target.value as Tenant['license'])}
@@ -149,7 +147,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
           {/* Status (EDIT ONLY) */}
           {isEdit && (
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Tenant Status</label>
+              <label style={labelStyle}>{t('tenantStatus')}</label>
               <button
                 onClick={() => setStatus(status === 'Active' ? 'Suspended' : 'Active')}
                 style={{
@@ -164,15 +162,15 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
                 }}
               >
                 {status === 'Active' ? <CheckCircle size={18} /> : <XCircle size={18} />}
-                {status === 'Active' ? 'Active / Operations Enabled' : 'Suspended / Operations Disabled'}
+                {status === 'Active' ? t('activeOperations') : t('suspendedOperations')}
               </button>
             </div>
           )}
 
-          {/* Initial User Count */}
+          {/* User Count */}
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>
-              {isEdit ? 'User Count' : 'Initial User Count'}
+              {isEdit ? t('userCount') : t('initialUserCount')}
             </label>
             <input
               type="number"
@@ -185,7 +183,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
 
           {/* License Expiry Date */}
           <div style={{ marginBottom: 8 }}>
-            <label style={labelStyle}>License Expiry Date</label>
+            <label style={labelStyle}>{t('licenseExpiryDate')}</label>
             <input
               type="date"
               value={expiry}
@@ -207,7 +205,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
               cursor: 'pointer', fontSize: 15, fontWeight: 600, color: '#555',
             }}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -218,7 +216,7 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
               fontSize: 15, fontWeight: 700,
             }}
           >
-            {isEdit ? 'Save Changes' : 'Add Tenant'}
+            {isEdit ? t('saveChanges') : t('addTenantBtn')}
           </button>
         </div>
       </div>

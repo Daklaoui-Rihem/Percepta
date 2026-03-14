@@ -1,5 +1,5 @@
-
 import ActivityTypeBadge from '../Molecules/ActivityTypeBadge';
+import { useTranslation } from '../../context/TranslationContext';
 
 const activities = [
   { time: '2026-02-22 14:32', user: 'Jean Dupont',    action: 'Uploaded audio file "Client Meeting Q4.mp3"',   type: 'upload' },
@@ -10,17 +10,18 @@ const activities = [
 ];
 
 export default function RecentActivities() {
+  const { t } = useTranslation();
 
   return (
     <div style={{ background: 'white', borderRadius: 12, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginTop: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h3 style={{ color: '#1a3a6b', margin: 0, fontWeight: 700 }}>{('recentActivities')}</h3>
-        <span style={{ color: '#1a3a6b', fontSize: 14, cursor: 'pointer' }}>{('viewAll')}</span>
+        <h3 style={{ color: '#1a3a6b', margin: 0, fontWeight: 700 }}>{t('recentActivities')}</h3>
+        <span style={{ color: '#1a3a6b', fontSize: 14, cursor: 'pointer' }}>{t('viewAll')}</span>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#dbeafe' }}>
-            {[('timestamp'), ('user'), ('action'),('type')].map(col => (
+            {[t('timestamp'), t('user'), t('action'), t('type')].map(col => (
               <th key={col} style={{ padding: '12px 16px', textAlign: 'left', color: '#1a3a6b', fontSize: 14, fontWeight: 700 }}>
                 {col}
               </th>

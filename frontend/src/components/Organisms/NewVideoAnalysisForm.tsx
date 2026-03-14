@@ -2,22 +2,24 @@ import { useState } from 'react';
 import { Home, Video, PlayCircle } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function NewVideoAnalysisForm() {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
 
   return (
     <div>
       {/* Breadcrumb: Home > Video Analysis > New */}
       <Breadcrumb items={[
-        { label: 'Home', path: '/client/dashboard', icon: Home },
-        { label: 'Video Analysis', path: '/client/video-analysis' },
-        { label: 'New' },
+        { label: t('home'), path: '/client/dashboard', icon: Home },
+        { label: t('videoAnalysis'), path: '/client/video-analysis' },
+        { label: t('breadcrumbNew') },
       ]} />
 
       {/* Page title */}
       <h2 style={{ color: '#1a3a6b', marginBottom: 28, fontSize: 26, fontWeight: 700 }}>
-        New Video Analysis
+        {t('newVideoAnalysis')}
       </h2>
 
       {/* White card wrapper */}
@@ -51,7 +53,7 @@ export default function NewVideoAnalysisForm() {
             cursor: 'pointer',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <PlayCircle size={20} /> Start Video Analysis
+              <PlayCircle size={20} /> {t('startVideoAnalysis')}
             </div>
           </button>
         )}

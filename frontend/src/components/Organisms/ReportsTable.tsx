@@ -3,6 +3,7 @@ import StatusBadge from '../Atoms/StatusBadge';
 import SizeBadge from '../Atoms/SizeBadge';
 import TypeBadge from '../Atoms/TypeBadge';
 import ReportFilters from '../Molecules/ReportFilters';
+import { useTranslation } from '../../context/TranslationContext';
 
 type Report = {
   id: string; user: string; type: string;
@@ -25,13 +26,13 @@ const allReports: Report[] = [
 ];
 
 export default function ReportsTable() {
+  const { t } = useTranslation();
   const [search, setSearch]   = useState('');
   const [user, setUser]       = useState('');
   const [type, setType]       = useState('');
   const [status, setStatus]   = useState('');
   const [reports, setReports] = useState<Report[]>(allReports);
 
-  // ── Filtering ──────────────────────────────────
   const filtered = reports.filter(r =>
     (search === '' || r.id.includes(search) || r.user.toLowerCase().includes(search.toLowerCase()) || r.filename.toLowerCase().includes(search.toLowerCase())) &&
     (user   === '' || r.user   === user) &&
@@ -42,6 +43,12 @@ export default function ReportsTable() {
   const handleDelete = (id: string) => {
     setReports(prev => prev.filter(r => r.id !== id));
   };
+
+  const columns = [
+    'ID ↕', t('user') + ' ↕', t('type') + ' ↕',
+    t('filename') + ' ↕', t('date') + ' ↕',
+    t('size') + ' ↕', t('status') + ' ↕', t('actions'),
+  ];
 
   return (
     <>
@@ -57,7 +64,7 @@ export default function ReportsTable() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#dbeafe' }}>
-              {['ID ↕', 'User ↕', 'Type ↕', 'Filename ↕', 'Date ↕', 'Size ↕', 'Status ↕', 'Actions'].map(col => (
+              {columns.map(col => (
                 <th key={col} style={{ padding: '14px 16px', textAlign: 'left', color: '#1a3a6b', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
                   {col}
                 </th>
@@ -80,11 +87,8 @@ export default function ReportsTable() {
                 <td style={{ padding: '14px 16px' }}><StatusBadge status={r.status} /></td>
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    {/* View */}
                     <span title="View" style={{ cursor: 'pointer', fontSize: 16, color: '#1a3a6b' }}>👁️</span>
-                    {/* Download */}
                     <span title="Download" style={{ cursor: 'pointer', fontSize: 16, color: '#1a3a6b' }}>⬇️</span>
-                    {/* Delete */}
                     <span title="Delete" onClick={() => handleDelete(r.id)} style={{ cursor: 'pointer', fontSize: 16, color: '#dc2626' }}>🗑️</span>
                   </div>
                 </td>

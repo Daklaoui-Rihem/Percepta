@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
 import { userApi } from '../../services/api';
 import type { UpdateUserPayload } from '../../services/api';
+import { useTranslation } from '../../context/TranslationContext';
 
 interface Props {
   onProfileLoaded?: (name: string) => void;
 }
 
 export default function ProfileInfoForm({ onProfileLoaded }: Props) {
+  const { t } = useTranslation();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,13 +27,13 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
         setEmail(profile.email);
         onProfileLoaded?.(profile.name);
       })
-      .catch(() => setError('Failed to load profile'))
+      .catch(() => setError(t('failed')))
       .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
     if (!firstName.trim()) {
-      setError('First name is required');
+      setError(t('fillAllFields'));
       return;
     }
     setSaving(true);
@@ -43,9 +45,9 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
         email,
       };
       await userApi.updateMyProfile(data);
-      setSuccess('Profile updated successfully');
+      setSuccess(t('saveChanges') + ' ✓');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile');
+      setError(err instanceof Error ? err.message : t('failed'));
     } finally {
       setSaving(false);
     }
@@ -54,7 +56,7 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
   if (loading) {
     return (
       <div style={{ background: 'white', borderRadius: 16, padding: '28px 32px', marginBottom: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', color: '#888' }}>
-        Loading profile...
+        {t('loadingProfile')}
       </div>
     );
   }
@@ -66,12 +68,12 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
       <h3 style={{ color: '#1a3a6b', marginBottom: 24, fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <User size={20} /> Personal Information
+        <User size={20} /> {t('personalInfo')}
       </h3>
 
       <div style={{ display: 'flex', gap: 20, marginBottom: 20 }}>
         <div style={{ flex: 1 }}>
-          <label style={labelStyle}>First Name</label>
+          <label style={labelStyle}>{t('firstName')}</label>
           <input
             value={firstName}
             onChange={e => setFirstName(e.target.value)}
@@ -79,7 +81,7 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
           />
         </div>
         <div style={{ flex: 1 }}>
-          <label style={labelStyle}>Last Name</label>
+          <label style={labelStyle}>{t('lastName')}</label>
           <input
             value={lastName}
             onChange={e => setLastName(e.target.value)}
@@ -89,7 +91,7 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>Email Address</label>
+        <label style={labelStyle}>{t('emailAddress')}</label>
         <input
           type="email"
           value={email}
@@ -111,7 +113,7 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
           fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
         }}
       >
-        {saving ? 'Saving...' : 'Save Personal Info'}
+        {saving ? t('saving') : t('savePersonalInfo')}
       </button>
     </div>
   );

@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import {
-  Globe,
   Settings,
   Building2,
   ClipboardList,
@@ -9,9 +8,12 @@ import {
 } from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
 import Logo from '../Atoms/Logo';
+import LanguageSwitcher from '../Atoms/LanguageSwitcher';
+import { useTranslation } from '../../context/TranslationContext';
 
 export default function SuperNavbar() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const session = getSession();
   const name = session?.name || 'Admin User';
   const email = session?.email || 'superadmin@ifbw.com';
@@ -41,20 +43,18 @@ export default function SuperNavbar() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <LanguageSwitcher />
         <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Globe size={16} /> EN English
-        </button>
-        <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Settings size={16} /> Settings
+          <Settings size={16} /> {t('settings')}
         </button>
         <button
           onClick={() => navigate('/superadmin/tenants')}
           style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}
         >
-          <Building2 size={16} /> Tenant Management
+          <Building2 size={16} /> {t('tenantManagement')}
         </button>
         <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ClipboardList size={16} /> View System Logs
+          <ClipboardList size={16} /> {t('viewSystemLogs')}
         </button>
       </div>
 
@@ -62,7 +62,7 @@ export default function SuperNavbar() {
         <div
           onClick={() => navigate('/superadmin/profile')}
           style={{ textAlign: 'right', cursor: 'pointer' }}
-          title="My Profile"
+          title={t('myProfileMenu')}
         >
           <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{name}</div>
           <div style={{ color: '#93c5fd', fontSize: 12 }}>{email}</div>
@@ -89,7 +89,7 @@ export default function SuperNavbar() {
             borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}
-          title="Logout"
+          title={t('logout')}
         >
           <LogOut size={18} />
         </button>

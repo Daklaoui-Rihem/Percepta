@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useTranslation } from '../../context/TranslationContext';
 
 // Generate a random value that stays close to a base number — simulates real server data
 const randomNear = (base: number, range: number) =>
@@ -18,6 +19,7 @@ const generateInitialData = () =>
   }));
 
 export default function RealTimeChart() {
+  const { t } = useTranslation();
   const [data, setData] = useState(generateInitialData());
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function RealTimeChart() {
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
       <h3 style={{ color: '#1a3a6b', marginBottom: 20, fontSize: 16 }}>
-        Real-Time Resource Usage
+        {t('realTimeResourceUsage')}
       </h3>
 
       <ResponsiveContainer width="100%" height={300}>
