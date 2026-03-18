@@ -28,6 +28,11 @@ export default function LoginForm() {
       const res = await authApi.login(email, password);
       saveSession(res.token, res.user);
 
+      if (res.user.hasFirstLogin === false) {
+        navigate('/force-password-change');
+        return;
+      }
+
       if (res.user.role === 'SuperAdmin') {
         navigate('/superadmin/dashboard');
       } else if (res.user.role === 'Admin') {

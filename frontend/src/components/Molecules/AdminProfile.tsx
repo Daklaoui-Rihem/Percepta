@@ -13,6 +13,10 @@ export default function AdminProfile() {
   const name = session?.name || 'Admin User';
   const initials = name.split(' ').map((p: string) => p[0]).join('').substring(0, 2).toUpperCase();
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  const SERVER_URL = API_URL.replace('/api', '');
+  const photoUrl = session?.photoUrl ? (session.photoUrl.startsWith('http') ? session.photoUrl : `${SERVER_URL}/${session.photoUrl}`) : null;
+
   const handleLogout = () => {
     clearSession();
     navigate('/login');
@@ -21,8 +25,18 @@ export default function AdminProfile() {
   return (
     <div style={{ position: 'relative' }}>
       <div onClick={() => setOpen(!open)} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#1a3a9f', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700 }}>
-          {initials}
+        <div style={{ 
+          width: 38, height: 38, borderRadius: '50%', 
+          background: '#1a3a9f', color: 'white', 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', 
+          fontSize: 15, fontWeight: 700,
+          overflow: 'hidden', border: '1.5px solid #f0f9ff'
+        }}>
+          {photoUrl ? (
+            <img src={photoUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            initials
+          )}
         </div>
         <div>
           <div style={{ fontWeight: 600, fontSize: 14, color: '#1a3a6b' }}>{name}</div>

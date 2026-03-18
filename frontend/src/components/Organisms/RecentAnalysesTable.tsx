@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { analysisApi, type AnalysisRecord } from '../../services/api';
 import { useTranslation } from '../../context/TranslationContext';
+import { Search, Filter } from 'lucide-react';
 
 const statusStyle: Record<string, { bg: string; color: string }> = {
   done: { bg: '#dcfce7', color: '#16a34a' },
@@ -14,6 +15,8 @@ export default function RecentAnalysesTable() {
   const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   useEffect(() => {
     analysisApi.getMyAnalyses()
@@ -53,10 +56,56 @@ export default function RecentAnalysesTable() {
       direction: isRTL ? 'rtl' : 'ltr',
     }}>
 
-      {/* Title */}
-      <h3 style={{ color: '#1a3a6b', marginBottom: 20, fontSize: 18, fontWeight: 700 }}>
-        {t('recentAnalyses')}
-      </h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h3 style={{ color: '#1a3a6b', margin: 0, fontSize: 18, fontWeight: 700 }}>
+          {t('recentAnalyses')}
+        </h3>
+        
+        <div style={{ display: 'flex', gap: 12 }}>
+          {/* Search Input */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: 12 }} />
+            <input 
+              type="text"
+              placeholder={t('searchReports') || 'Search...'}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                padding: '8px 12px 8px 36px',
+                borderRadius: 8,
+                border: '1.5px solid #e2e8f0',
+                fontSize: 13,
+                outline: 'none',
+                width: 200,
+                color: '#1e293b'
+              }}
+            />
+          </div>
+
+          {/* Type Filter */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Filter size={14} color="#94a3b8" style={{ position: 'absolute', left: 12 }} />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              style={{
+                padding: '8px 12px 8px 32px',
+                borderRadius: 8,
+                border: '1.5px solid #e2e8f0',
+                fontSize: 13,
+                outline: 'none',
+                background: 'white',
+                cursor: 'pointer',
+                color: '#1e293b'
+              }}
+            >
+              <option value="all">{t('allTypes')}</option>
+              <option value="audio">{t('transcription')}</option>
+              <option value="video">{t('videoAnalysisType')}</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Column headers */}
       <div style={{
@@ -73,19 +122,23 @@ export default function RecentAnalysesTable() {
         ))}
       </div>
 
-      {/* Empty state */}
-      {analyses.length === 0 ? (
-        <div style={{
-          padding: '48px 0', textAlign: 'center',
-          color: '#aaa', fontSize: 14,
-        }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
-          Aucune analyse pour le moment.<br />
-          Uploadez votre premier fichier !
-        </div>
-      ) : (
-        // Rows
-        analyses.map((row, i) => {
+      {(() => {
+        const filtered = analyses.filter((a: AnalysisRecord) => {
+          const matchesSearch = a.originalName.toLowerCase().includes(search.toLowerCase());
+          const matchesType = typeFilter === 'all' || a.type === typeFilter;
+          return matchesSearch && matchesType;
+        });
+
+        if (filtered.length === 0) {
+          return (
+            <div style={{ padding: '48px 0', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
+              {search || typeFilter !== 'all' ? (t('noResults') || 'No results found') : (t('noAnalysesYet') || 'No analyses yet')}
+            </div>
+          );
+        }
+
+        return filtered.map((row: AnalysisRecord, i: number) => {
           const s = statusStyle[row.status] || statusStyle.pending;
 
           const typeLabel =
@@ -146,8 +199,8 @@ export default function RecentAnalysesTable() {
               </div>
             </div>
           );
-        })
-      )}
+        });
+      })()}
     </div>
   );
 }

@@ -31,7 +31,7 @@ export default function AdminProfileForm({ role = 'Admin' }: Props) {
 
       <ProfilePhotoUpload />
       <ProfileInfoForm />
-      <AdminInfoSection role={role} />
+      {role === 'SuperAdmin' && <AdminInfoSection role={role} />}
       <ChangePasswordSection />
       
       {/* Optionally AccountInfoSection if different. AdminInfoSection wraps AccountInfoSection logic in this app structure based on role. */}

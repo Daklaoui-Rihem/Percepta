@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
         ref: 'User',
         default: null,
     },
+    userType: {
+        type: String,
+        enum: ['Entreprise', 'Single person'],
+        default: 'Single person',
+    },
     department: { type: String, default: '' },
     phone: { type: String, default: '' },
     adminLevel: { type: String, default: 'Administrator' },
@@ -40,6 +45,8 @@ const userSchema = new mongoose.Schema({
     resetCode: { type: String, default: undefined },
     resetCodeExpiry: { type: Date, default: undefined },
     resetCodeUsed: { type: Boolean, default: false },
+
+    hasFirstLogin: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

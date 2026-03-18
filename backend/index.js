@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
 const { seedSuperAdmin } = require('./controllers/authController');
+const startCleanupJob = require('./utils/cleanupJob');
 
 const analysesRoutes = require('./routes/analyses');
 
@@ -41,6 +42,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ifbw')
   .then(async () => {
     console.log('✅ MongoDB connected');
     await seedSuperAdmin();
+    startCleanupJob(); // ← Start 24h unactivated accounts cleanup
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   })
   .catch(err => {

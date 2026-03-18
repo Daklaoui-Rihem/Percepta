@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
+const validatePassword = require('../utils/validatePassword');
 
 // ── Dynamic transporter from DB settings ──────────────────────
 async function getTransporter() {
@@ -157,8 +158,10 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ message: 'Email, code and new password are required' });
         }
 
-        if (newPassword.length < 6) {
-            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        if (!validatePassword(newPassword)) {
+            return res.status(400).json({ 
+                message: 'Password must be at least 8 characters long and include uppercase, lowercase, and special characters.' 
+            });
         }
 
         const user = await User.findOne({ email: email.toLowerCase() });

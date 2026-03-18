@@ -73,9 +73,9 @@ export default function RealTimeChart() {
           <Tooltip formatter={(v: number | undefined) => v !== undefined ? `${v.toFixed(1)}%` : ''} />
           <Legend />
 
-          <Area type="monotone" dataKey="cpu"     name="CPU %"     stroke="#3b82f6" fill="url(#cpu)"     strokeWidth={2} dot={false} />
-          <Area type="monotone" dataKey="ram"     name="RAM %"     stroke="#8b5cf6" fill="url(#ram)"     strokeWidth={2} dot={false} />
-          <Area type="monotone" dataKey="storage" name="Storage %" stroke="#10b981" fill="url(#storage)" strokeWidth={2} dot={false} />
+          <Area type="monotone" dataKey="cpu"     name={`${t('cpu')} %`}     stroke="#3b82f6" fill="url(#cpu)"     strokeWidth={2} dot={false} />
+          <Area type="monotone" dataKey="ram"     name={`${t('ram')} %`}     stroke="#8b5cf6" fill="url(#ram)"     strokeWidth={2} dot={false} />
+          <Area type="monotone" dataKey="storage" name={`${t('storage')} %`} stroke="#10b981" fill="url(#storage)" strokeWidth={2} dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>

@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from '../../context/TranslationContext';
 
 type Props = {
   icon: LucideIcon;
@@ -8,6 +9,7 @@ type Props = {
 }
 
 export default function ActivityItem({ icon: Icon, title, tenant, time }: Props) {
+  const { t } = useTranslation();
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start',
@@ -27,7 +29,7 @@ export default function ActivityItem({ icon: Icon, title, tenant, time }: Props)
       {/* Text */}
       <div>
         <p style={{ margin: 0, fontWeight: 600, color: '#1a3a6b', fontSize: 14 }}>{title}</p>
-        <p style={{ margin: '2px 0', color: '#555', fontSize: 13 }}>Tenant: {tenant}</p>
+        <p style={{ margin: '2px 0', color: '#555', fontSize: 13 }}>{t('tenantLabel')} {tenant}</p>
         <p style={{ margin: 0, color: '#60a5fa', fontSize: 12 }}>{time}</p>
       </div>
     </div>

@@ -13,8 +13,9 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -25,6 +26,7 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
         setFirstName(parts[0] || '');
         setLastName(parts.slice(1).join(' ') || '');
         setEmail(profile.email);
+        setPhone(profile.phone || '');
         onProfileLoaded?.(profile.name);
       })
       .catch(() => setError(t('failed')))
@@ -42,7 +44,7 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
     try {
       const data: UpdateUserPayload = {
         name: `${firstName.trim()} ${lastName.trim()}`.trim(),
-        email,
+        phone: phone.trim(),
       };
       await userApi.updateMyProfile(data);
       setSuccess(t('saveChanges') + ' ✓');
@@ -90,14 +92,27 @@ export default function ProfileInfoForm({ onProfileLoaded }: Props) {
         </div>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>{t('emailAddress')}</label>
-        <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          style={inputStyle}
-        />
+      <div style={{ display: 'flex', gap: 20, marginBottom: 20 }}>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>{t('emailAddress')}</label>
+          <input
+            type="email"
+            value={email}
+            readOnly
+            style={{ ...inputStyle, backgroundColor: '#f9f9f9', cursor: 'default' }}
+          />
+          <p style={{ fontSize: 12, color: '#888', marginTop: 6 }}>Email cannot be changed. Contact support for assistance.</p>
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>{t('phone')}</label>
+          <input
+            type="text"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            placeholder="+33 6 00 00 00 00"
+            style={inputStyle}
+          />
+        </div>
       </div>
 
       {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}

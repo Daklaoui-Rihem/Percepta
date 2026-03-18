@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const validatePassword = require('../utils/validatePassword');
+const emailService = require('../utils/emailService');
 
 // ─────────────────────────────────────────────
 // CREATE USER
@@ -8,10 +10,20 @@ const User = require('../models/User');
 // ─────────────────────────────────────────────
 exports.createUser = async (req, res) => {
     try {
-        const { name, email, password, role, department, phone, adminLevel } = req.body;
+        let { name, email, password, role, department, phone, adminLevel, userType } = req.body;
+        
+        name = name?.trim();
+        email = email?.trim()?.toLowerCase();
+        password = password?.trim();
 
         if (!name || !email || !password) {
             return res.status(400).json({ message: 'Name, email and password are required' });
+        }
+
+        if (!validatePassword(password)) {
+            return res.status(400).json({ 
+                message: 'Password must be at least 8 characters long and include uppercase, lowercase, and special characters.' 
+            });
         }
 
         // Role rules:
@@ -43,7 +55,13 @@ exports.createUser = async (req, res) => {
             department: department || '',
             phone: phone || '',
             adminLevel: adminLevel || 'Administrator',
+            userType: userType || 'Single person',
         });
+
+        console.log(`👤 User Created: ${user.email} (Password for Email: ${password})`);
+
+        // ── Send welcome email async (no wait needed to return response) ──
+        emailService.sendWelcomeEmail(user, password);
 
         res.status(201).json({
             message: 'User created successfully',
@@ -123,10 +141,11 @@ exports.updateUser = async (req, res) => {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        const { name, email, role, isActive, department, phone, adminLevel } = req.body;
+        const { name, email, role, isActive, department, phone, adminLevel, userType } = req.body;
 
         if (name) user.name = name;
         if (email) user.email = email.toLowerCase();
+        if (userType !== undefined) user.userType = userType;
         if (department !== undefined) user.department = department;
         if (phone !== undefined) user.phone = phone;
         if (adminLevel !== undefined) user.adminLevel = adminLevel;
@@ -148,6 +167,7 @@ exports.updateUser = async (req, res) => {
                 department: user.department,
                 phone: user.phone,
                 adminLevel: user.adminLevel,
+                userType: user.userType,
             }
         });
     } catch (error) {
@@ -177,6 +197,62 @@ exports.deleteUser = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────
+// BULK DELETE USERS
+// ─────────────────────────────────────────────
+exports.bulkDeleteUsers = async (req, res) => {
+    try {
+        const { userIds } = req.body; // array of IDs
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ message: 'No users selected' });
+        }
+
+        let filter = { _id: { $in: userIds } };
+
+        // Security: Admins can only delete their own clients
+        if (req.user.role === 'Admin') {
+            filter.tenantId = req.user.id;
+            filter.role = 'Client';
+        } else if (req.user.role === 'SuperAdmin') {
+            filter.role = 'Admin';
+        }
+
+        const result = await User.deleteMany(filter);
+        res.json({ message: `${result.deletedCount} users deleted successfully` });
+    } catch (error) {
+        console.error('Bulk delete error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// ─────────────────────────────────────────────
+// BULK UPDATE USERS (Status change, etc)
+// ─────────────────────────────────────────────
+exports.bulkUpdateUsers = async (req, res) => {
+    try {
+        const { userIds, updates } = req.body;
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ message: 'No users selected' });
+        }
+
+        let filter = { _id: { $in: userIds } };
+
+        // Security: Admins can only update their own clients
+        if (req.user.role === 'Admin') {
+            filter.tenantId = req.user.id;
+            filter.role = 'Client';
+        } else if (req.user.role === 'SuperAdmin') {
+            filter.role = 'Admin';
+        }
+
+        const result = await User.updateMany(filter, { $set: updates });
+        res.json({ message: `${result.modifiedCount} users updated successfully` });
+    } catch (error) {
+        console.error('Bulk update error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// ─────────────────────────────────────────────
 // GET MY PROFILE (any authenticated user)
 // ─────────────────────────────────────────────
 exports.getMyProfile = async (req, res) => {
@@ -197,10 +273,10 @@ exports.updateMyProfile = async (req, res) => {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const { name, email, department, phone, adminLevel, photoUrl } = req.body;
+        const { name, department, phone, adminLevel, photoUrl } = req.body;
 
         if (name) user.name = name;
-        if (email) user.email = email.toLowerCase();
+        // email is unchangeable
         if (department !== undefined) user.department = department;
         if (phone !== undefined) user.phone = phone;
         if (adminLevel !== undefined) user.adminLevel = adminLevel;
@@ -229,6 +305,33 @@ exports.updateMyProfile = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────
+// UPLOAD AVATAR
+// ─────────────────────────────────────────────
+exports.uploadAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Update path to something served statically
+        const photoUrl = `uploads/avatars/${req.file.filename}`;
+        user.photoUrl = photoUrl;
+        await user.save();
+
+        res.json({
+            message: 'Avatar uploaded successfully',
+            photoUrl: user.photoUrl
+        });
+    } catch (error) {
+        console.error('Avatar upload error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// ─────────────────────────────────────────────
 // CHANGE MY PASSWORD
 // ─────────────────────────────────────────────
 exports.changeMyPassword = async (req, res) => {
@@ -238,8 +341,10 @@ exports.changeMyPassword = async (req, res) => {
         if (!currentPassword || !newPassword) {
             return res.status(400).json({ message: 'Current and new password required' });
         }
-        if (newPassword.length < 6) {
-            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        if (!validatePassword(newPassword)) {
+            return res.status(400).json({ 
+                message: 'New password must be at least 8 characters long and include uppercase, lowercase, and special characters.' 
+            });
         }
 
         const user = await User.findById(req.user.id);
@@ -249,11 +354,27 @@ exports.changeMyPassword = async (req, res) => {
         }
 
         user.password = await bcrypt.hash(newPassword, 10);
+        user.hasFirstLogin = true; // Mark account activated upon password change
         await user.save();
 
         res.json({ message: 'Password changed successfully' });
     } catch (error) {
         console.error('Change password error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// ─────────────────────────────────────────────
+// CHECK EMAIL EXISTS
+// ─────────────────────────────────────────────
+exports.checkEmail = async (req, res) => {
+    try {
+        const { email } = req.query;
+        if (!email) return res.status(400).json({ message: 'Email query param required' });
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        res.json({ exists: !!user });
+    } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
 };

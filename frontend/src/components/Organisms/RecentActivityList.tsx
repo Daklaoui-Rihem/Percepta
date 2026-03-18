@@ -2,16 +2,18 @@ import { UserPlus, Building2, Clock } from 'lucide-react';
 import ActivityItem from '../Molecules/ActivityItem';
 import { useTranslation } from '../../context/TranslationContext';
 
-const activities = [
-  { icon: UserPlus,   title: 'New tenant onboarded',          tenant: 'Digital Ventures',      time: '2 hours ago' },
-  { icon: Building2,  title: 'Enterprise license upgraded',    tenant: 'Global Services Ltd.',  time: '5 hours ago' },
-  { icon: UserPlus,   title: 'New tenant onboarded',          tenant: 'Innovate Solutions',    time: '1 day ago'   },
-  { icon: Building2,  title: 'Professional license activated', tenant: 'TechStart Inc.',        time: '2 days ago'  },
-  { icon: UserPlus,   title: 'New tenant onboarded',          tenant: 'Acme Corporation',      time: '3 days ago'  },
-];
+// activities moved inside component to use translations
 
 export default function RecentActivityList() {
   const { t } = useTranslation();
+
+  const activities = [
+    { icon: UserPlus,   title: t('newTenantOnboarded'),          tenant: 'Digital Ventures',      time: t('hoursAgo', { count: 2 }) },
+    { icon: Building2,  title: t('licenseUpgraded'),           tenant: 'Global Services Ltd.',  time: t('hoursAgo', { count: 5 }) },
+    { icon: UserPlus,   title: t('newTenantOnboarded'),          tenant: 'Innovate Solutions',    time: t('dayAgo')   },
+    { icon: Building2,  title: t('licenseActivated'),          tenant: 'TechStart Inc.',        time: t('daysAgo', { count: 2 })  },
+    { icon: UserPlus,   title: t('newTenantOnboarded'),          tenant: 'Acme Corporation',      time: t('daysAgo', { count: 3 })  },
+  ];
 
   return (
     <div style={{

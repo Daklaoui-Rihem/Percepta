@@ -1,5 +1,6 @@
 import PlanBadge from '../Atoms/PlanBadge';
 import ResourceBar from '../Atoms/ResourceBar';
+import { useTranslation } from '../../context/TranslationContext';
 
 type Props = {
   name: string;
@@ -9,6 +10,7 @@ type Props = {
 }
 
 export default function TenantItem({ name, plan, users, resource }: Props) {
+  const { t } = useTranslation();
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between',
@@ -22,7 +24,7 @@ export default function TenantItem({ name, plan, users, resource }: Props) {
           <PlanBadge plan={plan} />
         </div>
         <span style={{ color: '#888', fontSize: 13 }}>
-          {users} users &nbsp;·&nbsp; Resource: {resource}%
+          {users} {t('users')} &nbsp;·&nbsp; {t('resource')}: {resource}%
         </span>
       </div>
 

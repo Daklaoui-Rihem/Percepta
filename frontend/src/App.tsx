@@ -16,6 +16,7 @@ import SuperAdminProfilePage from './Pages/SuperAdminProfilePage';
 import ProtectedRoute from './components/Guards/ProtectedRoute';
 import TenantManagementPage from './Pages/TenantManagementPage';
 import SettingsPage from './Pages/SettingsPage';
+import ForcePasswordChangePage from './Pages/ForcePasswordChangePage';
 
 export default function App() {
   return (
@@ -31,6 +32,11 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/force-password-change" element={
+          <ProtectedRoute allowedRoles={['Client', 'Admin', 'SuperAdmin']}>
+            <ForcePasswordChangePage />
+          </ProtectedRoute>
+        } />
 
         {/* Admin routes */}
         <Route path="/dashboard" element={

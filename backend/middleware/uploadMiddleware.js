@@ -35,6 +35,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
+
 // ── Export upload instances ────────────────────────────────────
 const uploadAudio = multer({
     storage,
@@ -48,4 +49,28 @@ const uploadVideo = multer({
     limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
 }).single('file');
 
-module.exports = { uploadAudio, uploadVideo };
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, '..', 'uploads', 'avatars');
+        if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`);
+    },
+});
+
+const uploadAvatar = multer({
+    storage: avatarStorage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+    fileFilter: (req, file, cb) => {
+        if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid image type'), false);
+        }
+    }
+}).single('avatar');
+
+module.exports = { uploadAudio, uploadVideo, uploadAvatar };

@@ -4,6 +4,7 @@ import { Mail, ArrowLeft, KeyRound, Lock, CheckCircle, RefreshCw } from 'lucide-
 import Logo from '../components/Atoms/Logo';
 import LanguageSwitcher from '../components/Atoms/LanguageSwitcher';
 import { useTranslation } from '../context/TranslationContext';
+import { validatePassword } from '../utils/validatePassword';
 
 // ── API calls for password reset ──────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -176,6 +177,9 @@ export default function ForgotPasswordPage() {
     const handleFinalSubmit = async () => {
         if (!newPassword) { setError(t('fillAllFields')); return; }
         if (newPassword !== confirmPassword) { setError(t('passwordMismatch')); return; }
+        if (!validatePassword(newPassword)) {
+            setError(t('passwordPolicyError')); return;
+        }
 
         setLoading(true);
         setError('');
@@ -193,11 +197,20 @@ export default function ForgotPasswordPage() {
     // ── Password strength indicator ────────────────────────────
     const getStrength = (p: string) => {
         if (!p) return null;
-        if (p.length < 6) return { label: t('pwStrengthTooShort'), color: '#dc2626', width: '20%' };
-        if (p.length < 8) return { label: t('pwStrengthWeak'),    color: '#f97316', width: '40%' };
-        if (p.length < 10) return { label: t('pwStrengthFair'),   color: '#eab308', width: '60%' };
-        if (/[A-Z]/.test(p) && /[0-9]/.test(p)) return { label: t('pwStrengthStrong'), color: '#16a34a', width: '100%' };
-        return { label: t('pwStrengthGood'), color: '#22c55e', width: '80%' };
+        if (p.length < 8) return { label: t('pwStrengthTooShort'), color: '#dc2626', width: '25%' };
+        
+        const hasUpper = /[A-Z]/.test(p);
+        const hasLower = /[a-z]/.test(p);
+        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(p);
+        
+        let score = 0;
+        if (hasUpper) score++;
+        if (hasLower) score++;
+        if (hasSpecial) score++;
+
+        if (score < 2) return { label: t('pwStrengthWeak'), color: '#f97316', width: '40%' };
+        if (score === 2) return { label: t('pwStrengthFair'), color: '#eab308', width: '70%' };
+        return { label: t('pwStrengthStrong'), color: '#16a34a', width: '100%' };
     };
     const strength = getStrength(newPassword);
 

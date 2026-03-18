@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pencil, PlusCircle, X, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from '../../context/TranslationContext';
+import { validatePassword } from '../../utils/validatePassword';
+import { generatePassword } from '../../utils/generatePassword';
+import { userApi } from '../../services/api';
 
 // This is the shape of one tenant object
 export type Tenant = {
@@ -30,12 +33,54 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
   const [users, setUsers] = useState(existingTenant?.users?.toString() || '10');
   const [expiry, setExpiry] = useState(existingTenant?.expiry || '');
   const [status, setStatus] = useState<Tenant['status']>(existingTenant?.status || 'Active');
-  const [password, setPassword] = useState('');
+  const [password] = useState(generatePassword());
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passError, setPassError] = useState('');
+
+  // Real-time Email check
+  useEffect(() => {
+    if (isEdit || !email || !email.includes('@')) {
+      setEmailError('');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const { exists } = await userApi.checkEmail(email);
+        if (exists) {
+          setEmailError('Email already in use');
+        } else {
+          setEmailError('');
+        }
+      } catch (err) {
+        console.error('Email check failed', err);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [email, isEdit]);
+
+  // Real-time Password check
+  useEffect(() => {
+    if (isEdit || !password) {
+      setPassError('');
+      return;
+    }
+    if (!validatePassword(password)) {
+      setPassError('Password must be at least 8 characters with Uppercases, Lowercases and Special Characters');
+    } else {
+      setPassError('');
+    }
+  }, [password, isEdit]);
 
   const handleSubmit = () => {
     if (!name || !email || !expiry || (!isEdit && !password)) {
       setError(t('fillAllFields'));
+      return;
+    }
+    if (!isEdit && (emailError || passError)) {
+      setError('Please fix the errors before submitting');
       return;
     }
     onSubmit({
@@ -112,8 +157,12 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="admin@company.com"
-              style={inputStyle}
+              style={{
+                ...inputStyle,
+                borderColor: emailError ? '#dc2626' : '#e0eaf4'
+              }}
             />
+            {emailError && <p style={{ color: '#dc2626', fontSize: 12, marginTop: 4 }}>{emailError}</p>}
           </div>
 
           {/* Password (CREATE ONLY) */}
@@ -123,10 +172,16 @@ export default function AddTenantModal({ onClose, onSubmit, existingTenant }: Pr
               <input
                 type="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                readOnly
                 placeholder="Secure password"
-                style={inputStyle}
+                style={{
+                  ...inputStyle,
+                  borderColor: passError ? '#dc2626' : '#e0eaf4',
+                  backgroundColor: '#f9fafb',
+                  cursor: 'default'
+                }}
               />
+              {passError && <p style={{ color: '#dc2626', fontSize: 12, marginTop: 4 }}>{passError}</p>}
             </div>
           )}
 

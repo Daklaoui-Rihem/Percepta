@@ -18,6 +18,10 @@ export default function SuperNavbar() {
   const name = session?.name || 'Admin User';
   const email = session?.email || 'superadmin@ifbw.com';
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  const SERVER_URL = API_URL.replace('/api', '');
+  const photoUrl = session?.photoUrl ? (session.photoUrl.startsWith('http') ? session.photoUrl : `${SERVER_URL}/${session.photoUrl}`) : null;
+
   const handleLogout = () => {
     clearSession();
     navigate('/login');
@@ -61,11 +65,26 @@ export default function SuperNavbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div
           onClick={() => navigate('/superadmin/profile')}
-          style={{ textAlign: 'right', cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
           title={t('myProfileMenu')}
         >
-          <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{name}</div>
-          <div style={{ color: '#93c5fd', fontSize: 12 }}>{email}</div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{name}</div>
+            <div style={{ color: '#93c5fd', fontSize: 12 }}>{email}</div>
+          </div>
+          <div style={{ 
+            width: 42, height: 42, borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.2)', color: 'white', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            fontSize: 16, fontWeight: 700,
+            overflow: 'hidden', border: '2px solid rgba(255,255,255,0.3)'
+          }}>
+            {photoUrl ? (
+              <img src={photoUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              name.charAt(0).toUpperCase()
+            )}
+          </div>
         </div>
 
         <button

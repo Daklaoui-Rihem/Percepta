@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Lock, ChevronDown } from 'lucide-react';
 import { userApi } from '../../services/api';
 import { useTranslation } from '../../context/TranslationContext';
+import { validatePassword } from '../../utils/validatePassword';
 
 export default function ChangePasswordSection() {
   const { t } = useTranslation();
@@ -20,8 +21,8 @@ export default function ChangePasswordSection() {
     if (newPass !== confirm) {
       setError(t('passwordMismatch')); return;
     }
-    if (newPass.length < 6) {
-      setError(t('newPasswordPlaceholder')); return;
+    if (!validatePassword(newPass)) {
+      setError(t('passwordPolicyError')); return;
     }
 
     setSaving(true);

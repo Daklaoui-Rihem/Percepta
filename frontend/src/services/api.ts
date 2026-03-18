@@ -47,6 +47,7 @@ export interface LoginResponse {
         role: 'Client' | 'Admin' | 'SuperAdmin';
         tenantId: string | null;
         photoUrl: string;
+        hasFirstLogin: boolean;
     };
 }
 
@@ -67,6 +68,7 @@ export interface UserProfile {
     adminLevel: string;
     photoUrl: string;
     isActive: boolean;
+    userType: 'Entreprise' | 'Single person';
     createdAt: string;
 }
 
@@ -78,6 +80,7 @@ export interface CreateUserPayload {
     department?: string;
     phone?: string;
     adminLevel?: string;
+    userType?: string;
 }
 
 export interface UpdateUserPayload {
@@ -88,6 +91,7 @@ export interface UpdateUserPayload {
     adminLevel?: string;
     isActive?: boolean;
     photoUrl?: string;
+    userType?: string;
 }
 
 export const userApi = {
@@ -101,6 +105,22 @@ export const userApi = {
     changeMyPassword: (currentPassword: string, newPassword: string) =>
         request<{ message: string }>('PUT', '/users/me/password', { currentPassword, newPassword }),
 
+    uploadAvatar: (file: File) => {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        return fetch(`${BASE_URL}/users/me/avatar`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: formData,
+        }).then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Upload failed');
+            return data as { message: string, photoUrl: string };
+        });
+    },
+
     // User management
     getAllUsers: () =>
         request<UserProfile[]>('GET', '/users'),
@@ -113,6 +133,15 @@ export const userApi = {
 
     deleteUser: (id: string) =>
         request<{ message: string }>('DELETE', `/users/${id}`),
+
+    bulkDeleteUsers: (userIds: string[]) =>
+        request<{ message: string }>('POST', '/users/bulk-delete', { userIds }),
+
+    bulkUpdateUsers: (userIds: string[], updates: any) =>
+        request<{ message: string }>('POST', '/users/bulk-update', { userIds, updates }),
+
+    checkEmail: (email: string) =>
+        request<{ exists: boolean }>('GET', `/users/check-email?email=${encodeURIComponent(email)}`),
 };
 
 // ── Settings ───────────────────────────────────────────────────
@@ -200,6 +229,8 @@ export const analysisApi = {
     // Admin — get all analyses for their clients
     getAllAnalyses: () =>
         request<AnalysisRecord[]>('GET', '/analyses/admin/all'),
+    getUserAnalyses: (userId: string) =>
+        request<AnalysisRecord[]>('GET', `/analyses/user/${userId}`),
 };
 
 // ── Auth helpers ───────────────────────────────────────────────

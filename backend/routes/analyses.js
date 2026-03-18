@@ -5,6 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const { adminOrAbove } = require('../middleware/roleMiddleware');
 const { uploadAudio, uploadVideo } = require('../middleware/uploadMiddleware');
 
+
 // ── Multer error handler helper ────────────────────────────────
 const handleUpload = (uploadFn) => (req, res, next) => {
     uploadFn(req, res, (err) => {
@@ -24,5 +25,6 @@ router.delete('/:id', authMiddleware, analysisController.deleteAnalysis);
 
 // ── Admin / SuperAdmin routes ──────────────────────────────────
 router.get('/admin/all', authMiddleware, adminOrAbove, analysisController.getAllAnalyses);
+router.get('/user/:userId', authMiddleware, adminOrAbove, analysisController.getUserAnalyses);
 
 module.exports = router;

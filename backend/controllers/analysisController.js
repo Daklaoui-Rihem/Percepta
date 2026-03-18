@@ -132,6 +132,27 @@ exports.getAllAnalyses = async (req, res) => {
     }
 };
 
+// ── Get User's Analyses (Admin/SuperAdmin) ──────────────────────
+// GET /api/analyses/user/:userId
+exports.getUserAnalyses = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        let filter = { userId };
+
+        if (req.user.role === 'Admin') {
+            filter.tenantId = req.user.id;
+        }
+
+        const analyses = await Analysis.find(filter)
+            .select('-filePath')
+            .sort({ createdAt: -1 });
+
+        res.json(analyses);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 // ── Delete Analysis ────────────────────────────────────────────
 // DELETE /api/analyses/:id
 exports.deleteAnalysis = async (req, res) => {

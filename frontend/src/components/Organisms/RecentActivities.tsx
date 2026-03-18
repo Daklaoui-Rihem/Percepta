@@ -1,16 +1,16 @@
 import ActivityTypeBadge from '../Molecules/ActivityTypeBadge';
 import { useTranslation } from '../../context/TranslationContext';
 
-const activities = [
-  { time: '2026-02-22 14:32', user: 'Jean Dupont',    action: 'Uploaded audio file "Client Meeting Q4.mp3"',   type: 'upload' },
-  { time: '2026-02-22 14:28', user: 'Marie Claire',   action: 'Generated PDF report for "Product Demo Video"', type: 'report' },
-  { time: '2026-02-22 14:15', user: 'Pierre Martin',  action: 'Started video analysis',                        type: 'analysis' },
-  { time: '2026-02-22 14:05', user: 'Sophie Bernard', action: 'Completed transcription',                       type: 'transcription' },
-  { time: '2026-02-22 13:58', user: 'Luc Moreau',     action: 'Error: Failed to process "large_file.mp4"',     type: 'error' },
-];
-
 export default function RecentActivities() {
   const { t } = useTranslation();
+
+  const activities = [
+    { time: '2026-02-22 14:32', user: 'Jean Dupont',    action: t('uploadedAudioFile', { filename: 'Client Meeting Q4.mp3' }),   type: 'upload' },
+    { time: '2026-02-22 14:28', user: 'Marie Claire',   action: t('generatedPdfReport', { filename: 'Product Demo Video' }), type: 'report' },
+    { time: '2026-02-22 14:15', user: 'Pierre Martin',  action: t('startedVideoAnalysis'),                        type: 'analysis' },
+    { time: '2026-02-22 14:05', user: 'Sophie Bernard', action: t('completedTranscription'),                       type: 'transcription' },
+    { time: '2026-02-22 13:58', user: 'Luc Moreau',     action: t('failedToProcess', { filename: 'large_file.mp4' }),     type: 'error' },
+  ];
 
   return (
     <div style={{ background: 'white', borderRadius: 12, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginTop: 28 }}>

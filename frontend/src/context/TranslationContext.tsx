@@ -5,14 +5,14 @@ import translations, { type Lang } from '../i18n/translations';
 type TranslationContextType = {
   lang: Lang;                        // current language: 'fr' | 'en' | 'ar'
   setLang: (l: Lang) => void;        // function to change language
-  t: (key: keyof typeof translations) => string; // translate a key
+  t: (key: keyof typeof translations, vars?: Record<string, any>) => string; // translate a key
   isRTL: boolean;                    // true when Arabic is selected
 }
 
 const TranslationContext = createContext<TranslationContextType>({
   lang: 'fr',
-  setLang: () => {},
-  t: (key) => String(key),
+  setLang: () => { },
+  t: (key: any) => String(key),
   isRTL: false,
 });
 
@@ -42,8 +42,17 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
   }, []);
 
   // The t() function: looks up the key and returns the text for current language
-  const t = (key: keyof typeof translations): string => {
-    return translations[key]?.[lang] ?? String(key);
+  const t = (key: keyof typeof translations, vars?: Record<string, any>): string => {
+    let str: string = (translations[key] as any)?.[lang] ?? String(key);
+
+    // Support interpolation: t('hoursAgo', { count: 2 }) -> "2 hours ago"
+    if (vars) {
+      Object.entries(vars).forEach(([k, v]) => {
+        str = str.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+      });
+    }
+
+    return str;
     // If key doesn't exist, shows the key itself (helps debug missing translations)
   };
 

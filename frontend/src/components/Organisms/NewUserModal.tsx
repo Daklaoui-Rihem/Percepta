@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { validatePassword } from '../../utils/validatePassword';
+import { generatePassword } from '../../utils/generatePassword';
+import { userApi } from '../../services/api';
+import { useTranslation } from '../../context/TranslationContext';
 
 type Props = {
   onClose: () => void;   // called when modal should close
@@ -6,17 +10,59 @@ type Props = {
 }
 
 export default function NewUserModal({ onClose, onSubmit }: Props) {
+  const { t } = useTranslation();
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [email,     setEmail]     = useState('');
   const [role,      setRole]      = useState('Client');
-  const [password,  setPassword]  = useState('');
+  const [password]                = useState(generatePassword());
   const [error,     setError]     = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passError,  setPassError]  = useState('');
+
+  // Real-time Email check
+  useEffect(() => {
+    if (!email || !email.includes('@')) {
+      setEmailError('');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const { exists } = await userApi.checkEmail(email);
+        if (exists) {
+          setEmailError(t('emailAlreadyInUse'));
+        } else {
+          setEmailError('');
+        }
+      } catch (err) {
+        console.error('Email check failed', err);
+      }
+    }, 500); // Debounce 500ms
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  // Real-time Password check
+  useEffect(() => {
+    if (!password) {
+      setPassError('');
+      return;
+    }
+    if (!validatePassword(password)) {
+      setPassError(t('passwordPolicyError'));
+    } else {
+      setPassError('');
+    }
+  }, [password]);
 
   const handleSubmit = () => {
-    // Basic validation
     if (!firstName || !lastName || !email || !password) {
-      setError('Please fill all fields');
+      setError(t('fillAllFields'));
+      return;
+    }
+    if (emailError || passError) {
+      setError(t('fixErrorsBeforeSubmit'));
       return;
     }
     onSubmit({ firstName, lastName, email, role, password });
@@ -75,7 +121,16 @@ export default function NewUserModal({ onClose, onSubmit }: Props) {
         {/* Email */}
         <div style={{ marginBottom: 16 }}>
           <label style={labelStyle}>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
+          <input 
+            type="email" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            style={{
+              ...inputStyle,
+              borderColor: emailError ? '#dc2626' : '#d0e4f0'
+            }} 
+          />
+          {emailError && <p style={{ color: '#dc2626', fontSize: 12, marginTop: 4 }}>{emailError}</p>}
         </div>
 
         {/* Role dropdown */}
@@ -90,10 +145,24 @@ export default function NewUserModal({ onClose, onSubmit }: Props) {
         {/* Temporary Password */}
         <div style={{ marginBottom: 8 }}>
           <label style={labelStyle}>Temporary Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
-          <p style={{ color: '#888', fontSize: 12, marginTop: 6 }}>
-            User will be prompted to change on first login
-          </p>
+          <input 
+            type="password" 
+            value={password} 
+            readOnly
+            style={{
+              ...inputStyle,
+              borderColor: passError ? '#dc2626' : '#d0e4f0',
+              backgroundColor: '#f9fafb',
+              cursor: 'default'
+            }} 
+          />
+          {passError ? (
+            <p style={{ color: '#dc2626', fontSize: 12, marginTop: 4 }}>{passError}</p>
+          ) : (
+            <p style={{ color: '#888', fontSize: 12, marginTop: 6 }}>
+              User will be prompted to change on first login
+            </p>
+          )}
         </div>
 
         {/* Error */}

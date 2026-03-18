@@ -1,3 +1,5 @@
+import { useTranslation } from '../../context/TranslationContext';
+
 type Props = { type: string }
 
 const colors: Record<string, { bg: string; color: string }> = {
@@ -9,6 +11,7 @@ const colors: Record<string, { bg: string; color: string }> = {
 };
 
 export default function ActivityTypeBadge({ type }: Props) {
+  const { t } = useTranslation();
   const style = colors[type] || { bg: '#f3f4f6', color: '#555' };
   return (
     <span style={{
@@ -19,7 +22,7 @@ export default function ActivityTypeBadge({ type }: Props) {
       fontSize: 12,
       fontWeight: 600,
     }}>
-      {type}
+      {t(type as any) || type}
     </span>
   );
 }
