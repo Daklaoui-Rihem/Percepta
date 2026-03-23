@@ -73,4 +73,10 @@ const uploadAvatar = multer({
     }
 }).single('avatar');
 
-module.exports = { uploadAudio, uploadVideo, uploadAvatar };
+const uploadGroupActivity = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
+}).single('file');
+
+module.exports = { uploadAudio, uploadVideo, uploadAvatar, uploadGroupActivity };

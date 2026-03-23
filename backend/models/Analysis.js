@@ -20,7 +20,7 @@ const analysisSchema = new mongoose.Schema({
     size: { type: Number, required: true },  // bytes
     type: {
         type: String,
-        enum: ['audio', 'video'],
+        enum: ['audio', 'video', 'groupActivity'],
         required: true
     },
 

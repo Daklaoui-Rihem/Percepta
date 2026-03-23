@@ -17,10 +17,10 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
 
   // Labels now use t() — icons are untouched
   const navItems = [
-    { icon: Home,     label: 'Home',          translatedLabel: t('home'),          path: '/client/dashboard'        },
-    { icon: FileText, label: 'Transcriptions', translatedLabel: t('transcriptions'), path: '/client/transcriptions'   },
-    { icon: Video,    label: 'Video Analysis', translatedLabel: t('videoAnalysis'),  path: '/client/video-analysis'   },
-    { icon: BarChart3,label: 'Reports',        translatedLabel: t('reports'),        path: '/client/reports'          },
+    { icon: Home, label: 'Home', translatedLabel: t('home'), path: '/client/dashboard' },
+    { icon: FileText, label: 'Transcriptions', translatedLabel: t('transcriptions'), path: '/client/transcriptions' },
+    { icon: Video, label: 'Video Analysis', translatedLabel: t('videoAnalysis'), path: '/client/video-analysis' },
+    { icon: BarChart3, label: 'Reports', translatedLabel: t('reports'), path: '/client/reports' },
   ];
 
   return (
@@ -48,8 +48,8 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
           <NavLink
             key={item.label}
             icon={item.icon}
-            label={item.translatedLabel} 
-            active={activePage === item.label} 
+            label={item.translatedLabel}
+            active={activePage === item.label}
             onClick={() => {
               onNavigate(item.label);
               navigate(item.path);

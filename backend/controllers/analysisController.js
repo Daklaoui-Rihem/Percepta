@@ -75,6 +75,42 @@ exports.uploadVideo = async (req, res) => {
     }
 };
 
+// ── Upload Group Activity ──────────────────────────────────────
+// POST /api/analyses/upload/group
+exports.uploadGroupActivity = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const analysis = await Analysis.create({
+            userId: req.user.id,
+            tenantId: req.user.tenantId || null,
+            originalName: req.file.originalname,
+            filename: req.file.filename,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+            type: 'groupActivity',
+            status: 'pending',
+            filePath: req.file.path,
+        });
+
+        res.status(201).json({
+            message: 'Group activity uploaded successfully',
+            analysis: {
+                id: analysis._id,
+                originalName: analysis.originalName,
+                size: analysis.size,
+                status: analysis.status,
+                createdAt: analysis.createdAt,
+            }
+        });
+    } catch (error) {
+        console.error('Group activity upload error:', error);
+        res.status(500).json({ message: 'Upload failed' });
+    }
+};
+
 // ── Get My Analyses (history) ──────────────────────────────────
 // GET /api/analyses
 exports.getMyAnalyses = async (req, res) => {

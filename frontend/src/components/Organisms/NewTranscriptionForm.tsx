@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Home, Music, AudioLines, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Home, Music, AudioLines, CheckCircle, XCircle, FolderOpen } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
 import { useTranslation } from '../../context/TranslationContext';
@@ -11,6 +11,7 @@ export default function NewTranscriptionForm() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
     if (!file) return;
@@ -97,33 +98,50 @@ export default function NewTranscriptionForm() {
           </div>
         )}
 
-        {/* Submit button — only show when file selected and not yet succeeded */}
+        {/* Submit + change-file buttons */}
         {file && !success && (
-          <button
-            onClick={handleSubmit}
-            disabled={uploading}
-            style={{
-              marginTop: 24,
-              width: '100%',
-              padding: '14px',
-              background: uploading ? '#93c5fd' : '#1a3a6b',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 16,
-              fontWeight: 700,
-              cursor: uploading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {uploading ? (
-                <>⏳ Uploading...</>
-              ) : (
-                <><AudioLines size={20} /> {t('startTranscription')}</>
-              )}
-            </div>
-          </button>
+          <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".wav,.mp3,.m4a,.ogg"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) { setFile(f); setError(''); setSuccess(''); }
+              }}
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={uploading}
+              style={{
+                flex: 1, padding: '14px',
+                background: uploading ? '#93c5fd' : '#1a3a6b',
+                color: 'white', border: 'none', borderRadius: 8,
+                fontSize: 16, fontWeight: 700,
+                cursor: uploading ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {uploading ? <>⏳ {t('uploading')}</> : <><AudioLines size={20} /> {t('startTranscription')}</>}
+              </div>
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              style={{
+                padding: '14px 18px', background: '#f0f4f8',
+                color: '#1a3a6b', border: '1.5px solid #d0e4f0',
+                borderRadius: 8, fontSize: 14, fontWeight: 600,
+                cursor: uploading ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <FolderOpen size={16} /> {t('chooseAnotherFile')}
+            </button>
+          </div>
         )}
 
         {/* Upload another button — shows after success */}

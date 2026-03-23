@@ -85,6 +85,8 @@ const translations = {
   pending: { fr: 'En attente', en: 'Pending', ar: 'معلّق' },
   transcription: { fr: 'Transcription', en: 'Transcription', ar: 'نص' },
   videoAnalysisType: { fr: 'Analyse Vidéo', en: 'Video Analysis', ar: 'تحليل فيديو' },
+  groupActivityType: { fr: 'Activité de Groupe', en: 'Group Activity', ar: 'نشاط جماعي' },
+  groupActivities: { fr: 'Activités de Groupe', en: 'Group Activities', ar: 'نشاطات جماعية' },
 
   // ── Admin Dashboard ───────────────────────────────────────────
   activeUsers: { fr: 'Utilisateurs actifs', en: 'Active Users', ar: 'المستخدمون النشطون' },
@@ -189,6 +191,9 @@ const translations = {
   refresh: { fr: 'Actualiser', en: 'Refresh', ar: 'تحديث' },
   active: { fr: 'Actif', en: 'Active', ar: 'نشط' },
   noAnalysesYet: { fr: 'Aucune analyse pour le moment.', en: 'No analyses yet.', ar: 'لا توجد تحليلات بعد.' },
+  confirmDeleteAnalysis: { fr: 'Êtes-vous sûr de vouloir supprimer cette analyse ?', en: 'Are you sure you want to delete this analysis?', ar: 'هل أنت متأكد من حذف هذا التحليل؟' },
+  confirmDeleteSelected: { fr: 'Voulez-vous supprimer les', en: 'Are you sure you want to delete', ar: 'هل أنت متأكد من حذف' },
+  chooseAnotherFile: { fr: 'Choisir un autre fichier', en: 'Choose another file', ar: 'اختيار ملف آخر' },
   userType: { fr: 'Type d\'utilisateur', en: 'User Type', ar: 'نوع المستخدم' },
   enterprise: { fr: 'Entreprise', en: 'Enterprise', ar: 'مؤسسة' },
   professional: { fr: 'Professionnel', en: 'Professional', ar: 'احترافي' },
@@ -249,6 +254,8 @@ const translations = {
   // ── New Transcription / Video Analysis ───────────────────────
   newAudioTranscription: { fr: 'Nouvelle Transcription Audio', en: 'New Audio Transcription', ar: 'نص صوتي جديد' },
   newVideoAnalysis: { fr: 'Nouvelle Analyse Vidéo', en: 'New Video Analysis', ar: 'تحليل فيديو جديد' },
+  newGroupActivity: { fr: 'Nouvelle Activité de Groupe', en: 'New Group Activity', ar: 'نشاط جماعي جديد' },
+  startGroupActivity: { fr: "Lancer l'activité de groupe", en: 'Start Group Activity', ar: 'بدء النشاط الجماعي' },
   startTranscription: { fr: 'Lancer la transcription', en: 'Start Transcription', ar: 'بدء النص' },
   startVideoAnalysis: { fr: "Lancer l'analyse vidéo", en: 'Start Video Analysis', ar: 'بدء تحليل الفيديو' },
   dragFileHere: { fr: 'Glissez votre fichier ici ou cliquez pour parcourir', en: 'Drag your file here or click to browse', ar: 'اسحب ملفك هنا أو انقر للاستعراض' },
@@ -259,6 +266,7 @@ const translations = {
   breadcrumbNew: { fr: 'Nouveau', en: 'New', ar: 'جديد' },
   uploadAudioSuccess: { fr: "Transcription lancée ! Suivez l'avancement dans votre historique.", en: 'Transcription started! Track progress in your history.', ar: 'تم بدء النص! تابع التقدم في تاريخك.' },
   uploadVideoSuccess: { fr: "Analyse vidéo lancée ! Suivez l'avancement dans votre historique.", en: 'Video analysis started! Track progress in your history.', ar: 'تم بدء تحليل الفيديو! تابع التقدم في تاريخك.' },
+  uploadGroupActivitySuccess: { fr: "Analyse de groupe lancée ! Suivez l'avancement dans votre historique.", en: 'Group activity analysis started! Track progress in your history.', ar: 'تم بدء تحليل النشاط الجماعي! تابع التقدم في تاريخك.' },
   uploadFailed: { fr: 'Upload échoué. Réessayez.', en: 'Upload failed. Try again.', ar: 'فشل الرفع. حاول مرة أخرى.' },
   uploadAnotherAudio: { fr: '⊕ Uploader un autre fichier', en: '⊕ Upload another file', ar: '⊕ رفع ملف آخر' },
   uploadAnotherVideo: { fr: '▷ Analyser une autre vidéo', en: '▷ Analyze another video', ar: '▷ تحليل فيديو آخر' },
