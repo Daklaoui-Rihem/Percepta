@@ -1,8 +1,12 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function authMiddleware(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    let token = req.headers['authorization']?.split(' ')[1];
+    
+    // Fallback: allow token via query param (useful for Bull Board browser access)
+    if (!token && req.query.token) {
+        token = req.query.token;
+    }
 
     if (!token) {
         return res.status(401).json({ message: 'Access denied. No token provided.' });
