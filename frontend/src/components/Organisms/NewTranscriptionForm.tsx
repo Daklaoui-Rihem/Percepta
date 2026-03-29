@@ -1,174 +1,150 @@
+/**
+ * NewTranscriptionForm.tsx — UPDATED
+ *
+ * Changes: after upload succeeds, captures analysisId and switches
+ * to TranscriptionResultCard (polling mode). "Upload another" resets.
+ *
+ * Replace: frontend/src/components/Organisms/NewTranscriptionForm.tsx
+ */
+
 import { useState, useRef } from 'react';
-import { Home, Music, AudioLines, CheckCircle, XCircle, FolderOpen } from 'lucide-react';
+import { Home, Music, AudioLines, XCircle, FolderOpen } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
+import TranscriptionResultCard from '../Molecules/TranscriptionResultCard';
 import { useTranslation } from '../../context/TranslationContext';
 import { analysisApi } from '../../services/api';
 
 export default function NewTranscriptionForm() {
-  const { t } = useTranslation();
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+    const { t } = useTranslation();
 
-  const handleSubmit = async () => {
-    if (!file) return;
+    const [file, setFile]         = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [error, setError]       = useState('');
 
-    setUploading(true);
-    setError('');
-    setSuccess('');
+    // After upload: store analysisId → switch to result card
+    const [analysisId, setAnalysisId]     = useState<string | null>(null);
+    const [uploadedName, setUploadedName] = useState('');
 
-    try {
-      await analysisApi.uploadAudio(file);
-      setSuccess(t('uploadAudioSuccess'));
-      setFile(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('uploadFailed'));
-    } finally {
-      setUploading(false);
-    }
-  };
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  return (
-    <div>
-      {/* Breadcrumb */}
-      <Breadcrumb items={[
-        { label: t('home'), path: '/client/dashboard', icon: Home },
-        { label: t('transcriptions'), path: '/client/transcriptions' },
-        { label: t('breadcrumbNew') },
-      ]} />
+    const handleSubmit = async () => {
+        if (!file) return;
+        setUploading(true);
+        setError('');
+        try {
+            // Backend returns { analysis: { id, originalName, ... }, queue: {...} }
+            const res = await analysisApi.uploadAudio(file);
+            setAnalysisId(res.analysis.id);
+            setUploadedName(res.analysis.originalName);
+            setFile(null);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : t('uploadFailed'));
+        } finally {
+            setUploading(false);
+        }
+    };
 
-      {/* Page title */}
-      <h2 style={{ color: '#1a3a6b', marginBottom: 28, fontSize: 26, fontWeight: 700 }}>
-        {t('newAudioTranscription')}
-      </h2>
+    const handleReset = () => {
+        setAnalysisId(null);
+        setUploadedName('');
+        setFile(null);
+        setError('');
+    };
 
-      {/* Card */}
-      <div style={{
-        background: 'white',
-        borderRadius: 16,
-        padding: '32px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}>
+    return (
+        <div>
+            <Breadcrumb items={[
+                { label: t('home'), path: '/client/dashboard', icon: Home },
+                { label: t('transcriptions'), path: '/client/transcriptions' },
+                { label: t('breadcrumbNew') },
+            ]} />
 
-        {/* Drop zone */}
-        <FileDropZone
-          accept=".wav,.mp3,.m4a,.ogg"
-          maxSizeMB={100}
-          formatLabel="WAV, MP3, M4A, OGG"
-          icon={Music}
-          onFileSelected={(f) => {
-            setFile(f);
-            setError('');
-            setSuccess('');
-          }}
-        />
+            <h2 style={{ color: '#1a3a6b', marginBottom: 28, fontSize: 26, fontWeight: 700 }}>
+                {t('newAudioTranscription')}
+            </h2>
 
-        {/* Error message */}
-        {error && (
-          <div style={{
-            marginTop: 16,
-            padding: '12px 16px',
-            background: '#fff1f1',
-            border: '1px solid #ad1b1b',
-            borderRadius: 8,
-            color: '#ad1b1b',
-            fontSize: 14,
-            display: 'flex', alignItems: 'center', gap: 8
-          }}>
-            <XCircle size={18} /> {error}
-          </div>
-        )}
+            <div style={{
+                background: 'white', borderRadius: 16,
+                padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            }}>
+                {/* ── Upload mode ── */}
+                {!analysisId && (
+                    <>
+                        <FileDropZone
+                            accept=".mp3,.wav,.m4a,.ogg,.mp4,.mpeg,.mpga,.webm"
+                            maxSizeMB={500}
+                            formatLabel="MP3, WAV, M4A, OGG, MP4 (max 500 MB)"
+                            icon={Music}
+                            onFileSelected={(f) => { setFile(f); setError(''); }}
+                        />
 
-        {/* Success message */}
-        {success && (
-          <div style={{
-            marginTop: 16,
-            padding: '12px 16px',
-            background: '#eef8f8',
-            border: '1px solid #16757a',
-            borderRadius: 8,
-            color: '#16757a',
-            fontSize: 14,
-            display: 'flex', alignItems: 'center', gap: 8
-          }}>
-            <CheckCircle size={18} /> {success}
-          </div>
-        )}
+                        {error && (
+                            <div style={{
+                                marginTop: 16, padding: '12px 16px',
+                                background: '#fff1f1', border: '1px solid #fecaca',
+                                borderRadius: 8, color: '#dc2626',
+                                fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
+                            }}>
+                                <XCircle size={18} /> {error}
+                            </div>
+                        )}
 
-        {/* Submit + change-file buttons */}
-        {file && !success && (
-          <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".wav,.mp3,.m4a,.ogg"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) { setFile(f); setError(''); setSuccess(''); }
-              }}
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={uploading}
-              style={{
-                flex: 1, padding: '14px',
-                background: uploading ? '#93c5fd' : '#1a3a6b',
-                color: 'white', border: 'none', borderRadius: 8,
-                fontSize: 16, fontWeight: 700,
-                cursor: uploading ? 'not-allowed' : 'pointer',
-                transition: 'background 0.2s',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                {uploading ? <>⏳ {t('uploading')}</> : <><AudioLines size={20} /> {t('startTranscription')}</>}
-              </div>
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              style={{
-                padding: '14px 18px', background: '#f0f4f8',
-                color: '#1a3a6b', border: '1.5px solid #d0e4f0',
-                borderRadius: 8, fontSize: 14, fontWeight: 600,
-                cursor: uploading ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <FolderOpen size={16} /> {t('chooseAnotherFile')}
-            </button>
-          </div>
-        )}
+                        {file && (
+                            <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".mp3,.wav,.m4a,.ogg,.mp4,.mpeg,.mpga,.webm"
+                                    style={{ display: 'none' }}
+                                    onChange={e => {
+                                        const f = e.target.files?.[0];
+                                        if (f) { setFile(f); setError(''); }
+                                    }}
+                                />
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={uploading}
+                                    style={{
+                                        flex: 1, padding: '14px',
+                                        background: uploading ? '#93c5fd' : '#1a3a6b',
+                                        color: 'white', border: 'none', borderRadius: 8,
+                                        fontSize: 16, fontWeight: 700,
+                                        cursor: uploading ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                        {uploading
+                                            ? <>⏳ {t('uploading')}</>
+                                            : <><AudioLines size={20} /> {t('startTranscription')}</>}
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={uploading}
+                                    style={{
+                                        padding: '14px 18px', background: '#f0f4f8',
+                                        color: '#1a3a6b', border: '1.5px solid #d0e4f0',
+                                        borderRadius: 8, fontSize: 14, fontWeight: 600,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                                    }}
+                                >
+                                    <FolderOpen size={16} /> {t('chooseAnotherFile')}
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )}
 
-        {/* Upload another button — shows after success */}
-        {success && (
-          <button
-            onClick={() => {
-              setSuccess('');
-              setFile(null);
-              setError('');
-            }}
-            style={{
-              marginTop: 24,
-              width: '100%',
-              padding: '14px',
-              background: '#f0f4f8',
-              color: '#1a3a6b',
-              border: '1.5px solid #d0e4f0',
-              borderRadius: 8,
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {t('uploadAnotherAudio')}
-          </button>
-        )}
-      </div>
-    </div>
-  );
+                {/* ── Result / polling mode ── */}
+                {analysisId && (
+                    <TranscriptionResultCard
+                        analysisId={analysisId}
+                        originalName={uploadedName}
+                        onReset={handleReset}
+                    />
+                )}
+            </div>
+        </div>
+    );
 }

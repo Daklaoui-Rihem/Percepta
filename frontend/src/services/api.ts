@@ -226,6 +226,20 @@ export const analysisApi = {
     deleteAnalysis: (id: string) =>
         request<{ message: string }>('DELETE', `/analyses/${id}`),
 
+    // Poll status — lightweight, only returns transcription when status==='done'
+    getAnalysisStatus: (id: string) =>
+        request<{
+            id: string;
+            status: 'pending' | 'processing' | 'done' | 'error';
+            errorMessage: string | null;
+            transcription: string | null;
+            summary: string | null;
+        }>('GET', `/analyses/${id}/status`),
+
+    // Retry a failed analysis (no re-upload needed)
+    retryAnalysis: (id: string) =>
+        request<{ message: string; queue: { jobId: string } }>('POST', `/analyses/${id}/retry`),
+
     // Admin — get all analyses for their clients
     getAllAnalyses: () =>
         request<AnalysisRecord[]>('GET', '/analyses/admin/all'),

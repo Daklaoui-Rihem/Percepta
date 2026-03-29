@@ -4,7 +4,8 @@ import {
   Building2,
   ClipboardList,
   LogOut,
-  Bell
+  Bell,
+  Database
 } from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
 import Logo from '../Atoms/Logo';
@@ -25,6 +26,10 @@ export default function SuperNavbar() {
   const handleLogout = () => {
     clearSession();
     navigate('/login');
+  };
+
+  const handleQueueDashboard = () => {
+    window.open(`${SERVER_URL}/admin/queues`, '_blank');
   };
 
   return (
@@ -56,6 +61,9 @@ export default function SuperNavbar() {
           style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}
         >
           <Building2 size={16} /> {t('tenantManagement')}
+        </button>
+        <button onClick={handleQueueDashboard} style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
+          <Database size={16} color="#38bdf8" /> <span style={{ color: '#e0f2fe' }}>Queues</span>
         </button>
         <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
           <ClipboardList size={16} /> {t('viewSystemLogs')}
