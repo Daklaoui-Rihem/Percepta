@@ -342,6 +342,39 @@ const translations = {
   characters: { fr: 'caractères', en: 'characters', ar: 'حروف' },
   wordsLabel: { fr: 'mots', en: 'words', ar: 'كلمات' },
 
+  // ─────────────────────────────────────────────────────────────
+  // ADD THESE ENTRIES to the existing translations object in
+  // frontend/src/i18n/translations.ts
+  // (paste them before the closing `} as const;`)
+  // ─────────────────────────────────────────────────────────────
+
+
+
+  // ── PDF Report ───────────────────────────────────────────────
+  pdfReportReady: { fr: 'Rapport PDF prêt', en: 'PDF Report Ready', ar: 'تقرير PDF جاهز' },
+  pdfNotYetGenerated: { fr: 'Rapport PDF non généré', en: 'PDF Report not generated', ar: 'تقرير PDF غير منشأ' },
+  downloadPdf: { fr: 'Télécharger PDF', en: 'Download PDF', ar: 'تحميل PDF' },
+  generatePdf: { fr: 'Générer le rapport PDF', en: 'Generate PDF Report', ar: 'إنشاء تقرير PDF' },
+  generating: { fr: 'Génération...', en: 'Generating…', ar: 'جارٍ الإنشاء...' },
+  downloading: { fr: 'Téléchargement...', en: 'Downloading…', ar: 'جارٍ التنزيل...' },
+  generatedOn: { fr: 'Généré le', en: 'Generated on', ar: 'تم الإنشاء في' },
+  pdfGenerated: { fr: 'Rapport PDF généré !', en: 'PDF Report generated!', ar: 'تم إنشاء تقرير PDF!' },
+  pdfReports: { fr: 'Rapports PDF', en: 'PDF Reports', ar: 'تقارير PDF' },
+
+  // ── Audio History Page ────────────────────────────────────────
+  audioHistory: { fr: 'Historique audio', en: 'Audio History', ar: 'سجل الصوت' },
+  audioHistoryDesc: { fr: 'Toutes vos transcriptions et rapports audio', en: 'All your audio transcriptions and reports', ar: 'جميع نصوصك وتقاريرك الصوتية' },
+  totalAnalyses: { fr: 'Total analyses', en: 'Total Analyses', ar: 'إجمالي التحليلات' },
+  deleteAnalysis: { fr: "Supprimer l'analyse", en: 'Delete Analysis', ar: 'حذف التحليل' },
+  deleteSuccess: { fr: 'Analyse supprimée.', en: 'Analysis deleted.', ar: 'تم حذف التحليل.' },
+  retryQueued: { fr: "Analyse remise en file d'attente.", en: 'Analysis re-queued.', ar: 'تمت إعادة إضافة التحليل إلى القائمة.' },
+  noAudioHistoryYet: { fr: "Aucune analyse audio pour l'instant.", en: 'No audio analyses yet.', ar: 'لا توجد تحليلات صوتية بعد.' },
+  uploadFirstAudio: { fr: 'Téléchargez votre premier fichier audio pour commencer.', en: 'Upload your first audio file to get started.', ar: 'ارفع أول ملف صوتي للبدء.' },
+  showTranscription: { fr: 'Afficher la transcription', en: 'Show transcription', ar: 'عرض النص' },
+  hideTranscription: { fr: 'Masquer la transcription', en: 'Hide transcription', ar: 'إخفاء النص' },
+
+
+
   // ── Video Analysis Form ───────────────────────────────────────
   queuePending: { fr: "En file d'attente...", en: "In queue...", ar: "في الانتظار..." },
   videoProcessingAnalysis: { fr: "Analyse vidéo en cours...", en: "Video analysis in progress...", ar: "تحليل الفيديو قيد التقدم..." },

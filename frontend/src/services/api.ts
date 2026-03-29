@@ -95,7 +95,6 @@ export interface UpdateUserPayload {
 }
 
 export const userApi = {
-    // Profile
     getMyProfile: () =>
         request<UserProfile>('GET', '/users/me'),
 
@@ -110,18 +109,15 @@ export const userApi = {
         formData.append('avatar', file);
         return fetch(`${BASE_URL}/users/me/avatar`, {
             method: 'POST',
-            headers: {
-                Authorization: `Bearer ${getToken()}`,
-            },
+            headers: { Authorization: `Bearer ${getToken()}` },
             body: formData,
         }).then(async res => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Upload failed');
-            return data as { message: string, photoUrl: string };
+            return data as { message: string; photoUrl: string };
         });
     },
 
-    // User management
     getAllUsers: () =>
         request<UserProfile[]>('GET', '/users'),
 
@@ -137,7 +133,7 @@ export const userApi = {
     bulkDeleteUsers: (userIds: string[]) =>
         request<{ message: string }>('POST', '/users/bulk-delete', { userIds }),
 
-    bulkUpdateUsers: (userIds: string[], updates: any) =>
+    bulkUpdateUsers: (userIds: string[], updates: unknown) =>
         request<{ message: string }>('POST', '/users/bulk-update', { userIds, updates }),
 
     checkEmail: (email: string) =>
@@ -170,12 +166,14 @@ export interface AnalysisRecord {
     _id: string;
     originalName: string;
     size: number;
-    type: 'audio' | 'video';
+    type: 'audio' | 'video' | 'groupActivity';
     status: 'pending' | 'processing' | 'done' | 'error';
     createdAt: string;
     transcription?: string;
     summary?: string;
     errorMessage?: string;
+    hasPdf?: boolean;
+    pdfGeneratedAt?: string | null;
 }
 
 export const analysisApi = {
@@ -185,10 +183,7 @@ export const analysisApi = {
         formData.append('file', file);
         return fetch(`${BASE_URL}/analyses/upload/audio`, {
             method: 'POST',
-            headers: {
-                // NO Content-Type here — browser sets it automatically with boundary
-                Authorization: `Bearer ${getToken()}`,
-            },
+            headers: { Authorization: `Bearer ${getToken()}` },
             body: formData,
         }).then(async res => {
             const data = await res.json();
@@ -203,9 +198,7 @@ export const analysisApi = {
         formData.append('file', file);
         return fetch(`${BASE_URL}/analyses/upload/video`, {
             method: 'POST',
-            headers: {
-                Authorization: `Bearer ${getToken()}`,
-            },
+            headers: { Authorization: `Bearer ${getToken()}` },
             body: formData,
         }).then(async res => {
             const data = await res.json();
@@ -218,7 +211,7 @@ export const analysisApi = {
     getMyAnalyses: () =>
         request<AnalysisRecord[]>('GET', '/analyses'),
 
-    // Get single analysis by id
+    // Get single analysis
     getAnalysisById: (id: string) =>
         request<AnalysisRecord>('GET', `/analyses/${id}`),
 
@@ -226,7 +219,7 @@ export const analysisApi = {
     deleteAnalysis: (id: string) =>
         request<{ message: string }>('DELETE', `/analyses/${id}`),
 
-    // Poll status — lightweight, only returns transcription when status==='done'
+    // Poll status
     getAnalysisStatus: (id: string) =>
         request<{
             id: string;
@@ -234,15 +227,58 @@ export const analysisApi = {
             errorMessage: string | null;
             transcription: string | null;
             summary: string | null;
+            hasPdf: boolean;
+            pdfGeneratedAt: string | null;
         }>('GET', `/analyses/${id}/status`),
 
-    // Retry a failed analysis (no re-upload needed)
+    // Retry a failed analysis
     retryAnalysis: (id: string) =>
         request<{ message: string; queue: { jobId: string } }>('POST', `/analyses/${id}/retry`),
 
-    // Admin — get all analyses for their clients
+    // ── PDF report ────────────────────────────────────────────────
+    /**
+     * Download the PDF report for a completed analysis.
+     * Triggers a browser file download.
+     */
+    downloadReport: async (id: string, originalName?: string): Promise<void> => {
+        const token = getToken();
+        const res = await fetch(`${BASE_URL}/analyses/${id}/report`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.message || 'Download failed');
+        }
+
+        // Trigger browser download
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+
+        const safeName = (originalName || 'report')
+            .replace(/\.[^/.]+$/, '')
+            .replace(/[^a-zA-Z0-9_-]/g, '_')
+            .substring(0, 40);
+
+        a.href = url;
+        a.download = `Percepta_Report_${safeName}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
+
+    /**
+     * Force-generate (or re-generate) the PDF report for a completed analysis.
+     */
+    generateReport: (id: string) =>
+        request<{ message: string; hasPdf: boolean }>('POST', `/analyses/${id}/report/generate`),
+
+    // Admin — get all analyses
     getAllAnalyses: () =>
         request<AnalysisRecord[]>('GET', '/analyses/admin/all'),
+
     getUserAnalyses: (userId: string) =>
         request<AnalysisRecord[]>('GET', `/analyses/user/${userId}`),
 };

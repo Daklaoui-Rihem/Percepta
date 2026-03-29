@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Home, FileText, Video, BarChart3 } from 'lucide-react';
+import { Home, FileText, Video, History } from 'lucide-react';
 import NavLink from '../Atoms/NavLink';
 import ClientProfile from '../Molecules/ClientProfile';
 import Logo from '../Atoms/Logo';
@@ -13,14 +13,13 @@ type Props = {
 
 export default function ClientNavbar({ activePage, onNavigate }: Props) {
   const navigate = useNavigate();
-  const { t } = useTranslation(); // ← only addition
+  const { t } = useTranslation();
 
-  // Labels now use t() — icons are untouched
   const navItems = [
     { icon: Home, label: 'Home', translatedLabel: t('home'), path: '/client/dashboard' },
     { icon: FileText, label: 'Transcriptions', translatedLabel: t('transcriptions'), path: '/client/transcriptions/new' },
     { icon: Video, label: 'Video Analysis', translatedLabel: t('videoAnalysis'), path: '/client/video-analysis/new' },
-    { icon: BarChart3, label: 'Reports', translatedLabel: t('reports'), path: '/client/reports' },
+    { icon: History, label: 'History', translatedLabel: t('audioHistory') || 'History', path: '/client/history' },
   ];
 
   return (
@@ -37,10 +36,8 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     }}>
 
-      {/* Left side: Logo + nav links — unchanged */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-
-        <div onClick={() => navigate('/client/dashboard')} style={{ marginRight: 24 }}>
+        <div onClick={() => navigate('/client/dashboard')} style={{ marginRight: 24, cursor: 'pointer' }}>
           <Logo size="medium" light />
         </div>
 
@@ -58,12 +55,10 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
         ))}
       </div>
 
-      {/* Right side: Language switcher + Client profile — unchanged */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <LanguageSwitcher />  {/* ← added here so it's always visible */}
+        <LanguageSwitcher />
         <ClientProfile />
       </div>
-
     </nav>
   );
 }

@@ -33,6 +33,9 @@ RTX 2050 notes:
 import sys
 import json
 import os
+import math
+import re
+from collections import Counter
 
 
 def main():
@@ -84,13 +87,15 @@ def main():
             file_path,
             language=language,
             beam_size=5,
-            vad_filter=True,
-            vad_parameters={"min_silence_duration_ms": 500},
+            vad_filter=False,
+            condition_on_previous_text=False,
             word_timestamps=False,
         )
 
         segments   = []
         text_parts = []
+        total_prob = 0.0
+        num_segments = 0
 
         for seg in segments_iter:           # generator — must consume
             text_parts.append(seg.text.strip())
@@ -99,20 +104,105 @@ def main():
                 "end":   round(seg.end,   2),
                 "text":  seg.text.strip(),
             })
+            total_prob += math.exp(seg.avg_logprob)
+            num_segments += 1
+            
+        avg_confidence = round((total_prob / num_segments) * 100, 1) if num_segments > 0 else 0.0
+
+        # ── Local Extractive Summary ──
+        full_text = " ".join(text_parts)
+        summary = generate_summary(full_text)
 
     except Exception as e:
         _fail(f"Transcription failed: {e}")
 
     # ── Output ─────────────────────────────────────────────────
     result = {
-        "text":     " ".join(text_parts),
+        "text":     full_text,
         "language": info.language,           # detected or forced
         "duration": round(info.duration, 1),
+        "confidence": avg_confidence,
+        "summary": summary,
         "segments": segments,
     }
     # ensure_ascii=False keeps Arabic / French characters intact
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0)
+
+
+def generate_summary(text, top_n=3):
+    """
+    Extractive summarization using word frequency.
+    Works for EN, FR, AR without needing heavy NLTK models.
+    Updated to handle unpunctuated songs by fallback chunking.
+    """
+    if not text or len(text) < 50:
+        return text
+
+    # 1. Split into processing units (sentences or chunks)
+    # Try splitting by punctuation first
+    units = [u.strip() for u in re.split(r'(?<=[.!?؟])\s+', text.strip()) if u.strip()]
+    
+    # If no punctuation (less than top_n units found), split by fixed length chunks (around 15 words)
+    # This is critical for lyrics/songs where Whisper often doesn't add periods.
+    if len(units) < top_n + 1:
+        words_only = text.strip().split()
+        if not words_only: return text
+        chunk_size = 18
+        units = [" ".join(words_only[i:i+chunk_size]) for i in range(0, len(words_only), chunk_size)]
+
+    if len(units) <= top_n:
+        return text
+
+    # 2. Score words by frequency using a broader multilingual stop set
+    words = re.findall(r'\w+', text.lower())
+    stops = {
+        'the', 'and', 'is', 'a', 'to', 'in', 'it', 'of', 'for', 'with', 'that', 'this', 'on', 'was', 'be', 'at', 'as', 'but',
+        'le', 'la', 'les', 'des', 'est', 'un', 'une', 'dans', 'pour', 'qui', 'avec', 'sur', 'du', 'au', 'ce', 'se', 'que',
+        'في', 'من', 'على', 'ان', 'هذا', 'كان', 'إلى', 'مع', 'عن', 'ما', 'لو', 'لا', 'يا', 'هو', 'هي', 'ني', 'لي'
+    }
+    
+    filtered = [w for w in words if w not in stops and len(w) > 2]
+    if not filtered:
+        # Fallback if text is entirely common words: take spread of sentences
+        step = len(units) // top_n
+        return "... ".join([units[i*step] for i in range(top_n)])
+
+    freqs = Counter(filtered)
+    
+    # 3. Score units by summing word frequencies
+    scores = []
+    for u in units:
+        u_words = re.findall(r'\w+', u.lower())
+        if not u_words:
+            scores.append(0)
+            continue
+        # Base score from word frequency
+        word_score = sum(freqs.get(w, 0) for w in u_words)
+        # Length penalty (we want dense phrases, not just long ones)
+        normalized_score = word_score / (math.log(len(u_words) + 2))
+        scores.append(normalized_score)
+
+    # 4. Smart selection:
+    # Instead of just top N scores (which might all be the same chorus line),
+    # we pick the highest scoring sentences from different parts of the file.
+    part_size = len(units) // top_n
+    selected_indices = []
+    for i in range(top_n):
+        start = i * part_size
+        end = (i + 1) * part_size if i < top_n - 1 else len(units)
+        part_scores = scores[start:end]
+        if part_scores:
+            best_in_part = start + part_scores.index(max(part_scores))
+            selected_indices.append(best_in_part)
+
+    # Ensure uniqueness and return sorted output
+    final_indices = sorted(list(set(selected_indices)))
+    summary_pts = [units[i].strip() for i in final_indices]
+    
+    # Combine with ellipsis if we had to chunk it
+    separator = "... " if len(units) > 10 else " "
+    return separator.join(summary_pts)
 
 
 def _fail(msg: str):

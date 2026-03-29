@@ -1,17 +1,12 @@
 /**
- * analysisWorker.js — The actual BullMQ Worker process
+ * analysisWorker.js — BullMQ Worker
  *
- * Run this separately from the Express server:
- *   node backend/workers/analysisWorker.js
+ * Run separately: node backend/workers/analysisWorker.js
  *
- * Or add to package.json scripts:
- *   "worker": "node backend/workers/analysisWorker.js"
- *
- * This worker:
- *  1. Connects to Redis via BullMQ
- *  2. Pulls jobs from the 'analysis' queue
- *  3. Calls the appropriate processor (audio / video / groupActivity)
- *  4. Updates the Analysis document in MongoDB with the result
+ * Changes:
+ *  - Loads user info (name, email) before processing so the PDF report
+ *    can include proper attribution.
+ *  - Saves pdfPath to the Analysis document after processing.
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
@@ -20,6 +15,7 @@ const { Worker } = require('bullmq');
 const mongoose = require('mongoose');
 const { redisConnection } = require('../config/redis');
 const Analysis = require('../models/Analysis');
+const User = require('../models/User');
 const { processAudio } = require('../processors/audioProcessor');
 const { processVideo } = require('../processors/videoProcessor');
 const { processGroupActivity } = require('../processors/groupActivityProcessor');
@@ -34,7 +30,7 @@ mongoose.connect(process.env.MONGO_URI)
         process.exit(1);
     });
 
-// ── Create the BullMQ Worker ───────────────────────────────────
+// ── Worker ─────────────────────────────────────────────────────
 const worker = new Worker(
     'analysis',
     async (job) => {
@@ -42,7 +38,23 @@ const worker = new Worker(
 
         console.log(`⚙️  [Worker] Processing job ${job.id} | type=${type} | analysisId=${analysisId}`);
 
-        // Mark as 'processing' in DB
+        // Fetch analysis + owner info for PDF attribution
+        const analysis = await Analysis.findById(analysisId);
+        if (!analysis) throw new Error(`Analysis ${analysisId} not found in DB`);
+
+        let userName = 'User';
+        let userEmail = '';
+        let userId = analysis.userId;
+
+        try {
+            const user = await User.findById(analysis.userId).select('name email');
+            if (user) {
+                userName = user.name;
+                userEmail = user.email;
+            }
+        } catch (_) { /* non-fatal */ }
+
+        // Mark as processing
         await Analysis.findByIdAndUpdate(analysisId, { status: 'processing' });
         await job.updateProgress(5);
 
@@ -51,38 +63,49 @@ const worker = new Worker(
         try {
             switch (type) {
                 case 'audio':
-                    result = await processAudio({ analysisId, filePath, job });
+                    result = await processAudio({
+                        analysisId,
+                        filePath,
+                        job,
+                        userId: String(userId),
+                        userName,
+                        userEmail,
+                        originalName: analysis.originalName,
+                    });
                     break;
+
                 case 'video':
                     result = await processVideo({ analysisId, filePath, job });
                     break;
+
                 case 'groupActivity':
                     result = await processGroupActivity({ analysisId, filePath, job });
                     break;
+
                 default:
                     throw new Error(`Unknown analysis type: ${type}`);
             }
 
-            // Mark as 'done' with results
+            // Save result (including pdfPath if generated)
             await Analysis.findByIdAndUpdate(analysisId, {
                 status: 'done',
                 transcription: result.transcription,
                 summary: result.summary,
+                pdfPath: result.pdfPath || '',
+                pdfGeneratedAt: result.pdfPath ? new Date() : null,
                 errorMessage: '',
             });
 
             await job.updateProgress(100);
             console.log(`✅ [Worker] Job ${job.id} completed for analysisId=${analysisId}`);
 
-            return { success: true, analysisId };
+            return { success: true, analysisId, hasPdf: !!result.pdfPath };
 
         } catch (processingError) {
-            // Mark as 'error' in DB so the frontend knows
             await Analysis.findByIdAndUpdate(analysisId, {
                 status: 'error',
                 errorMessage: processingError.message || 'Processing failed',
             });
-            // Re-throw so BullMQ can handle retries
             throw processingError;
         }
     },
@@ -92,7 +115,7 @@ const worker = new Worker(
     }
 );
 
-// ── Worker event listeners ─────────────────────────────────────
+// ── Events ─────────────────────────────────────────────────────
 worker.on('completed', (job) => {
     console.log(`✅ [Worker] Job ${job.id} finished`);
 });
