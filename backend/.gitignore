@@ -1,2 +1,12 @@
 .env
 node_modules
+backend/uploads/
+*.mp3
+*.mp4
+*.wav
+*.ogg
+*.m4a
+*.webm
+*.mkv
+*.avi
+*.mov
