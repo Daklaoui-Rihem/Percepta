@@ -19,7 +19,7 @@ import {
     FileAudio, Download, Trash2, RefreshCw, Search,
     ChevronDown, ChevronUp, FileText, Clock, CheckCircle,
     XCircle, Loader2, AlertTriangle, Eye, EyeOff,
-    Filter, RotateCcw,
+    Filter, RotateCcw, Calendar, HardDrive, Hash
 } from 'lucide-react';
 import ClientTemplate from '../components/Templates/ClientTemplate';
 import { analysisApi, type AnalysisRecord } from '../services/api';
@@ -203,12 +203,16 @@ function AnalysisRow({
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: 16, color: '#94a3b8', fontSize: 12 }}>
-                        <span>📅 {dateStr} · {timeStr}</span>
-                        <span>💾 {sizeMB} MB</span>
+                    <div style={{ display: 'flex', gap: 16, color: '#94a3b8', fontSize: 12, alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Calendar size={13} /> {dateStr} · {timeStr}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <HardDrive size={13} /> {sizeMB} MB
+                        </span>
                         {record.status === 'done' && record.transcription && (
-                            <span>
-                                📝 ~{record.transcription.split(/\s+/).filter(Boolean).length.toLocaleString()} {t('wordsLabel')}
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Hash size={13} /> ~{record.transcription.split(/\s+/).filter(Boolean).length.toLocaleString()} {t('wordsLabel')}
                             </span>
                         )}
                     </div>
