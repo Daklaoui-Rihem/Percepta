@@ -71,6 +71,8 @@ export default function App() {
             <ClientDashboardPage />
           </ProtectedRoute>
         } />
+        <Route path="/client/transcriptions" element={<Navigate to="/client/transcriptions/new" replace />} />
+        <Route path="/client/video-analysis" element={<Navigate to="/client/video-analysis/new" replace />} />
         <Route path="/client/transcriptions/new" element={
           <ProtectedRoute allowedRoles={['Client']}>
             <NewTranscriptionPage />

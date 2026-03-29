@@ -18,12 +18,12 @@ import { analysisApi } from '../../services/api';
 export default function NewTranscriptionForm() {
     const { t } = useTranslation();
 
-    const [file, setFile]         = useState<File | null>(null);
+    const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [error, setError]       = useState('');
+    const [error, setError] = useState('');
 
     // After upload: store analysisId → switch to result card
-    const [analysisId, setAnalysisId]     = useState<string | null>(null);
+    const [analysisId, setAnalysisId] = useState<string | null>(null);
     const [uploadedName, setUploadedName] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,9 +72,9 @@ export default function NewTranscriptionForm() {
                 {!analysisId && (
                     <>
                         <FileDropZone
-                            accept=".mp3,.wav,.m4a,.ogg,.mp4,.mpeg,.mpga,.webm"
-                            maxSizeMB={500}
-                            formatLabel="MP3, WAV, M4A, OGG, MP4 (max 500 MB)"
+                            accept=".mp3,.wav,.m4a,.ogg,.mpeg,.mpga"
+                            maxSizeMB={100}
+                            formatLabel="MP3, WAV, M4A, OGG, MPEG"
                             icon={Music}
                             onFileSelected={(f) => { setFile(f); setError(''); }}
                         />
@@ -95,7 +95,7 @@ export default function NewTranscriptionForm() {
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept=".mp3,.wav,.m4a,.ogg,.mp4,.mpeg,.mpga,.webm"
+                                    accept=".mp3,.wav,.m4a,.ogg,.mpeg,.mpga"
                                     style={{ display: 'none' }}
                                     onChange={e => {
                                         const f = e.target.files?.[0];

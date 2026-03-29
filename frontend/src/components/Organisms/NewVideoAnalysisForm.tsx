@@ -28,8 +28,8 @@ export default function NewVideoAnalysisForm() {
   const statusLabel: Record<ProcessingStatus, string> = {
     idle: '',
     uploading: t('uploading'),
-    pending: 'En file d\'attente...',
-    processing: 'Analyse vidéo en cours...',
+    pending: t('queuePending'),
+    processing: t('videoProcessingAnalysis'),
     done: t('completed'),
     error: t('failed'),
   };
@@ -114,7 +114,7 @@ export default function NewVideoAnalysisForm() {
               {statusLabel[processingStatus]}
             </p>
             <p style={{ color: '#64748b', fontSize: 13 }}>
-              Vous pouvez fermer cette page. Le résultat sera disponible dans votre historique.
+              {t('youCanClosePage')}
             </p>
 
             {/* Status stepper */}
@@ -161,12 +161,12 @@ export default function NewVideoAnalysisForm() {
         {processingStatus === 'done' && result && (
           <div style={{ marginTop: 16 }}>
             <div style={{ padding: '12px 16px', background: '#eef8f8', border: '1px solid #16757a', borderRadius: 8, color: '#16757a', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-              <CheckCircle size={18} /> Analyse vidéo terminée !
+              <CheckCircle size={18} /> {t('videoAnalysisDoneAlert')}
             </div>
 
             {result.transcription && (
               <div style={{ marginBottom: 20 }}>
-                <h4 style={{ color: '#1a3a6b', marginBottom: 12 }}>Transcription</h4>
+                <h4 style={{ color: '#1a3a6b', marginBottom: 12 }}>{t('transcription')}</h4>
                 <div style={{ background: '#f8fbff', border: '1px solid #d0e4f0', borderRadius: 8, padding: '16px', fontSize: 14, color: '#334155', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                   {result.transcription}
                 </div>
@@ -175,7 +175,7 @@ export default function NewVideoAnalysisForm() {
 
             {result.summary && (
               <div>
-                <h4 style={{ color: '#1a3a6b', marginBottom: 12 }}>Résumé</h4>
+                <h4 style={{ color: '#1a3a6b', marginBottom: 12 }}>{t('summary')}</h4>
                 <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '16px', fontSize: 14, color: '#166534', lineHeight: 1.7 }}>
                   {result.summary}
                 </div>

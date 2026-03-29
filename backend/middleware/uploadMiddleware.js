@@ -4,8 +4,8 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 // ── Allowed file types ─────────────────────────────────────────
-const ALLOWED_AUDIO = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/ogg', 'audio/x-m4a'];
-const ALLOWED_VIDEO = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-matroska', 'video/webm'];
+const ALLOWED_AUDIO = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/mp3', 'audio/mpga', 'video/mpeg'];
+const ALLOWED_VIDEO = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-matroska', 'video/webm', 'video/mpeg'];
 
 // ── Storage engine ─────────────────────────────────────────────
 const storage = multer.diskStorage({
@@ -25,27 +25,42 @@ const storage = multer.diskStorage({
     },
 });
 
-// ── File filter ────────────────────────────────────────────────
-const fileFilter = (req, file, cb) => {
-    const allowed = [...ALLOWED_AUDIO, ...ALLOWED_VIDEO];
-    if (allowed.includes(file.mimetype)) {
-        cb(null, true);  // accept
+// ── File filters ───────────────────────────────────────────────
+const audioFilter = (req, file, cb) => {
+    if (ALLOWED_AUDIO.includes(file.mimetype)) {
+        cb(null, true);
     } else {
-        cb(new Error(`File type not allowed: ${file.mimetype}`), false); // reject
+        cb(new Error(`Audio file type not allowed: ${file.mimetype}`), false);
     }
 };
 
+const videoFilter = (req, file, cb) => {
+    if (ALLOWED_VIDEO.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error(`Video file type not allowed: ${file.mimetype}`), false);
+    }
+};
+
+const generalFilter = (req, file, cb) => {
+    const allowed = [...ALLOWED_AUDIO, ...ALLOWED_VIDEO];
+    if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error(`File type not allowed: ${file.mimetype}`), false);
+    }
+};
 
 // ── Export upload instances ────────────────────────────────────
 const uploadAudio = multer({
     storage,
-    fileFilter,
+    fileFilter: audioFilter,
     limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
 }).single('file'); // 'file' = field name in the form
 
 const uploadVideo = multer({
     storage,
-    fileFilter,
+    fileFilter: videoFilter,
     limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
 }).single('file');
 
@@ -75,7 +90,7 @@ const uploadAvatar = multer({
 
 const uploadGroupActivity = multer({
     storage,
-    fileFilter,
+    fileFilter: generalFilter,
     limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
 }).single('file');
 

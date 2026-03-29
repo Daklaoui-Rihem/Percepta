@@ -15,7 +15,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
     CheckCircle, XCircle, Clock, Copy,
-    ChevronDown, ChevronUp, RefreshCw, Globe,
+    ChevronDown, ChevronUp, RefreshCw, Globe, FileText,
 } from 'lucide-react';
 import { analysisApi } from '../../services/api';
 import { useTranslation } from '../../context/TranslationContext';
@@ -108,13 +108,13 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
     const STATUS_CFG = {
         pending: {
-            label: `${t('pending')} — waiting for worker…`,
+            label: `${t('pending')} — ${t('waitingWorker')}`,
             bg: '#fef9c3', color: '#a16207', border: '#fde68a',
             icon: <Clock size={20} color="#a16207" />,
             spinner: true,
         },
         processing: {
-            label: `${t('processing')} — Whisper is running…`,
+            label: `${t('processing')} — ${t('whisperRunning')}`,
             bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe',
             icon: <SpinnerIcon />,
             spinner: false,
@@ -177,7 +177,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                         border: 'none', borderRadius: 8,
                         padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                     }}>
-                        <RefreshCw size={13} /> Retry
+                        <RefreshCw size={13} /> {t('retry')}
                     </button>
                 )}
             </div>
@@ -226,7 +226,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                             color: '#166534', fontWeight: 700, fontSize: 14,
                         }}
                     >
-                        <span>📝 Summary</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FileText size={16} /> {t('summary')}</span>
                         {showSummary ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>
                     {showSummary && (
@@ -254,31 +254,33 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                         borderBottom: '1px solid #f1f5f9',
                     }}>
                         <span style={{ fontWeight: 700, color: '#1a3a6b', fontSize: 14 }}>
-                            Full Transcription
+                            {t('fullTranscription')}
                         </span>
                         <div style={{ display: 'flex', gap: 8 }}>
                             <button onClick={() => setExpanded(e => !e)} style={pillBtn}>
                                 {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                                {expanded ? 'Collapse' : 'Expand'}
+                                {expanded ? t('collapse') : t('expand')}
                             </button>
                             <button onClick={handleCopy} style={pillBtn}>
                                 <Copy size={13} />
-                                {copied ? '✓ Copied' : 'Copy'}
+                                {copied ? t('copied') : t('copy')}
                             </button>
                         </div>
                     </div>
 
                     {/* Body */}
-                    <div style={{
-                        padding: '16px 18px',
-                        maxHeight: expanded ? 'none' : 280,
-                        overflowY: expanded ? 'visible' : 'auto',
-                        fontSize: 14, lineHeight: 1.85,
-                        color: '#334155',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                        direction: 'auto',        // browser detects RTL (Arabic)
-                    }}>
+                    <div 
+                        dir="auto"
+                        style={{
+                            padding: '16px 18px',
+                            maxHeight: expanded ? 'none' : 280,
+                            overflowY: expanded ? 'visible' : 'auto',
+                            fontSize: 14, lineHeight: 1.85,
+                            color: '#334155',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                        }}
+                    >
                         {data.transcription}
                     </div>
 
@@ -290,10 +292,10 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                         fontSize: 12, color: '#94a3b8',
                     }}>
                         <span>
-                            {data.transcription.length.toLocaleString()} characters
+                            {data.transcription.length.toLocaleString()} {t('characters')}
                         </span>
                         <span>
-                            ~{data.transcription.split(/\s+/).filter(Boolean).length.toLocaleString()} words
+                            ~{data.transcription.split(/\s+/).filter(Boolean).length.toLocaleString()} {t('wordsLabel')}
                         </span>
                     </div>
                 </div>

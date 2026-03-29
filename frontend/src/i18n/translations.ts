@@ -329,6 +329,24 @@ const translations = {
   comingSoonGeneral: { fr: 'Paramètres généraux — bientôt disponibles', en: 'General settings — coming soon', ar: 'الإعدادات العامة — قريباً' },
   comingSoonSecurity: { fr: 'Paramètres de sécurité — bientôt disponibles', en: 'Security settings — coming soon', ar: 'إعدادات الأمان — قريباً' },
 
+  // ── Transcription Result Card ─────────────────────────────────
+  waitingWorker: { fr: 'En attente du worker…', en: 'Waiting for worker…', ar: 'في انتظار المعالج…' },
+  whisperRunning: { fr: 'Whisper est en cours d’exécution…', en: 'Whisper is running…', ar: 'يتم تشغيل Whisper…' },
+  summary: { fr: 'Résumé', en: 'Summary', ar: 'ملخص' },
+  fullTranscription: { fr: 'Transcription Complète', en: 'Full Transcription', ar: 'النص الكامل' },
+  collapse: { fr: 'Réduire', en: 'Collapse', ar: 'طي' },
+  expand: { fr: 'Développer', en: 'Expand', ar: 'توسيع' },
+  copy: { fr: 'Copier', en: 'Copy', ar: 'نسخ' },
+  copied: { fr: '✓ Copié', en: '✓ Copied', ar: '✓ تم النسخ' },
+  retry: { fr: 'Réessayer', en: 'Retry', ar: 'إعادة المحاولة' },
+  characters: { fr: 'caractères', en: 'characters', ar: 'حروف' },
+  wordsLabel: { fr: 'mots', en: 'words', ar: 'كلمات' },
+
+  // ── Video Analysis Form ───────────────────────────────────────
+  queuePending: { fr: "En file d'attente...", en: "In queue...", ar: "في الانتظار..." },
+  videoProcessingAnalysis: { fr: "Analyse vidéo en cours...", en: "Video analysis in progress...", ar: "تحليل الفيديو قيد التقدم..." },
+  youCanClosePage: { fr: "Vous pouvez fermer cette page. Le résultat sera disponible dans votre historique.", en: "You can close this page. The result will be available in your history.", ar: "يمكنك إغلاق هذه الصفحة. ستكون النتيجة متاحة في السجل." },
+  videoAnalysisDoneAlert: { fr: "Analyse vidéo terminée !", en: "Video analysis completed!", ar: "اكتمل تحليل الفيديو!" },
 
 } as const;
 

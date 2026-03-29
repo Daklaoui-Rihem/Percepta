@@ -71,6 +71,7 @@ function runWhisper(filePath, language) {
 
         const proc = spawn(PYTHON_BIN, args, {
             stdio: ['ignore', 'pipe', 'pipe'],
+            env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' }
             // shell: false  ← default, don't change — avoids Windows quoting issues
         });
 

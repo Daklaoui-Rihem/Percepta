@@ -18,8 +18,8 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
   // Labels now use t() — icons are untouched
   const navItems = [
     { icon: Home, label: 'Home', translatedLabel: t('home'), path: '/client/dashboard' },
-    { icon: FileText, label: 'Transcriptions', translatedLabel: t('transcriptions'), path: '/client/transcriptions' },
-    { icon: Video, label: 'Video Analysis', translatedLabel: t('videoAnalysis'), path: '/client/video-analysis' },
+    { icon: FileText, label: 'Transcriptions', translatedLabel: t('transcriptions'), path: '/client/transcriptions/new' },
+    { icon: Video, label: 'Video Analysis', translatedLabel: t('videoAnalysis'), path: '/client/video-analysis/new' },
     { icon: BarChart3, label: 'Reports', translatedLabel: t('reports'), path: '/client/reports' },
   ];
 
