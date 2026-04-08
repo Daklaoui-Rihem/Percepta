@@ -1,19 +1,21 @@
 /**
- * NewTranscriptionForm.tsx — UPDATED
- *
- * Changes: after upload succeeds, captures analysisId and switches
- * to TranscriptionResultCard (polling mode). "Upload another" resets.
- *
- * Replace: frontend/src/components/Organisms/NewTranscriptionForm.tsx
+ * NewTranscriptionForm.tsx — Updated with optional translation language selector
  */
 
 import { useState, useRef } from 'react';
-import { Home, Music, AudioLines, XCircle, FolderOpen } from 'lucide-react';
+import { Home, Music, AudioLines, XCircle, FolderOpen, Globe, ChevronDown, Ban, Languages } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
 import TranscriptionResultCard from '../Molecules/TranscriptionResultCard';
 import { useTranslation } from '../../context/TranslationContext';
 import { analysisApi } from '../../services/api';
+
+const TRANSLATION_LANGUAGES = [
+  { code: '', label: 'No translation', icon: <Ban size={18} /> },
+  { code: 'fr', label: 'French', icon: <Languages size={18} /> },
+  { code: 'en', label: 'English', icon: <Languages size={18} /> },
+  { code: 'ar', label: 'Arabic', icon: <Languages size={18} /> },
+];
 
 export default function NewTranscriptionForm() {
     const { t } = useTranslation();
@@ -21,6 +23,8 @@ export default function NewTranscriptionForm() {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
+    const [translateTo, setTranslateTo] = useState('');
+    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
     // After upload: store analysisId → switch to result card
     const [analysisId, setAnalysisId] = useState<string | null>(null);
@@ -28,13 +32,14 @@ export default function NewTranscriptionForm() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const selectedLang = TRANSLATION_LANGUAGES.find(l => l.code === translateTo) || TRANSLATION_LANGUAGES[0];
+
     const handleSubmit = async () => {
         if (!file) return;
         setUploading(true);
         setError('');
         try {
-            // Backend returns { analysis: { id, originalName, ... }, queue: {...} }
-            const res = await analysisApi.uploadAudio(file);
+            const res = await analysisApi.uploadAudio(file, translateTo || undefined);
             setAnalysisId(res.analysis.id);
             setUploadedName(res.analysis.originalName);
             setFile(null);
@@ -50,6 +55,7 @@ export default function NewTranscriptionForm() {
         setUploadedName('');
         setFile(null);
         setError('');
+        setTranslateTo('');
     };
 
     return (
@@ -78,6 +84,106 @@ export default function NewTranscriptionForm() {
                             icon={Music}
                             onFileSelected={(f) => { setFile(f); setError(''); }}
                         />
+
+                        {/* ── Translation Language Selector ── */}
+                        <div style={{ marginTop: 24 }}>
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                marginBottom: 10,
+                            }}>
+                                <Globe size={18} color="#1a3a6b" />
+                                <span style={{ color: '#1a3a6b', fontWeight: 700, fontSize: 14 }}>
+                                    {t('translateResultTo') || 'Translate result to'}{' '}
+                                    <span style={{ color: '#60a5fa', fontWeight: 400, fontSize: 13 }}>
+                                        ({t('optional') || 'optional'})
+                                    </span>
+                                </span>
+                            </div>
+
+                            <div style={{ position: 'relative', display: 'inline-block', minWidth: 240 }}>
+                                <button
+                                    onClick={() => setLangDropdownOpen(o => !o)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                        background: translateTo ? '#eff6ff' : '#f8fbff',
+                                        border: `1.5px solid ${translateTo ? '#3b82f6' : '#d0e4f0'}`,
+                                        borderRadius: 10, padding: '10px 16px',
+                                        cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                                        color: translateTo ? '#1d4ed8' : '#555',
+                                        width: '100%',
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <span style={{ display: 'flex', alignItems: 'center' }}>{selectedLang.icon}</span>
+                                    <span style={{ flex: 1, textAlign: 'left' }}>{selectedLang.label}</span>
+                                    <ChevronDown
+                                        size={16}
+                                        style={{
+                                            transform: langDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.2s',
+                                            color: '#888',
+                                        }}
+                                    />
+                                </button>
+
+                                {langDropdownOpen && (
+                                    <div style={{
+                                        position: 'absolute', top: '110%', left: 0,
+                                        background: 'white', borderRadius: 10,
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                        border: '1px solid #e0eaf4',
+                                        zIndex: 100, overflow: 'hidden',
+                                        minWidth: '100%',
+                                        animation: 'fadeIn 0.15s ease',
+                                    }}>
+                                        {TRANSLATION_LANGUAGES.map(lang => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => {
+                                                    setTranslateTo(lang.code);
+                                                    setLangDropdownOpen(false);
+                                                }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: 10,
+                                                    width: '100%', padding: '11px 16px',
+                                                    background: translateTo === lang.code ? '#eff6ff' : 'white',
+                                                    border: 'none',
+                                                    borderBottom: '1px solid #f0f4f8',
+                                                    cursor: 'pointer', fontSize: 14,
+                                                    color: translateTo === lang.code ? '#1d4ed8' : '#333',
+                                                    fontWeight: translateTo === lang.code ? 700 : 400,
+                                                    textAlign: 'left',
+                                                    transition: 'background 0.15s',
+                                                }}
+                                                onMouseEnter={e => {
+                                                    if (translateTo !== lang.code) e.currentTarget.style.background = '#f8fbff';
+                                                }}
+                                                onMouseLeave={e => {
+                                                    if (translateTo !== lang.code) e.currentTarget.style.background = 'white';
+                                                }}
+                                            >
+                                                <span style={{ display: 'flex', alignItems: 'center' }}>{lang.icon}</span>
+                                                <span>{lang.label}</span>
+                                                {translateTo === lang.code && (
+                                                    <span style={{ marginLeft: 'auto', color: '#3b82f6' }}>✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {translateTo && (
+                                <p style={{
+                                    marginTop: 8, fontSize: 12, color: '#60a5fa',
+                                    display: 'flex', alignItems: 'center', gap: 4,
+                                }}>
+                                    <Globe size={12} />
+                                    {t('willTranslateTo') || 'The transcription will also be translated to'}{' '}
+                                    <strong>{selectedLang.label}</strong>
+                                </p>
+                            )}
+                        </div>
 
                         {error && (
                             <div style={{
@@ -145,6 +251,10 @@ export default function NewTranscriptionForm() {
                     />
                 )}
             </div>
+
+            <style>{`
+                @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+            `}</style>
         </div>
     );
 }

@@ -17,7 +17,7 @@ const fs = require('fs');
 const ALLOWED_AUDIO = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/ogg', 'audio/x-m4a'];
 
 // ── In-process fallback (when Redis is unavailable) ────────────
-async function processInBackground(analysisId, type, filePath, userId) {
+async function processInBackground(analysisId, type, filePath, userId, translateTo = '') {
     const fakeJob = { updateProgress: async () => { } };
     try {
         await Analysis.findByIdAndUpdate(analysisId, { status: 'processing' });
@@ -32,6 +32,7 @@ async function processInBackground(analysisId, type, filePath, userId) {
                 job: fakeJob,
                 userId: String(userId),
                 originalName: analysis?.originalName || path.basename(filePath),
+                translateTo,  // ← pass through
             });
         } else if (type === 'video') {
             result = await processVideo({ analysisId, filePath, job: fakeJob });
@@ -43,6 +44,8 @@ async function processInBackground(analysisId, type, filePath, userId) {
             status: 'done',
             transcription: result.transcription,
             summary: result.summary,
+            translatedText: result.translatedText || '',    // ← NEW
+            translationLang: result.translationLang || '',  // ← NEW
             pdfPath: result.pdfPath || '',
             pdfGeneratedAt: result.pdfPath ? new Date() : null,
             errorMessage: '',
@@ -58,14 +61,16 @@ async function processInBackground(analysisId, type, filePath, userId) {
 }
 
 // ── Try queue, fall back to in-process ────────────────────────
-async function dispatchJob(analysisId, type, filePath, userId) {
+async function dispatchJob(analysisId, type, filePath, userId, translateTo = '') {
     try {
-        const job = await addAnalysisJob(analysisId, type, filePath);
+        // Pass translateTo as extra data in the job
+        const { addAnalysisJobWithOptions } = require('../queue');
+        const job = await addAnalysisJobWithOptions(analysisId, type, filePath, { translateTo });
         console.log(`📥 [Queue] Job dispatched: ${job.id}`);
         return { jobId: job.id, mode: 'queue' };
     } catch (redisErr) {
-        console.warn(`⚠️  [Queue] Redis unavailable (${redisErr.message}). Falling back to in-process.`);
-        setImmediate(() => processInBackground(analysisId, type, filePath, userId));
+        console.warn(`⚠️  [Queue] Redis unavailable. Falling back to in-process.`);
+        setImmediate(() => processInBackground(analysisId, type, filePath, userId, translateTo));
         return { jobId: null, mode: 'in-process' };
     }
 }
@@ -74,6 +79,9 @@ async function dispatchJob(analysisId, type, filePath, userId) {
 exports.uploadAudio = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+        // Read optional translation target from form data
+        const translateTo = req.body.translateTo || '';
 
         const analysis = await Analysis.create({
             userId: req.user.id,
@@ -85,9 +93,10 @@ exports.uploadAudio = async (req, res) => {
             type: 'audio',
             status: 'pending',
             filePath: req.file.path,
+            translationLang: translateTo || '',   // store requested target lang
         });
 
-        const dispatch = await dispatchJob(String(analysis._id), 'audio', req.file.path, req.user.id);
+        const dispatch = await dispatchJob(String(analysis._id), 'audio', req.file.path, req.user.id, translateTo);
 
         res.status(202).json({
             message: 'Audio uploaded. Transcription queued.',
@@ -221,7 +230,7 @@ exports.getAnalysisById = async (req, res) => {
 exports.getAnalysisStatus = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id)
-            .select('status errorMessage transcription summary pdfPath pdfGeneratedAt');
+            .select('status errorMessage transcription translatedText translationLang summary pdfPath pdfGeneratedAt');
 
         if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
 
@@ -231,8 +240,9 @@ exports.getAnalysisStatus = async (req, res) => {
             id: req.params.id,
             status: analysis.status,
             errorMessage: analysis.errorMessage || null,
-            // Only send content when done — avoids large payloads during polling
             transcription: analysis.status === 'done' ? analysis.transcription : null,
+            translatedText: analysis.status === 'done' ? (analysis.translatedText || null) : null,   // ← NEW
+            translationLang: analysis.status === 'done' ? (analysis.translationLang || null) : null, // ← NEW
             summary: analysis.status === 'done' ? analysis.summary : null,
             hasPdf: analysis.status === 'done' ? hasPdf : false,
             pdfGeneratedAt: analysis.pdfGeneratedAt || null,
@@ -331,6 +341,8 @@ exports.generateReport = async (req, res) => {
             analysisId: String(analysis._id),
             originalName: analysis.originalName,
             transcription: analysis.transcription,
+            translatedText: analysis.translatedText,
+            translationLang: analysis.translationLang,
             summary: analysis.summary,
             userName,
             userEmail,

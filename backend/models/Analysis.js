@@ -14,10 +14,10 @@ const analysisSchema = new mongoose.Schema({
     },
 
     // File info
-    originalName: { type: String, required: true },  // "meeting.mp3"
-    filename: { type: String, required: true },        // "uuid-123.mp3"
-    mimetype: { type: String, required: true },        // "audio/mpeg"
-    size: { type: Number, required: true },            // bytes
+    originalName: { type: String, required: true },
+    filename: { type: String, required: true },
+    mimetype: { type: String, required: true },
+    size: { type: Number, required: true },
     type: {
         type: String,
         enum: ['audio', 'video', 'groupActivity'],
@@ -32,17 +32,21 @@ const analysisSchema = new mongoose.Schema({
     },
     errorMessage: { type: String, default: '' },
 
-    // Storage path (original upload)
+    // Storage path
     filePath: { type: String, required: true },
 
-    // Results (filled by AI service)
+    // Results
     transcription: { type: String, default: '' },
     summary: { type: String, default: '' },
 
-    // PDF report path (filled after PDF generation)
+    // ── Translation (NEW) ──────────────────────────────────────
+    translationLang: { type: String, default: '' },   // e.g. 'fr', 'en', 'ar'
+    translatedText:  { type: String, default: '' },   // translated transcription
+
+    // PDF report
     pdfPath: { type: String, default: '' },
     pdfGeneratedAt: { type: Date, default: null },
 
-}, { timestamps: true }); // createdAt + updatedAt automatic
+}, { timestamps: true });
 
 module.exports = mongoose.model('Analysis', analysisSchema);

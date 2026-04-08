@@ -52,6 +52,24 @@ async function addAnalysisJob(analysisId, type, filePath) {
     return job;
 }
 
+async function addAnalysisJobWithOptions(analysisId, type, filePath, extras = {}) {
+    const job = await analysisQueue.add(
+        `${type}-analysis`,
+        {
+            analysisId,
+            type,
+            filePath,
+            ...extras,    // ← spreads translateTo etc. into job data
+        },
+        {
+            priority: type === 'audio' ? 1 : 2,
+        }
+    );
+
+    console.log(`📥 [Queue] Job ${job.id} added | type=${type} | analysisId=${analysisId}${extras.translateTo ? ` | translateTo=${extras.translateTo}` : ''}`);
+    return job;
+}
+
 /**
  * Get queue stats (used by the admin health endpoint).
  */
@@ -66,4 +84,4 @@ async function getQueueStats() {
     return { waiting, active, completed, failed, delayed };
 }
 
-module.exports = { analysisQueue, addAnalysisJob, getQueueStats };
+module.exports = { analysisQueue, addAnalysisJob, addAnalysisJobWithOptions, getQueueStats };

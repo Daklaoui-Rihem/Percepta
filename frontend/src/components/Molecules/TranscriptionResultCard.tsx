@@ -1,20 +1,16 @@
 /**
- * TranscriptionResultCard.tsx — Updated with PDF download
+ * TranscriptionResultCard.tsx — Updated with translation display
  *
- * Polls /api/analyses/:id/status every 3 seconds until done or error.
- * When done, shows:
- *  - Language badge
- *  - Collapsible summary
- *  - Full transcription with copy / expand
- *  - PDF download button (if report was generated)
- *  - Retry button on error
+ * When a translation was requested, shows two tabs:
+ *   - Original transcription
+ *   - Translated text (with language flag)
  */
 
 import { useState, useEffect, useRef } from 'react';
 import {
     CheckCircle, XCircle, Clock, Copy,
     RefreshCw, Globe, FileText,
-    Download, Loader2, Target, Hash, Sparkles
+    Download, Loader2, Target, Hash, Sparkles, Languages
 } from 'lucide-react';
 import { analysisApi } from '../../services/api';
 import { useTranslation } from '../../context/TranslationContext';
@@ -25,6 +21,8 @@ type StatusData = {
     status: 'pending' | 'processing' | 'done' | 'error';
     errorMessage: string | null;
     transcription: string | null;
+    translatedText: string | null;
+    translationLang: string | null;
     summary: string | null;
     hasPdf: boolean;
     pdfGeneratedAt: string | null;
@@ -37,9 +35,21 @@ type Props = {
 };
 
 const LANG_NAMES: Record<string, string> = {
-    fr: '🇫🇷 French',
-    en: '🇬🇧 English',
-    ar: '🇹🇳 Arabic',
+    fr: 'French',
+    en: 'English',
+    ar: 'Arabic',
+};
+
+const LANG_FLAGS: Record<string, React.ReactNode> = {
+    fr: <Languages size={18} />,
+    en: <Languages size={18} />,
+    ar: <Languages size={18} />,
+};
+
+const LANG_DIR: Record<string, 'rtl' | 'ltr'> = {
+    ar: 'rtl',
+    fr: 'ltr',
+    en: 'ltr',
 };
 
 const POLL_INTERVAL = 3000;
@@ -51,9 +61,11 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
     const [data, setData] = useState<StatusData | null>(null);
     const [fetchError, setFetchError] = useState('');
     const [copied, setCopied] = useState(false);
+    const [copiedTranslation, setCopiedTranslation] = useState(false);
     const [showSummary, setShowSummary] = useState(true);
     const [pdfLoading, setPdfLoading] = useState(false);
     const [pdfError, setPdfError] = useState('');
+    const [activeTab, setActiveTab] = useState<'original' | 'translation'>('original');
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const detectedLang = data?.summary?.match(/Language detected:\s*(\w+)/i)?.[1]?.toLowerCase()
@@ -61,25 +73,20 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         ?? '';
     const langLabel = LANG_NAMES[detectedLang.toLowerCase()] ?? detectedLang ?? 'Auto';
 
-    // ── Fake Segments Generator ──
+    // Fake segments for timestamped view
     const generateFakeSegments = (text: string, durationSec: number) => {
         if (!text) return [];
-        // Safely split text into chunks of ~35 words to mimic timestamps without dropping any text
         const words = text.split(/\s+/).filter(Boolean);
         const segments = [];
         const chunkSize = 35;
         const numChunks = Math.ceil(words.length / chunkSize);
         const timePerChunk = durationSec / Math.max(numChunks, 1);
-        
         let currentSec = 0;
         for (let i = 0; i < words.length; i += chunkSize) {
             const chunkText = words.slice(i, i + chunkSize).join(' ');
             const mins = Math.floor(currentSec / 60).toString().padStart(2, '0');
             const secs = Math.floor(currentSec % 60).toString().padStart(2, '0');
-            segments.push({
-                time: `${mins}:${secs}`,
-                text: chunkText
-            });
+            segments.push({ time: `${mins}:${secs}`, text: chunkText });
             currentSec += timePerChunk;
         }
         return segments;
@@ -98,19 +105,17 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
     const wordsMatch = summaryRaw.match(/~(\d+)\s*words/i);
     const wordCount = wordsMatch ? parseInt(wordsMatch[1]).toLocaleString() : (data?.transcription?.split(/\s+/).filter(Boolean).length.toLocaleString() || '0');
-
     const confMatch = summaryRaw.match(/Confidence:\s*([\d.]+)%/i);
     const confidence = confMatch ? `${confMatch[1]}%` : '94.5%';
 
     const segments = generateFakeSegments(data?.transcription || '', durationSec || 120);
 
-    const handleDownloadTxt = () => {
-        if (!data?.transcription) return;
-        const blob = new Blob([data.transcription], { type: 'text/plain' });
+    const handleDownloadTxt = (text: string, suffix = '') => {
+        const blob = new Blob([text], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${originalName}.txt`;
+        a.download = `${originalName}${suffix}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -137,32 +142,28 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
     }, [analysisId]);
 
-    // ── PDF Download ───────────────────────────────────────────
+    // Auto-switch to translation tab if translation is available
+    useEffect(() => {
+        if (data?.translatedText && activeTab === 'original') {
+            // Don't auto-switch, let user choose
+        }
+    }, [data?.translatedText]);
+
+    // ── PDF ────────────────────────────────────────────────────
     const handleDownloadPDF = async () => {
         setPdfLoading(true);
         setPdfError('');
-        try {
-            await analysisApi.downloadReport(analysisId, originalName);
-        } catch (err: unknown) {
-            setPdfError(err instanceof Error ? err.message : 'Download failed');
-        } finally {
-            setPdfLoading(false);
-        }
+        try { await analysisApi.downloadReport(analysisId, originalName); }
+        catch (err: unknown) { setPdfError(err instanceof Error ? err.message : 'Download failed'); }
+        finally { setPdfLoading(false); }
     };
 
-    // ── Generate PDF (if not yet generated) ────────────────────
     const handleGeneratePDF = async () => {
         setPdfLoading(true);
         setPdfError('');
-        try {
-            await analysisApi.generateReport(analysisId);
-            // Re-poll to get updated hasPdf flag
-            await poll();
-        } catch (err: unknown) {
-            setPdfError(err instanceof Error ? err.message : 'Generation failed');
-        } finally {
-            setPdfLoading(false);
-        }
+        try { await analysisApi.generateReport(analysisId); await poll(); }
+        catch (err: unknown) { setPdfError(err instanceof Error ? err.message : 'Generation failed'); }
+        finally { setPdfLoading(false); }
     };
 
     // ── Retry ──────────────────────────────────────────────────
@@ -179,16 +180,18 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         }
     };
 
-    // ── Copy ───────────────────────────────────────────────────
-    const handleCopy = () => {
-        if (!data?.transcription) return;
-        navigator.clipboard.writeText(data.transcription).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+    const handleCopy = (text: string, setFlag: (v: boolean) => void) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setFlag(true);
+            setTimeout(() => setFlag(false), 2000);
         });
     };
 
     const status = data?.status ?? 'pending';
+    const hasTranslation = !!(data?.translatedText && data?.translationLang);
+    const translationLang = data?.translationLang || '';
+    const translationFlag = LANG_FLAGS[translationLang] || <Languages size={18} />;
+    const translationDir = LANG_DIR[translationLang] || 'ltr';
 
     const STATUS_CFG = {
         pending: {
@@ -229,10 +232,16 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                     <div>
                         <h3 style={{ margin: '0 0 10px 0', color: '#1a3a6b', fontSize: 20, fontWeight: 700 }}>{originalName}</h3>
                         <div style={{ color: '#64748b', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Clock size={14} /> 
+                            <Clock size={14} />
                             {new Date().toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                             &nbsp;·&nbsp; Durée: {durationStr}
                         </div>
+                        {hasTranslation && (
+                            <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, color: '#60a5fa', fontSize: 12 }}>
+                                <Languages size={14} />
+                                {t('translationAvailable') || 'Translation available:'} {LANG_NAMES[translationLang] || translationLang}
+                            </div>
+                        )}
                     </div>
                     <div style={{ background: '#dcfce7', color: '#16a34a', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <CheckCircle size={15} /> {t('completed')}
@@ -241,13 +250,30 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
                 {/* 2-Column Layout */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 320px) 1fr', gap: 24, alignItems: 'start' }}>
-                    
+
                     {/* Left Column */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <MetricCard icon={<Globe size={20} color="#1d4ed8" />} title="Detected Language" value={langLabel} />
                         <MetricCard icon={<Target size={20} color="#1d4ed8" />} title="Average Confidence" value={confidence} />
                         <MetricCard icon={<Hash size={20} color="#1d4ed8" />} title="Word Count" value={wordCount} />
-                        
+
+                        {/* Translation info card */}
+                        {hasTranslation && (
+                            <div style={{
+                                background: '#eff6ff', border: '1px solid #bfdbfe',
+                                borderRadius: 12, padding: '18px 20px',
+                                display: 'flex', alignItems: 'center', gap: 16,
+                            }}>
+                                <div style={{ background: '#dbeafe', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>
+                                    {translationFlag}
+                                </div>
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 3 }}>Translation</div>
+                                    <div style={{ color: '#1a3a6b', fontSize: 16, fontWeight: 700 }}>{LANG_NAMES[translationLang] || translationLang}</div>
+                                </div>
+                            </div>
+                        )}
+
                         <button onClick={() => setShowSummary(s => !s)} style={{ background: '#4b6884', color: 'white', border: 'none', padding: '14px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4, transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#3c556e'} onMouseLeave={(e) => e.currentTarget.style.background = '#4b6884'}>
                             <Sparkles size={16} /> {showSummary ? 'Hide Summary' : 'Generate Summary'}
                         </button>
@@ -259,18 +285,73 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                         )}
                     </div>
 
-                    {/* Right Column */}
+                    {/* Right Column — with tabs if translation exists */}
                     <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: 0, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ padding: '16px 24px', display: 'flex', gap: 12, borderBottom: '1px solid #f1f5f9' }}>
-                            <button onClick={handleCopy} style={actionBtnStyle2}>{copied ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy</button>
-                            <button onClick={handleDownloadTxt} style={actionBtnStyle2}><Download size={15} /> Download TXT</button>
+
+                        {/* Tab bar — only shown when translation exists */}
+                        {hasTranslation && (
+                            <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', padding: '0 24px' }}>
+                                <button
+                                    onClick={() => setActiveTab('original')}
+                                    style={{
+                                        padding: '14px 20px', border: 'none', background: 'none',
+                                        cursor: 'pointer', fontSize: 14, fontWeight: activeTab === 'original' ? 700 : 500,
+                                        color: activeTab === 'original' ? '#1a3a6b' : '#94a3b8',
+                                        borderBottom: activeTab === 'original' ? '2px solid #1a3a6b' : '2px solid transparent',
+                                        marginBottom: -2,
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <FileText size={15} />
+                                    {t('originalTranscription') || 'Original'}
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('translation')}
+                                    style={{
+                                        padding: '14px 20px', border: 'none', background: 'none',
+                                        cursor: 'pointer', fontSize: 14, fontWeight: activeTab === 'translation' ? 700 : 500,
+                                        color: activeTab === 'translation' ? '#1a3a6b' : '#94a3b8',
+                                        borderBottom: activeTab === 'translation' ? '2px solid #1a3a6b' : '2px solid transparent',
+                                        marginBottom: -2,
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <span style={{ fontSize: 16 }}>{translationFlag}</span>
+                                    {LANG_NAMES[translationLang] || 'Translation'}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Action buttons row */}
+                        <div style={{ padding: '16px 24px', display: 'flex', gap: 12, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+                            {activeTab === 'original' ? (
+                                <>
+                                    <button onClick={() => handleCopy(data?.transcription || '', setCopied)} style={actionBtnStyle2}>
+                                        {copied ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy
+                                    </button>
+                                    <button onClick={() => handleDownloadTxt(data?.transcription || '')} style={actionBtnStyle2}>
+                                        <Download size={15} /> Download TXT
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={() => handleCopy(data?.translatedText || '', setCopiedTranslation)} style={actionBtnStyle2}>
+                                        {copiedTranslation ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy
+                                    </button>
+                                    <button onClick={() => handleDownloadTxt(data?.translatedText || '', `_${translationLang}`)} style={actionBtnStyle2}>
+                                        <Download size={15} /> Download TXT
+                                    </button>
+                                </>
+                            )}
                             {data?.hasPdf ? (
-                                <button onClick={handleDownloadPDF} disabled={pdfLoading} style={{...actionBtnStyle2, opacity: pdfLoading ? 0.6 : 1}}>
+                                <button onClick={handleDownloadPDF} disabled={pdfLoading} style={{ ...actionBtnStyle2, opacity: pdfLoading ? 0.6 : 1 }}>
                                     {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
                                     Download PDF
                                 </button>
                             ) : (
-                                <button onClick={handleGeneratePDF} disabled={pdfLoading} style={{...actionBtnStyle2, opacity: pdfLoading ? 0.6 : 1}}>
+                                <button onClick={handleGeneratePDF} disabled={pdfLoading} style={{ ...actionBtnStyle2, opacity: pdfLoading ? 0.6 : 1 }}>
                                     {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
                                     Generate PDF
                                 </button>
@@ -278,33 +359,78 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                         </div>
 
                         <div style={{ padding: '24px' }}>
-                            <h4 style={{ color: '#1a3a6b', margin: '0 0 24px 0', fontSize: 16, fontWeight: 700 }}>{t('fullTranscription') || 'Transcription complète'}</h4>
-                            
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                                {segments.map((seg, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 16 }}>
-                                        <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, height: 'fit-content', flexShrink: 0 }}>
-                                            {seg.time}
-                                        </div>
-                                        <div style={{ color: '#334155', fontSize: 14, lineHeight: 1.7, marginTop: 1 }}>
-                                            {seg.text}
-                                        </div>
+                            {activeTab === 'original' ? (
+                                <>
+                                    <h4 style={{ color: '#1a3a6b', margin: '0 0 24px 0', fontSize: 16, fontWeight: 700 }}>
+                                        {t('fullTranscription') || 'Transcription complète'}
+                                    </h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                        {segments.map((seg, i) => (
+                                            <div key={i} style={{ display: 'flex', gap: 16 }}>
+                                                <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, height: 'fit-content', flexShrink: 0 }}>
+                                                    {seg.time}
+                                                </div>
+                                                <div style={{ color: '#334155', fontSize: 14, lineHeight: 1.7, marginTop: 1 }}>
+                                                    {seg.text}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                                        <span style={{ fontSize: 22 }}>{translationFlag}</span>
+                                        <h4 style={{ color: '#1a3a6b', margin: 0, fontSize: 16, fontWeight: 700 }}>
+                                            {LANG_NAMES[translationLang] || 'Translation'}
+                                        </h4>
+                                        <span style={{
+                                            background: '#dbeafe', color: '#1d4ed8',
+                                            fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
+                                        }}>
+                                            {t('aiTranslated') || 'AI Translated'}
+                                        </span>
+                                    </div>
 
+                                    {/* Translation notice banner */}
+                                    <div style={{
+                                        background: '#fffbeb', border: '1px solid #fde68a',
+                                        borderRadius: 8, padding: '10px 14px',
+                                        fontSize: 12, color: '#92400e',
+                                        marginBottom: 20,
+                                        display: 'flex', alignItems: 'center', gap: 8,
+                                    }}>
+                                        <Languages size={14} />
+                                        {t('translationDisclaimer') || 'This is an AI-generated translation. It may contain inaccuracies.'}
+                                    </div>
+
+                                    <div
+                                        dir={translationDir}
+                                        style={{
+                                            background: '#f8fafc', border: '1px solid #e2e8f0',
+                                            borderRadius: 10, padding: '20px',
+                                            fontSize: 14.5, lineHeight: 1.9, color: '#334155',
+                                            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                                            textAlign: translationDir === 'rtl' ? 'right' : 'left',
+                                            fontFamily: translationLang === 'ar' ? 'system-ui, -apple-system, sans-serif' : 'inherit',
+                                        }}
+                                    >
+                                        {data?.translatedText}
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 12, marginBottom: 20 }}>
                     <button onClick={data?.hasPdf ? handleDownloadPDF : handleGeneratePDF} disabled={pdfLoading} style={{ background: '#0047ff', color: 'white', border: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, display: 'flex', gap: 8, alignItems: 'center', cursor: pdfLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(0,71,255,0.2)', opacity: pdfLoading ? 0.8 : 1 }}>
-                        {pdfLoading ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Download size={18} />} 
+                        {pdfLoading ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Download size={18} />}
                         {data?.hasPdf ? 'Download PDF Report' : 'Generate PDF Report'}
                     </button>
                     {pdfError && <div style={{ color: '#dc2626', fontSize: 13, marginTop: 8 }}>{pdfError}</div>}
                 </div>
-                
+
                 {onReset && (
                     <button onClick={onReset} style={{ margin: '0 0 20px', width: '100%', padding: '13px', background: '#f8fafc', color: '#1a3a6b', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                         {t('uploadAnotherAudio') || 'Upload another audio'}
@@ -314,6 +440,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         );
     }
 
+    // ── Non-done states (pending / processing / error) ─────────
     return (
         <div style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             <style>{`
@@ -322,7 +449,6 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                 @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
             `}</style>
 
-            {/* ── Status banner ── */}
             <div style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '14px 18px',
@@ -337,15 +463,13 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{originalName}</div>
                 </div>
 
-                {/* Retry on error */}
                 {status === 'error' && (
-                    <button onClick={handleRetry} style={actionBtnStyle('#dc2626')}>
+                    <button onClick={handleRetry} style={actionBtnStyleSmall('#dc2626')}>
                         <RefreshCw size={13} /> {t('retry')}
                     </button>
                 )}
             </div>
 
-            {/* ── Pending / Processing dots ── */}
             {(status === 'pending' || status === 'processing') && (
                 <div style={{ display: 'flex', gap: 6, justifyContent: 'center', padding: '20px 0' }}>
                     {[0, 1, 2].map(i => (
@@ -358,40 +482,24 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                 </div>
             )}
 
-            {/* ── Error detail ── */}
             {status === 'error' && data?.errorMessage && (
-                <div style={{
-                    padding: '12px 16px',
-                    background: '#fff1f2', border: '1px solid #fecaca',
-                    borderRadius: 10, color: '#991b1b',
-                    fontSize: 13, marginBottom: 16,
-                    fontFamily: 'monospace', whiteSpace: 'pre-wrap',
-                }}>
+                <div style={{ padding: '12px 16px', background: '#fff1f2', border: '1px solid #fecaca', borderRadius: 10, color: '#991b1b', fontSize: 13, marginBottom: 16, fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
                     {data.errorMessage}
                 </div>
             )}
 
             {status === 'error' && onReset && (
-                <button onClick={onReset} style={{
-                    marginTop: 20, width: '100%', padding: '13px',
-                    background: '#f8fafc', color: '#1a3a6b',
-                    border: '1.5px solid #e2e8f0', borderRadius: 10,
-                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                }}>
+                <button onClick={onReset} style={{ marginTop: 20, width: '100%', padding: '13px', background: '#f8fafc', color: '#1a3a6b', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                     {t('uploadAnotherAudio')}
                 </button>
             )}
 
-            {fetchError && (
-                <p style={{ color: '#dc2626', fontSize: 12, marginTop: 10 }}>
-                    ⚠️ {fetchError}
-                </p>
-            )}
+            {fetchError && <p style={{ color: '#dc2626', fontSize: 12, marginTop: 10 }}>⚠️ {fetchError}</p>}
         </div>
     );
 }
 
-function MetricCard({ icon, title, value }: { icon: React.ReactNode, title: string, value: React.ReactNode }) {
+function MetricCard({ icon, title, value }: { icon: React.ReactNode; title: string; value: React.ReactNode }) {
     return (
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ background: '#eff6ff', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -407,15 +515,11 @@ function MetricCard({ icon, title, value }: { icon: React.ReactNode, title: stri
 
 function SpinnerIcon() {
     return (
-        <div style={{
-            width: 20, height: 20, borderRadius: '50%',
-            border: '2.5px solid #bfdbfe', borderTopColor: '#1d4ed8',
-            animation: 'spin 0.8s linear infinite', flexShrink: 0,
-        }} />
+        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2.5px solid #bfdbfe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
     );
 }
 
-const actionBtnStyle = (bg: string): React.CSSProperties => ({
+const actionBtnStyleSmall = (bg: string): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 6,
     background: bg, color: 'white',
     border: 'none', borderRadius: 8,

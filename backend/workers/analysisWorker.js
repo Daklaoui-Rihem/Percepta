@@ -34,11 +34,11 @@ mongoose.connect(process.env.MONGO_URI)
 const worker = new Worker(
     'analysis',
     async (job) => {
-        const { analysisId, type, filePath } = job.data;
+        // ← NEW: destructure translateTo from job data
+        const { analysisId, type, filePath, translateTo } = job.data;
 
-        console.log(`⚙️  [Worker] Processing job ${job.id} | type=${type} | analysisId=${analysisId}`);
+        console.log(`⚙️  [Worker] Processing job ${job.id} | type=${type} | analysisId=${analysisId}${translateTo ? ` | translateTo=${translateTo}` : ''}`);
 
-        // Fetch analysis + owner info for PDF attribution
         const analysis = await Analysis.findById(analysisId);
         if (!analysis) throw new Error(`Analysis ${analysisId} not found in DB`);
 
@@ -52,9 +52,8 @@ const worker = new Worker(
                 userName = user.name;
                 userEmail = user.email;
             }
-        } catch (_) { /* non-fatal */ }
+        } catch (_) { }
 
-        // Mark as processing
         await Analysis.findByIdAndUpdate(analysisId, { status: 'processing' });
         await job.updateProgress(5);
 
@@ -71,6 +70,7 @@ const worker = new Worker(
                         userName,
                         userEmail,
                         originalName: analysis.originalName,
+                        translateTo: translateTo || '',   // ← NEW: pass through
                     });
                     break;
 
@@ -86,11 +86,12 @@ const worker = new Worker(
                     throw new Error(`Unknown analysis type: ${type}`);
             }
 
-            // Save result (including pdfPath if generated)
             await Analysis.findByIdAndUpdate(analysisId, {
                 status: 'done',
                 transcription: result.transcription,
                 summary: result.summary,
+                translatedText: result.translatedText || '',    // ← NEW
+                translationLang: result.translationLang || '',  // ← NEW
                 pdfPath: result.pdfPath || '',
                 pdfGeneratedAt: result.pdfPath ? new Date() : null,
                 errorMessage: '',

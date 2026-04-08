@@ -170,6 +170,8 @@ export interface AnalysisRecord {
     status: 'pending' | 'processing' | 'done' | 'error';
     createdAt: string;
     transcription?: string;
+    translatedText?: string;       // ← NEW: translated transcription
+    translationLang?: string;      // ← NEW: target language code e.g. 'fr','en','ar'
     summary?: string;
     errorMessage?: string;
     hasPdf?: boolean;
@@ -177,10 +179,11 @@ export interface AnalysisRecord {
 }
 
 export const analysisApi = {
-    // Upload audio file
-    uploadAudio: (file: File) => {
+    // Upload audio file — now accepts optional translateTo language
+    uploadAudio: (file: File, translateTo?: string) => {
         const formData = new FormData();
         formData.append('file', file);
+        if (translateTo) formData.append('translateTo', translateTo);
         return fetch(`${BASE_URL}/analyses/upload/audio`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${getToken()}` },
@@ -226,6 +229,8 @@ export const analysisApi = {
             status: 'pending' | 'processing' | 'done' | 'error';
             errorMessage: string | null;
             transcription: string | null;
+            translatedText: string | null;       // ← NEW
+            translationLang: string | null;      // ← NEW
             summary: string | null;
             hasPdf: boolean;
             pdfGeneratedAt: string | null;
@@ -236,10 +241,6 @@ export const analysisApi = {
         request<{ message: string; queue: { jobId: string } }>('POST', `/analyses/${id}/retry`),
 
     // ── PDF report ────────────────────────────────────────────────
-    /**
-     * Download the PDF report for a completed analysis.
-     * Triggers a browser file download.
-     */
     downloadReport: async (id: string, originalName?: string): Promise<void> => {
         const token = getToken();
         const res = await fetch(`${BASE_URL}/analyses/${id}/report`, {
@@ -251,7 +252,6 @@ export const analysisApi = {
             throw new Error(data.message || 'Download failed');
         }
 
-        // Trigger browser download
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -269,13 +269,9 @@ export const analysisApi = {
         URL.revokeObjectURL(url);
     },
 
-    /**
-     * Force-generate (or re-generate) the PDF report for a completed analysis.
-     */
     generateReport: (id: string) =>
         request<{ message: string; hasPdf: boolean }>('POST', `/analyses/${id}/report/generate`),
 
-    // Admin — get all analyses
     getAllAnalyses: () =>
         request<AnalysisRecord[]>('GET', '/analyses/admin/all'),
 

@@ -99,7 +99,7 @@ const translations = {
   suspended: { fr: 'Suspendu', en: 'Suspended', ar: 'موقوف' },
   totalUsers: { fr: 'Total utilisateurs', en: 'Total Users', ar: 'إجمالي المستخدمين' },
   systemLoad: { fr: 'Charge système', en: 'System Load', ar: 'حمل النظام' },
-  activeTenantsList: { fr: '⚡ Locataires actifs', en: '⚡ Active Tenants', ar: '⚡ المستأجرون النشطون' },
+  activeTenantsList: { fr: 'Locataires actifs', en: 'Active Tenants', ar: 'المستأجرون النشطون' },
   recentActivity: { fr: 'Activité récente', en: 'Recent Activity', ar: 'النشاط الأخير' },
 
   // ── Tenant Management page ────────────────────────────────────
@@ -342,13 +342,6 @@ const translations = {
   characters: { fr: 'caractères', en: 'characters', ar: 'حروف' },
   wordsLabel: { fr: 'mots', en: 'words', ar: 'كلمات' },
 
-  // ─────────────────────────────────────────────────────────────
-  // ADD THESE ENTRIES to the existing translations object in
-  // frontend/src/i18n/translations.ts
-  // (paste them before the closing `} as const;`)
-  // ─────────────────────────────────────────────────────────────
-
-
 
   // ── PDF Report ───────────────────────────────────────────────
   pdfReportReady: { fr: 'Rapport PDF prêt', en: 'PDF Report Ready', ar: 'تقرير PDF جاهز' },
@@ -373,7 +366,13 @@ const translations = {
   showTranscription: { fr: 'Afficher la transcription', en: 'Show transcription', ar: 'عرض النص' },
   hideTranscription: { fr: 'Masquer la transcription', en: 'Hide transcription', ar: 'إخفاء النص' },
 
-
+  translateResultTo: { fr: 'Traduire le résultat vers', en: 'Translate result to', ar: 'ترجمة النتيجة إلى' },
+  optional: { fr: 'optionnel', en: 'optional', ar: 'اختياري' },
+  willTranslateTo: { fr: 'La transcription sera également traduite en', en: 'The transcription will also be translated to', ar: 'سيتم ترجمة النص أيضاً إلى' },
+  translationAvailable: { fr: 'Traduction disponible', en: 'Translation available', ar: 'الترجمة متاحة' },
+  originalTranscription: { fr: 'Texte original', en: 'Original', ar: 'النص الأصلي' },
+  aiTranslated: { fr: 'Traduit par IA', en: 'AI Translated', ar: 'مترجم بالذكاء الاصطناعي' },
+  translationDisclaimer: { fr: "Ceci est une traduction générée par IA. Elle peut contenir des inexactitudes.", en: 'This is an AI-generated translation. It may contain inaccuracies.', ar: 'هذه ترجمة آلية قد تحتوي على أخطاء.' },
 
   // ── Video Analysis Form ───────────────────────────────────────
   queuePending: { fr: "En file d'attente...", en: "In queue...", ar: "في الانتظار..." },

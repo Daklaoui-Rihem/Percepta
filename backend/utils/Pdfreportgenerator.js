@@ -30,6 +30,8 @@ async function generateTranscriptionPDF(opts) {
         analysisId,
         originalName,
         transcription,
+        translatedText,
+        translationLang,
         summary,
         userName = 'Unknown',
         userEmail = '',
@@ -294,6 +296,87 @@ async function generateTranscriptionPDF(opts) {
 
             cursorY = doc.y;
         });
+
+        if (translatedText && translationLang) {
+            cursorY += 40;
+            if (doc.y > H - 100) {
+                doc.addPage();
+                doc.rect(0, 0, W, 8).fill(MID_BLUE);
+                doc.rect(0, 8, W, 3).fill(LIGHT_BLUE);
+                cursorY = 40;
+            }
+
+            const langNames = { fr: 'French', en: 'English', ar: 'Arabic' };
+            const friendlyLang = langNames[translationLang] || translationLang.toUpperCase();
+
+            const isArabic = translationLang === 'ar';
+            let arabicFontRegistered = false;
+
+            if (isArabic) {
+                const possibleFonts = [
+                    'C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/Arial.ttf',
+                    'C:/Windows/Fonts/tahoma.ttf', 'C:/Windows/Fonts/Tahoma.ttf',
+                    'C:/Windows/Fonts/segoeui.ttf', 'C:/Windows/Fonts/Segoeui.ttf',
+                    path.join(__dirname, 'Amiri-Regular.ttf')
+                ];
+
+                for (const fp of possibleFonts) {
+                    if (fs.existsSync(fp)) {
+                        try {
+                            doc.registerFont('ArabicFont', fp);
+                            arabicFontRegistered = true;
+                            break;
+                        } catch (error) {
+                            console.warn("Failed to register font: " + fp);
+                        }
+                    }
+                }
+            }
+
+            doc.rect(contentX, cursorY, 4, 18).fill(LIGHT_BLUE);
+            doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK_BLUE)
+                .text(`Translation (${friendlyLang})`, contentX + 12, cursorY + 2);
+
+            cursorY += 28;
+            doc.rect(contentX, cursorY, contentW, 1).fill('#e0eaf4');
+            cursorY += 12;
+
+            const tParagraphs = chunkText(translatedText, isArabic ? 100 : 600);
+            tParagraphs.forEach((para, pi) => {
+                if (pi > 0) cursorY = doc.y + 8;
+                if (doc.y > H - 100) {
+                    doc.addPage();
+                    doc.rect(0, 0, W, 8).fill(MID_BLUE);
+                    doc.rect(0, 8, W, 3).fill(LIGHT_BLUE);
+                    cursorY = 40;
+                }
+
+                // If it's Arabic, reverse text by words so pdfkit correctly lays it out RTL 
+                // and use the Amiri font + rtla feature for shaping.
+                let drawText = para;
+                let drawOpts = {
+                    width: contentW,
+                    lineGap: 3,
+                    paragraphGap: 6,
+                    align: isArabic ? 'right' : 'justify'
+                };
+
+                if (isArabic) {
+                    if (arabicFontRegistered) {
+                        doc.font('ArabicFont').fontSize(12).fillColor(GRAY_700);
+                        drawOpts.features = ['rtla'];
+                    } else {
+                        doc.font('Helvetica').fontSize(12).fillColor(GRAY_700);
+                    }
+                } else {
+                    doc.font('Helvetica').fontSize(10.5).fillColor(GRAY_700);
+                }
+
+                doc.text(drawText, contentX, cursorY, drawOpts);
+                cursorY = doc.y;
+            });
+        }
+
 
         // ══════════════════════════════════════════════════════
         // FOOTER on all pages

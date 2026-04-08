@@ -1,20 +1,19 @@
 /**
- * audioProcessor.js — Local Whisper via Python child process
- *                     + automatic PDF report generation
+ * audioProcessor.js — Local Whisper + optional translation
  *
- * Works on Windows with Python in PATH.
- * Spawns whisper_transcribe.py, reads JSON from stdout,
- * then generates a PDF report via pdfReportGenerator.
+ * After transcription, if a `translateTo` language is provided,
+ * calls translate_text.py to produce a translated version.
  *
  * ENV variables:
  *   WHISPER_PYTHON   path to python exe  (default: "python")
- *   WHISPER_SCRIPT   path to the .py file (default: auto-resolved)
+ *   WHISPER_SCRIPT   path to whisper_transcribe.py
  *   WHISPER_LANG     'fr'|'en'|'ar'|'auto'  (default: 'auto')
  *   WHISPER_TIMEOUT  ms before we kill the process  (default: 600000)
  */
 
 const { spawn } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { generateTranscriptionPDF } = require('../utils/pdfReportGenerator');
 
@@ -24,11 +23,14 @@ const PYTHON_BIN = process.env.WHISPER_PYTHON || 'python';
 const SCRIPT_PATH = process.env.WHISPER_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'whisper_transcribe.py');
 
+const TRANSLATE_SCRIPT_PATH = process.env.TRANSLATE_SCRIPT ||
+    path.join(__dirname, '..', 'scripts', 'translate_text.py');
+
 const DEFAULT_LANG = process.env.WHISPER_LANG || 'auto';
 const TIMEOUT_MS = parseInt(process.env.WHISPER_TIMEOUT || '600000');
 
 // ── Main ───────────────────────────────────────────────────────
-async function processAudio({ analysisId, filePath, job, userId, userName, userEmail, originalName }) {
+async function processAudio({ analysisId, filePath, job, userId, userName, userEmail, originalName, translateTo }) {
     console.log(`🎵 [AudioProcessor] Starting Whisper for: ${path.basename(filePath)}`);
 
     if (!fs.existsSync(filePath)) {
@@ -46,7 +48,7 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     const result = await runWhisper(filePath, DEFAULT_LANG);
 
-    await job.updateProgress(85);
+    await job.updateProgress(75);
 
     console.log(
         `✅ [AudioProcessor] Whisper done — ` +
@@ -57,7 +59,26 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     const summary = buildSummary(result.text, result.language, result.duration, result.confidence, result.summary);
 
-    await job.updateProgress(90);
+    // ── Optional Translation ───────────────────────────────────
+    let translatedText = '';
+    let translationLang = '';
+
+    if (translateTo && translateTo !== result.language) {
+        console.log(`🌐 [AudioProcessor] Translating to: ${translateTo}`);
+        try {
+            const translationResult = await runTranslation(result.text, result.language, translateTo);
+            translatedText = translationResult;
+            translationLang = translateTo;
+            console.log(`✅ [AudioProcessor] Translation done (${result.language} → ${translateTo})`);
+        } catch (translErr) {
+            // Translation failure is non-fatal — transcription still succeeds
+            console.error(`⚠️  [AudioProcessor] Translation failed:`, translErr.message);
+        }
+    } else if (translateTo && translateTo === result.language) {
+        console.log(`ℹ️  [AudioProcessor] Source and target language are the same (${result.language}), skipping translation.`);
+    }
+
+    await job.updateProgress(85);
 
     // ── Generate PDF report ────────────────────────────────────
     let pdfPath = '';
@@ -67,6 +88,8 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
             analysisId: String(analysisId),
             originalName: originalName || path.basename(filePath),
             transcription: result.text,
+            translatedText,
+            translationLang,
             summary,
             userName: userName || 'User',
             userEmail: userEmail || '',
@@ -75,16 +98,15 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
         });
         console.log(`📄 [AudioProcessor] PDF report generated: ${path.basename(pdfPath)}`);
     } catch (pdfErr) {
-        // PDF generation failure is non-fatal — transcription still succeeds
         console.error(`⚠️  [AudioProcessor] PDF generation failed:`, pdfErr.message);
     }
 
     await job.updateProgress(95);
 
-    return { transcription: result.text, summary, pdfPath };
+    return { transcription: result.text, summary, pdfPath, translatedText, translationLang };
 }
 
-// ── Spawn Python ───────────────────────────────────────────────
+// ── Spawn Whisper Python ───────────────────────────────────────
 function runWhisper(filePath, language) {
     return new Promise((resolve, reject) => {
         const args = [SCRIPT_PATH, filePath, language];
@@ -100,7 +122,6 @@ function runWhisper(filePath, language) {
         let stderr = '';
 
         proc.stdout.on('data', chunk => { stdout += chunk.toString(); });
-
         proc.stderr.on('data', chunk => {
             const line = chunk.toString().trimEnd();
             stderr += line + '\n';
@@ -109,45 +130,97 @@ function runWhisper(filePath, language) {
 
         const timer = setTimeout(() => {
             proc.kill();
-            reject(new Error(
-                `Whisper timed out after ${TIMEOUT_MS / 1000}s. ` +
-                `The file may be very long. Increase WHISPER_TIMEOUT in .env.`
-            ));
+            reject(new Error(`Whisper timed out after ${TIMEOUT_MS / 1000}s.`));
         }, TIMEOUT_MS);
 
         proc.on('close', code => {
             clearTimeout(timer);
-
             let parsed;
             try {
                 parsed = JSON.parse(stdout.trim());
             } catch (_) {
                 return reject(new Error(
                     `Whisper returned non-JSON output (exit ${code}).\n` +
-                    `stdout: ${stdout.slice(0, 400)}\n` +
-                    `stderr: ${stderr.slice(0, 400)}`
+                    `stdout: ${stdout.slice(0, 400)}\nstderr: ${stderr.slice(0, 400)}`
                 ));
             }
 
             if (code !== 0 || parsed.error) {
                 return reject(new Error(parsed.error || `Whisper exited with code ${code}`));
             }
-
             resolve(parsed);
         });
 
         proc.on('error', err => {
             clearTimeout(timer);
             if (err.code === 'ENOENT') {
-                reject(new Error(
-                    `Python not found: "${PYTHON_BIN}"\n\n` +
-                    `Fix options:\n` +
-                    `  1. Add Python to your Windows PATH (reopen terminal after)\n` +
-                    `  2. Set WHISPER_PYTHON=C:\\Python311\\python.exe in backend/.env`
-                ));
+                reject(new Error(`Python not found: "${PYTHON_BIN}"\nAdd Python to PATH or set WHISPER_PYTHON in .env`));
             } else {
                 reject(err);
             }
+        });
+    });
+}
+
+// ── Run Translation Script ─────────────────────────────────────
+async function runTranslation(text, sourceLang, targetLang) {
+    if (!fs.existsSync(TRANSLATE_SCRIPT_PATH)) {
+        throw new Error(`translate_text.py not found at: ${TRANSLATE_SCRIPT_PATH}`);
+    }
+
+    // Write text to a temp file to avoid command-line length limits
+    const tmpFile = path.join(os.tmpdir(), `percepta_translate_${Date.now()}.txt`);
+    fs.writeFileSync(tmpFile, text, 'utf-8');
+
+    return new Promise((resolve, reject) => {
+        const args = [TRANSLATE_SCRIPT_PATH, sourceLang || 'auto', targetLang, tmpFile];
+
+        const proc = spawn(PYTHON_BIN, args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' },
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', chunk => { stdout += chunk.toString(); });
+        proc.stderr.on('data', chunk => {
+            const line = chunk.toString().trimEnd();
+            stderr += line + '\n';
+        });
+
+        // 5-minute timeout for translation
+        const timer = setTimeout(() => {
+            proc.kill();
+            fs.unlink(tmpFile, () => {});
+            reject(new Error('Translation timed out after 5 minutes.'));
+        }, 5 * 60 * 1000);
+
+        proc.on('close', code => {
+            clearTimeout(timer);
+            fs.unlink(tmpFile, () => {}); // cleanup temp file
+
+            let parsed;
+            try {
+                parsed = JSON.parse(stdout.trim());
+            } catch (_) {
+                return reject(new Error(
+                    `Translate script returned non-JSON (exit ${code}).\n` +
+                    `stdout: ${stdout.slice(0, 300)}\nstderr: ${stderr.slice(0, 300)}`
+                ));
+            }
+
+            if (code !== 0 || parsed.error) {
+                return reject(new Error(parsed.error || `Translation script exited with code ${code}`));
+            }
+
+            resolve(parsed.translated || '');
+        });
+
+        proc.on('error', err => {
+            clearTimeout(timer);
+            fs.unlink(tmpFile, () => {});
+            reject(new Error(`Failed to spawn translation script: ${err.message}`));
         });
     });
 }
@@ -169,10 +242,7 @@ function buildSummary(text, lang, duration, confidence, intelligentSummary) {
     const sentences = text.match(/[^.!?؟]+[.!?؟]+/g) || [];
     const preview = sentences.slice(0, 2).join(' ').trim();
 
-    return (
-        `${header}\n\n` +
-        (preview ? `Preview:\n${preview}` : '')
-    );
+    return `${header}\n\n${preview ? `Preview:\n${preview}` : ''}`;
 }
 
 module.exports = { processAudio };
