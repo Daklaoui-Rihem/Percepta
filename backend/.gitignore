@@ -1,6 +1,6 @@
 .env
 node_modules
-backend/uploads/
+/uploads
 *.mp3
 *.mp4
 *.wav
