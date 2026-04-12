@@ -135,7 +135,7 @@ function ConfirmModal({
 }
 
 // ── Main Table ─────────────────────────────────────────────────
-export default function RecentAnalysesTable() {
+export default function RecentAnalysesTable({ limit }: { limit?: number }) {
   const { t, isRTL } = useTranslation();
   const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,11 +153,15 @@ export default function RecentAnalysesTable() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = analyses.filter((a: AnalysisRecord) => {
+  let filtered = analyses.filter((a: AnalysisRecord) => {
     const matchesSearch = a.originalName.toLowerCase().includes(search.toLowerCase());
     const matchesType = typeFilter === 'all' || a.type === typeFilter;
     return matchesSearch && matchesType;
   });
+
+  if (limit) {
+    filtered = filtered.slice(0, limit);
+  }
 
   const allFilteredSelected = filtered.length > 0 && filtered.every(a => selected.has(a._id));
   const someSelected = selected.size > 0;
@@ -306,8 +310,8 @@ export default function RecentAnalysesTable() {
             const typeLabel = row.type === 'audio' ? t('transcription') : t('videoAnalysisType');
             const statusLabel =
               row.status === 'done' ? t('completed') :
-              row.status === 'processing' ? t('inProgress') :
-              row.status === 'error' ? t('failed') : t('pending');
+                row.status === 'processing' ? t('inProgress') :
+                  row.status === 'error' ? t('failed') : t('pending');
             const sizeMB = (row.size / (1024 * 1024)).toFixed(2);
 
             return (

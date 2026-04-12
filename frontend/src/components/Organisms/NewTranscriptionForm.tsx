@@ -11,10 +11,10 @@ import { useTranslation } from '../../context/TranslationContext';
 import { analysisApi } from '../../services/api';
 
 const TRANSLATION_LANGUAGES = [
-  { code: '', label: 'No translation', icon: <Ban size={18} /> },
-  { code: 'fr', label: 'French', icon: <Languages size={18} /> },
-  { code: 'en', label: 'English', icon: <Languages size={18} /> },
-  { code: 'ar', label: 'Arabic', icon: <Languages size={18} /> },
+    { code: '', label: 'No translation', icon: <Ban size={18} /> },
+    { code: 'fr', label: 'French', icon: <Languages size={18} /> },
+    { code: 'en', label: 'English', icon: <Languages size={18} /> },
+    { code: 'ar', label: 'Arabic', icon: <Languages size={18} /> },
 ];
 
 export default function NewTranscriptionForm() {

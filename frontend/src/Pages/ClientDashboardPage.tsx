@@ -52,7 +52,7 @@ export default function ClientDashboardPage() {
         </div>
 
         {/* Recent analyses table */}
-        <RecentAnalysesTable />
+        <RecentAnalysesTable limit={5} />
 
       </div>
     </ClientTemplate>
