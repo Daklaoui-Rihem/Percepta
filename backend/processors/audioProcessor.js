@@ -1,14 +1,20 @@
 /**
- * audioProcessor.js — Local Whisper + optional translation
+ * audioProcessor.js — With Key Entity Extraction
  *
- * After transcription, if a `translateTo` language is provided,
- * calls translate_text.py to produce a translated version.
+ * Pipeline:
+ *   1. Whisper STT → raw transcription
+ *   2. Entity extraction (location, phones, people count, incident type, etc.)
+ *   3. Optional translation
+ *   4. PDF report generation (now includes extracted entities)
  *
  * ENV variables:
- *   WHISPER_PYTHON   path to python exe  (default: "python")
- *   WHISPER_SCRIPT   path to whisper_transcribe.py
- *   WHISPER_LANG     'fr'|'en'|'ar'|'auto'  (default: 'auto')
- *   WHISPER_TIMEOUT  ms before we kill the process  (default: 600000)
+ *   WHISPER_PYTHON       path to python exe  (default: "python")
+ *   WHISPER_SCRIPT       path to whisper_transcribe.py
+ *   EXTRACT_SCRIPT       path to extract_entities.py
+ *   WHISPER_LANG         'fr'|'en'|'ar'|'auto'  (default: 'auto')
+ *   WHISPER_TIMEOUT      ms before kill  (default: 600000)
+ *   ANTHROPIC_API_KEY    for LLM-based extraction (optional, recommended)
+ *   OPENAI_API_KEY       alternative LLM (optional)
  */
 
 const { spawn } = require('child_process');
@@ -22,6 +28,9 @@ const PYTHON_BIN = process.env.WHISPER_PYTHON || 'python';
 
 const SCRIPT_PATH = process.env.WHISPER_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'whisper_transcribe.py');
+
+const EXTRACT_SCRIPT_PATH = process.env.EXTRACT_SCRIPT ||
+    path.join(__dirname, '..', 'scripts', 'extract_entities.py');
 
 const TRANSLATE_SCRIPT_PATH = process.env.TRANSLATE_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'translate_text.py');
@@ -46,9 +55,10 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     await job.updateProgress(10);
 
+    // ── Step 1: Transcription ──────────────────────────────────
     const result = await runWhisper(filePath, DEFAULT_LANG);
 
-    await job.updateProgress(75);
+    await job.updateProgress(60);
 
     console.log(
         `✅ [AudioProcessor] Whisper done — ` +
@@ -59,7 +69,26 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     const summary = buildSummary(result.text, result.language, result.duration, result.confidence, result.summary);
 
-    // ── Optional Translation ───────────────────────────────────
+    // ── Step 2: Entity Extraction ──────────────────────────────
+    let extractedEntities = null;
+    try {
+        console.log(`🔍 [AudioProcessor] Extracting key entities...`);
+        extractedEntities = await runEntityExtraction(result.text, result.language);
+        console.log(
+            `✅ [AudioProcessor] Entities extracted — ` +
+            `method=${extractedEntities.extraction_method}, ` +
+            `incident=${extractedEntities.incident_type || 'unknown'}, ` +
+            `severity=${extractedEntities.severity}`
+        );
+    } catch (extractErr) {
+        // Entity extraction failure is NON-FATAL — transcription still succeeds
+        console.error(`⚠️  [AudioProcessor] Entity extraction failed:`, extractErr.message);
+        extractedEntities = null;
+    }
+
+    await job.updateProgress(75);
+
+    // ── Step 3: Optional Translation ──────────────────────────
     let translatedText = '';
     let translationLang = '';
 
@@ -71,7 +100,6 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
             translationLang = translateTo;
             console.log(`✅ [AudioProcessor] Translation done (${result.language} → ${translateTo})`);
         } catch (translErr) {
-            // Translation failure is non-fatal — transcription still succeeds
             console.error(`⚠️  [AudioProcessor] Translation failed:`, translErr.message);
         }
     } else if (translateTo && translateTo === result.language) {
@@ -80,7 +108,7 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     await job.updateProgress(85);
 
-    // ── Generate PDF report ────────────────────────────────────
+    // ── Step 4: PDF Report ─────────────────────────────────────
     let pdfPath = '';
     try {
         const pdfOutputDir = path.join(__dirname, '..', 'uploads', String(userId || 'unknown'), 'reports');
@@ -91,6 +119,7 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
             translatedText,
             translationLang,
             summary,
+            extractedEntities,          // ← Pass entities to PDF generator
             userName: userName || 'User',
             userEmail: userEmail || '',
             createdAt: new Date(),
@@ -103,7 +132,14 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     await job.updateProgress(95);
 
-    return { transcription: result.text, summary, pdfPath, translatedText, translationLang };
+    return {
+        transcription: result.text,
+        summary,
+        pdfPath,
+        translatedText,
+        translationLang,
+        extractedEntities,              // ← Return to worker/controller
+    };
 }
 
 // ── Spawn Whisper Python ───────────────────────────────────────
@@ -162,13 +198,82 @@ function runWhisper(filePath, language) {
     });
 }
 
+// ── Run Entity Extraction ──────────────────────────────────────
+async function runEntityExtraction(text, language) {
+    if (!fs.existsSync(EXTRACT_SCRIPT_PATH)) {
+        throw new Error(`extract_entities.py not found at: ${EXTRACT_SCRIPT_PATH}`);
+    }
+
+    // Write text to a temp file to avoid command-line length limits
+    const tmpFile = path.join(os.tmpdir(), `percepta_extract_${Date.now()}.txt`);
+    fs.writeFileSync(tmpFile, text, 'utf-8');
+
+    return new Promise((resolve, reject) => {
+        const args = [EXTRACT_SCRIPT_PATH, tmpFile, language || 'auto'];
+
+        const proc = spawn(PYTHON_BIN, args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: {
+                ...process.env,
+                PYTHONIOENCODING: 'utf-8',
+                PYTHONUTF8: '1',
+                // Pass API keys so the Python script can use them
+                ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+                OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+            },
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', chunk => { stdout += chunk.toString(); });
+        proc.stderr.on('data', chunk => {
+            const line = chunk.toString().trimEnd();
+            stderr += line + '\n';
+        });
+
+        // 3-minute timeout for extraction
+        const timer = setTimeout(() => {
+            proc.kill();
+            fs.unlink(tmpFile, () => {});
+            reject(new Error('Entity extraction timed out after 3 minutes.'));
+        }, 3 * 60 * 1000);
+
+        proc.on('close', code => {
+            clearTimeout(timer);
+            fs.unlink(tmpFile, () => {}); // cleanup
+
+            let parsed;
+            try {
+                parsed = JSON.parse(stdout.trim());
+            } catch (_) {
+                return reject(new Error(
+                    `Entity extraction returned non-JSON (exit ${code}).\n` +
+                    `stdout: ${stdout.slice(0, 300)}\nstderr: ${stderr.slice(0, 300)}`
+                ));
+            }
+
+            if (code !== 0 || parsed.error) {
+                return reject(new Error(parsed.error || `Extraction exited with code ${code}`));
+            }
+
+            resolve(parsed);
+        });
+
+        proc.on('error', err => {
+            clearTimeout(timer);
+            fs.unlink(tmpFile, () => {});
+            reject(new Error(`Failed to spawn extraction script: ${err.message}`));
+        });
+    });
+}
+
 // ── Run Translation Script ─────────────────────────────────────
 async function runTranslation(text, sourceLang, targetLang) {
     if (!fs.existsSync(TRANSLATE_SCRIPT_PATH)) {
         throw new Error(`translate_text.py not found at: ${TRANSLATE_SCRIPT_PATH}`);
     }
 
-    // Write text to a temp file to avoid command-line length limits
     const tmpFile = path.join(os.tmpdir(), `percepta_translate_${Date.now()}.txt`);
     fs.writeFileSync(tmpFile, text, 'utf-8');
 
@@ -189,7 +294,6 @@ async function runTranslation(text, sourceLang, targetLang) {
             stderr += line + '\n';
         });
 
-        // 5-minute timeout for translation
         const timer = setTimeout(() => {
             proc.kill();
             fs.unlink(tmpFile, () => {});
@@ -198,7 +302,7 @@ async function runTranslation(text, sourceLang, targetLang) {
 
         proc.on('close', code => {
             clearTimeout(timer);
-            fs.unlink(tmpFile, () => {}); // cleanup temp file
+            fs.unlink(tmpFile, () => {});
 
             let parsed;
             try {

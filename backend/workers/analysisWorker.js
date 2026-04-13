@@ -1,12 +1,8 @@
 /**
  * analysisWorker.js — BullMQ Worker
+ * Updated to save extractedEntities from audio processing.
  *
  * Run separately: node backend/workers/analysisWorker.js
- *
- * Changes:
- *  - Loads user info (name, email) before processing so the PDF report
- *    can include proper attribution.
- *  - Saves pdfPath to the Analysis document after processing.
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
@@ -34,7 +30,6 @@ mongoose.connect(process.env.MONGO_URI)
 const worker = new Worker(
     'analysis',
     async (job) => {
-        // ← NEW: destructure translateTo from job data
         const { analysisId, type, filePath, translateTo } = job.data;
 
         console.log(`⚙️  [Worker] Processing job ${job.id} | type=${type} | analysisId=${analysisId}${translateTo ? ` | translateTo=${translateTo}` : ''}`);
@@ -70,7 +65,7 @@ const worker = new Worker(
                         userName,
                         userEmail,
                         originalName: analysis.originalName,
-                        translateTo: translateTo || '',   // ← NEW: pass through
+                        translateTo: translateTo || '',
                     });
                     break;
 
@@ -86,12 +81,23 @@ const worker = new Worker(
                     throw new Error(`Unknown analysis type: ${type}`);
             }
 
+            // ── Log extraction result ──────────────────────────
+            if (result.extractedEntities) {
+                console.log(
+                    `🔍 [Worker] Entities extracted for ${analysisId} — ` +
+                    `incident: ${result.extractedEntities.incident_type || 'N/A'}, ` +
+                    `severity: ${result.extractedEntities.severity || 'N/A'}, ` +
+                    `method: ${result.extractedEntities.extraction_method || 'N/A'}`
+                );
+            }
+
             await Analysis.findByIdAndUpdate(analysisId, {
                 status: 'done',
                 transcription: result.transcription,
                 summary: result.summary,
-                translatedText: result.translatedText || '',    // ← NEW
-                translationLang: result.translationLang || '',  // ← NEW
+                translatedText: result.translatedText || '',
+                translationLang: result.translationLang || '',
+                extractedEntities: result.extractedEntities || null,   // ← NEW
                 pdfPath: result.pdfPath || '',
                 pdfGeneratedAt: result.pdfPath ? new Date() : null,
                 errorMessage: '',
@@ -100,7 +106,12 @@ const worker = new Worker(
             await job.updateProgress(100);
             console.log(`✅ [Worker] Job ${job.id} completed for analysisId=${analysisId}`);
 
-            return { success: true, analysisId, hasPdf: !!result.pdfPath };
+            return {
+                success: true,
+                analysisId,
+                hasPdf: !!result.pdfPath,
+                hasEntities: !!result.extractedEntities,
+            };
 
         } catch (processingError) {
             await Analysis.findByIdAndUpdate(analysisId, {

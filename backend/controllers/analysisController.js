@@ -1,9 +1,11 @@
 /**
- * analysisController.js — Updated with PDF download endpoint
+ * analysisController.js — Updated with extractedEntities support
  *
- * New endpoints:
- *  - GET /api/analyses/:id/report   → Download PDF report
- *  - GET /api/analyses/:id/status   → Now includes hasPdf flag
+ * Changes:
+ *  - uploadAudio stores extractedEntities after processing
+ *  - getAnalysisStatus returns extractedEntities when done
+ *  - getMyAnalyses returns extractedEntities
+ *  - generateReport passes extractedEntities to PDF generator
  */
 
 const Analysis = require('../models/Analysis');
@@ -13,8 +15,6 @@ const { processVideo } = require('../processors/videoProcessor');
 const { processGroupActivity } = require('../processors/groupActivityProcessor');
 const path = require('path');
 const fs = require('fs');
-
-const ALLOWED_AUDIO = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/ogg', 'audio/x-m4a'];
 
 // ── In-process fallback (when Redis is unavailable) ────────────
 async function processInBackground(analysisId, type, filePath, userId, translateTo = '') {
@@ -32,7 +32,7 @@ async function processInBackground(analysisId, type, filePath, userId, translate
                 job: fakeJob,
                 userId: String(userId),
                 originalName: analysis?.originalName || path.basename(filePath),
-                translateTo,  // ← pass through
+                translateTo,
             });
         } else if (type === 'video') {
             result = await processVideo({ analysisId, filePath, job: fakeJob });
@@ -44,8 +44,9 @@ async function processInBackground(analysisId, type, filePath, userId, translate
             status: 'done',
             transcription: result.transcription,
             summary: result.summary,
-            translatedText: result.translatedText || '',    // ← NEW
-            translationLang: result.translationLang || '',  // ← NEW
+            translatedText: result.translatedText || '',
+            translationLang: result.translationLang || '',
+            extractedEntities: result.extractedEntities || null,   // ← NEW
             pdfPath: result.pdfPath || '',
             pdfGeneratedAt: result.pdfPath ? new Date() : null,
             errorMessage: '',
@@ -63,7 +64,6 @@ async function processInBackground(analysisId, type, filePath, userId, translate
 // ── Try queue, fall back to in-process ────────────────────────
 async function dispatchJob(analysisId, type, filePath, userId, translateTo = '') {
     try {
-        // Pass translateTo as extra data in the job
         const { addAnalysisJobWithOptions } = require('../queue');
         const job = await addAnalysisJobWithOptions(analysisId, type, filePath, { translateTo });
         console.log(`📥 [Queue] Job dispatched: ${job.id}`);
@@ -80,7 +80,6 @@ exports.uploadAudio = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-        // Read optional translation target from form data
         const translateTo = req.body.translateTo || '';
 
         const analysis = await Analysis.create({
@@ -93,7 +92,7 @@ exports.uploadAudio = async (req, res) => {
             type: 'audio',
             status: 'pending',
             filePath: req.file.path,
-            translationLang: translateTo || '',   // store requested target lang
+            translationLang: translateTo || '',
         });
 
         const dispatch = await dispatchJob(String(analysis._id), 'audio', req.file.path, req.user.id, translateTo);
@@ -194,7 +193,6 @@ exports.getMyAnalyses = async (req, res) => {
             .select('-filePath')
             .sort({ createdAt: -1 });
 
-        // Append hasPdf flag
         const result = analyses.map(a => ({
             ...a.toObject(),
             hasPdf: !!(a.pdfPath && fs.existsSync(a.pdfPath)),
@@ -230,7 +228,7 @@ exports.getAnalysisById = async (req, res) => {
 exports.getAnalysisStatus = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id)
-            .select('status errorMessage transcription translatedText translationLang summary pdfPath pdfGeneratedAt');
+            .select('status errorMessage transcription translatedText translationLang summary pdfPath pdfGeneratedAt extractedEntities');
 
         if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
 
@@ -241,9 +239,11 @@ exports.getAnalysisStatus = async (req, res) => {
             status: analysis.status,
             errorMessage: analysis.errorMessage || null,
             transcription: analysis.status === 'done' ? analysis.transcription : null,
-            translatedText: analysis.status === 'done' ? (analysis.translatedText || null) : null,   // ← NEW
-            translationLang: analysis.status === 'done' ? (analysis.translationLang || null) : null, // ← NEW
+            translatedText: analysis.status === 'done' ? (analysis.translatedText || null) : null,
+            translationLang: analysis.status === 'done' ? (analysis.translationLang || null) : null,
             summary: analysis.status === 'done' ? analysis.summary : null,
+            // ── NEW: extracted entities ──────────────────────────
+            extractedEntities: analysis.status === 'done' ? (analysis.extractedEntities || null) : null,
             hasPdf: analysis.status === 'done' ? hasPdf : false,
             pdfGeneratedAt: analysis.pdfGeneratedAt || null,
         });
@@ -253,16 +253,13 @@ exports.getAnalysisStatus = async (req, res) => {
 };
 
 // ── Download PDF Report ────────────────────────────────────────
-// GET /api/analyses/:id/report
 exports.downloadReport = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id);
 
         if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
 
-        // Access control
         if (String(analysis.userId) !== String(req.user.id)) {
-            // Also allow admin/superadmin of the same tenant
             if (
                 req.user.role === 'SuperAdmin' ||
                 (req.user.role === 'Admin' && String(analysis.tenantId) === String(req.user.id))
@@ -281,7 +278,6 @@ exports.downloadReport = async (req, res) => {
             return res.status(410).json({ message: 'PDF file no longer exists on disk.' });
         }
 
-        // Construct a clean download filename
         const safeName = analysis.originalName
             .replace(/\.[^/.]+$/, '')
             .replace(/[^a-zA-Z0-9_-]/g, '_')
@@ -305,8 +301,7 @@ exports.downloadReport = async (req, res) => {
     }
 };
 
-// ── Regenerate PDF (force re-create) ──────────────────────────
-// POST /api/analyses/:id/report/generate
+// ── Regenerate PDF ────────────────────────────────────────────
 exports.generateReport = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id);
@@ -344,6 +339,7 @@ exports.generateReport = async (req, res) => {
             translatedText: analysis.translatedText,
             translationLang: analysis.translationLang,
             summary: analysis.summary,
+            extractedEntities: analysis.extractedEntities || null,   // ← NEW
             userName,
             userEmail,
             createdAt: analysis.createdAt,
@@ -389,6 +385,7 @@ exports.retryAnalysis = async (req, res) => {
         await Analysis.findByIdAndUpdate(req.params.id, {
             status: 'pending',
             errorMessage: '',
+            extractedEntities: null,   // ← Reset on retry
         });
 
         const job = await addAnalysisJob(String(analysis._id), analysis.type, analysis.filePath);
@@ -462,12 +459,10 @@ exports.deleteAnalysis = async (req, res) => {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        // Delete original file
         if (analysis.filePath && fs.existsSync(analysis.filePath)) {
             fs.unlinkSync(analysis.filePath);
         }
 
-        // Delete PDF if it exists
         if (analysis.pdfPath && fs.existsSync(analysis.pdfPath)) {
             fs.unlinkSync(analysis.pdfPath);
         }

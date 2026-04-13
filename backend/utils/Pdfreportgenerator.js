@@ -1,20 +1,9 @@
 /**
- * pdfReportGenerator.js
+ * pdfReportGenerator.js — Updated with Extracted Entities section
  *
- * Generates a professional PDF report from a completed audio transcription.
- * Uses pdfkit with embedded Unicode fonts so Arabic, Chinese, Japanese, Korean
- * and other non-Latin scripts render correctly instead of showing gibberish.
- *
- * Font strategy:
- *   - NotoSans         → Latin / Cyrillic / Greek / most European scripts
- *   - NotoSansArabic   → Arabic
- *   - IPA Gothic (ipag)→ CJK (Chinese, Japanese, Korean)
- *
- * On Linux servers the fonts are pre-installed via:
- *   apt-get install fonts-noto fonts-noto-cjk ipafont-gothic
- *
- * On Windows (dev), the installer copies the same .ttf/.otf files into
- *   backend/fonts/  — the code falls back to that directory automatically.
+ * New section added between Summary and Full Transcription:
+ *   "Key Information Extracted" — shows location, phones, people count,
+ *   incident type, severity, names, time/date, etc.
  */
 
 const PDFDocument = require('pdfkit');
@@ -22,14 +11,12 @@ const fs = require('fs');
 const path = require('path');
 
 // ── Font paths ─────────────────────────────────────────────────
-// System font locations (Linux / Ubuntu)
 const SYSTEM_FONTS = {
     latin: '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
     arabic: '/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf',
     cjk: '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf',
 };
 
-// Fallback: fonts bundled alongside the backend (copy them here for Windows dev)
 const BUNDLED_FONTS = {
     latin: path.join(__dirname, '..', 'fonts', 'NotoSans-Regular.ttf'),
     arabic: path.join(__dirname, '..', 'fonts', 'NotoSansArabic-Regular.ttf'),
@@ -39,49 +26,15 @@ const BUNDLED_FONTS = {
 function resolveFontPath(key) {
     if (fs.existsSync(SYSTEM_FONTS[key])) return SYSTEM_FONTS[key];
     if (fs.existsSync(BUNDLED_FONTS[key])) return BUNDLED_FONTS[key];
-    return null; // will fall back to Helvetica for that block
+    return null;
 }
 
 // ── Script detection ───────────────────────────────────────────
-/**
- * Returns the font key required to render the given text string.
- * Priorities: CJK > Arabic > Latin (default)
- */
 function detectScript(text) {
     if (!text) return 'latin';
-
-    // CJK: Chinese, Japanese (Hiragana/Katakana/Kanji), Korean (Hangul)
-    if (/[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]/.test(text)) {
-        return 'cjk';
-    }
-    // Arabic / Farsi / Urdu
-    if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) {
-        return 'arabic';
-    }
+    if (/[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]/.test(text)) return 'cjk';
+    if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return 'arabic';
     return 'latin';
-}
-
-/**
- * Splits a block of text into runs that each share the same script,
- * so we can switch fonts mid-paragraph.
- * Returns: Array<{ text: string, script: 'latin'|'arabic'|'cjk' }>
- */
-function splitIntoRuns(text) {
-    if (!text) return [];
-    const runs = [];
-    let currentScript = detectScript(text[0]);
-    let start = 0;
-
-    for (let i = 1; i < text.length; i++) {
-        const s = detectScript(text[i]);
-        if (s !== currentScript) {
-            runs.push({ text: text.slice(start, i), script: currentScript });
-            currentScript = s;
-            start = i;
-        }
-    }
-    runs.push({ text: text.slice(start), script: currentScript });
-    return runs;
 }
 
 // ── Brand colors ───────────────────────────────────────────────
@@ -93,6 +46,14 @@ const GRAY_700 = '#374151';
 const GRAY_400 = '#9ca3af';
 const SUCCESS = '#16a34a';
 
+// ── Severity colors ────────────────────────────────────────────
+const SEVERITY_COLORS = {
+    low:      { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', label: 'LOW' },
+    medium:   { bg: '#fefce8', text: '#ca8a04', border: '#fde68a', label: 'MEDIUM' },
+    high:     { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', label: 'HIGH' },
+    critical: { bg: '#fff1f2', text: '#dc2626', border: '#fecaca', label: 'CRITICAL' },
+};
+
 // ── Main export ────────────────────────────────────────────────
 async function generateTranscriptionPDF(opts) {
     const {
@@ -102,6 +63,7 @@ async function generateTranscriptionPDF(opts) {
         translatedText,
         translationLang,
         summary,
+        extractedEntities,   // ← NEW
         userName = 'Unknown',
         userEmail = '',
         createdAt = new Date(),
@@ -120,13 +82,13 @@ async function generateTranscriptionPDF(opts) {
     // ── Parse summary metadata ─────────────────────────────────
     const durationMatch = summary?.match(/Duration:\s*([^\|]+)/i);
     const languageMatch = summary?.match(/Language:\s*(\w+)/i);
-    const wordsMatch = summary?.match(/~([\d,]+)\s*words/i);
-    const previewMatch = summary?.match(/(?:Preview|Key Highlights):\n([\s\S]+)/i);
+    const wordsMatch    = summary?.match(/~([\d,]+)\s*words/i);
+    const previewMatch  = summary?.match(/(?:Preview|Key Highlights):\n([\s\S]+)/i);
 
-    const duration = durationMatch?.[1]?.trim() || '—';
-    const language = languageMatch?.[1]?.trim() || '—';
+    const duration  = durationMatch?.[1]?.trim() || '—';
+    const language  = languageMatch?.[1]?.trim() || '—';
     const wordCount = wordsMatch?.[1]?.trim() || '—';
-    const preview = previewMatch?.[1]?.trim() || '';
+    const preview   = previewMatch?.[1]?.trim() || '';
 
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({
@@ -140,7 +102,7 @@ async function generateTranscriptionPDF(opts) {
             },
         });
 
-        // ── Register fonts ─────────────────────────────────────────
+        // ── Register fonts ─────────────────────────────────────
         const fontPaths = {
             latin: resolveFontPath('latin'),
             arabic: resolveFontPath('arabic'),
@@ -151,7 +113,6 @@ async function generateTranscriptionPDF(opts) {
         if (fontPaths.arabic) doc.registerFont('Arabic', fontPaths.arabic);
         if (fontPaths.cjk) doc.registerFont('CJK', fontPaths.cjk);
 
-        // Helper: pick the right registered font name for a script
         const fontFor = (script) => {
             if (script === 'arabic' && fontPaths.arabic) return 'Arabic';
             if (script === 'cjk' && fontPaths.cjk) return 'CJK';
@@ -164,7 +125,7 @@ async function generateTranscriptionPDF(opts) {
         const stream = fs.createWriteStream(pdfPath);
         doc.pipe(stream);
 
-        // ── HEADER BAND ────────────────────────────────────────────
+        // ── HEADER BAND ────────────────────────────────────────
         doc.rect(0, 0, W, 120).fill(MID_BLUE);
         doc.rect(0, 110, W, 10).fill(LIGHT_BLUE);
 
@@ -178,7 +139,7 @@ async function generateTranscriptionPDF(opts) {
         doc.font(fontFor('latin')).fontSize(11).fillColor(WHITE)
             .text('TRANSCRIPTION REPORT', W - 175, 40, { width: 130, align: 'center' });
 
-        // ── META BAND ──────────────────────────────────────────────
+        // ── META BAND ──────────────────────────────────────────
         doc.rect(0, 120, W, 90).fill('#f0f7ff');
 
         const metaY = 134;
@@ -209,12 +170,18 @@ async function generateTranscriptionPDF(opts) {
             .text(createdAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }), 40 + colW, userY + 12)
             .text(String(analysisId).substring(0, 12) + '…', 40 + colW * 2, userY + 12);
 
-        // ── CONTENT ────────────────────────────────────────────────
+        // ── CONTENT ────────────────────────────────────────────
         const contentX = 40;
         const contentW = W - 80;
         let cursorY = 228;
 
-        // Section: Summary
+        // ── SECTION: Key Information Extracted (NEW) ───────────
+        if (extractedEntities && Object.keys(extractedEntities).length > 0) {
+            cursorY = renderEntitiesSection(doc, extractedEntities, contentX, contentW, cursorY, H, W, fontFor, DARK_BLUE, GRAY_700, LIGHT_BLUE, MID_BLUE);
+            cursorY += 20;
+        }
+
+        // ── SECTION: Summary ───────────────────────────────────
         doc.rect(contentX, cursorY, 4, 18).fill(LIGHT_BLUE);
         doc.font(fontFor('latin')).fontSize(13).fillColor(DARK_BLUE)
             .text('Summary', contentX + 12, cursorY + 2);
@@ -223,7 +190,6 @@ async function generateTranscriptionPDF(opts) {
         if (preview) {
             doc.rect(contentX, cursorY, contentW, 1).fill('#e0eaf4');
             cursorY += 10;
-            // Preview may contain non-Latin text — render with appropriate font
             renderMixedText(doc, preview, contentX, cursorY, contentW, 11, GRAY_700, fontFor, false);
             cursorY = doc.y + 18;
         }
@@ -247,10 +213,10 @@ async function generateTranscriptionPDF(opts) {
         });
         cursorY += 66;
 
-        // Section: Full Transcription
+        // ── SECTION: Full Transcription ────────────────────────
         cursorY = renderSection(doc, 'Full Transcription', transcription, contentX, contentW, cursorY, H, W, MID_BLUE, LIGHT_BLUE, fontFor, DARK_BLUE, GRAY_700);
 
-        // Section: Translation (if present)
+        // ── SECTION: Translation ───────────────────────────────
         if (translatedText && translationLang) {
             const langNames = { fr: 'French', en: 'English', ar: 'Arabic', zh: 'Chinese', ja: 'Japanese', ko: 'Korean' };
             const friendlyLang = langNames[translationLang] || translationLang.toUpperCase();
@@ -265,7 +231,7 @@ async function generateTranscriptionPDF(opts) {
             cursorY = renderSection(doc, `Translation (${friendlyLang})`, translatedText, contentX, contentW, cursorY, H, W, MID_BLUE, LIGHT_BLUE, fontFor, DARK_BLUE, GRAY_700);
         }
 
-        // ── FOOTER on all pages ────────────────────────────────────
+        // ── FOOTER on all pages ────────────────────────────────
         const range = doc.bufferedPageRange();
         for (let i = 0; i < range.count; i++) {
             doc.switchToPage(range.start + i);
@@ -282,7 +248,140 @@ async function generateTranscriptionPDF(opts) {
     });
 }
 
-// ── Render a labelled section of (possibly mixed-script) text ──
+// ── Render Extracted Entities Section ─────────────────────────
+function renderEntitiesSection(doc, entities, contentX, contentW, cursorY, H, W, fontFor, DARK_BLUE, GRAY_700, LIGHT_BLUE, MID_BLUE) {
+    // Section header
+    doc.rect(contentX, cursorY, 4, 18).fill('#dc2626');
+    doc.font(fontFor('latin')).fontSize(13).fillColor(DARK_BLUE)
+        .text('Key Information Extracted', contentX + 12, cursorY + 2);
+    cursorY += 28;
+    doc.rect(contentX, cursorY, contentW, 1).fill('#e0eaf4');
+    cursorY += 12;
+
+    // ── Severity badge (prominent, full-width) ─────────────────
+    if (entities.severity) {
+        const sev = SEVERITY_COLORS[entities.severity] || SEVERITY_COLORS.medium;
+        const sevY = cursorY;
+
+        doc.rect(contentX, sevY, contentW, 36).fill(sev.bg);
+        doc.rect(contentX, sevY, 4, 36).fill(sev.text);
+
+        doc.font(fontFor('latin')).fontSize(10).fillColor(sev.text)
+            .text('SEVERITY LEVEL', contentX + 12, sevY + 6);
+        doc.font(fontFor('latin')).fontSize(14).fillColor(sev.text)
+            .text(`● ${sev.label}`, contentX + 12, sevY + 18);
+
+        // Extraction method badge (right side)
+        if (entities.extraction_method) {
+            const methodLabel = entities.extraction_method === 'rule_based' ? 'Rule-based' :
+                                entities.extraction_method === 'llm_anthropic' ? 'AI (Claude)' :
+                                entities.extraction_method === 'llm_openai' ? 'AI (GPT)' : entities.extraction_method;
+            doc.font(fontFor('latin')).fontSize(9).fillColor('#64748b')
+                .text(`Extracted via: ${methodLabel}`, contentX + contentW - 150, sevY + 13, { width: 140, align: 'right' });
+        }
+
+        cursorY = sevY + 44;
+    }
+
+    // ── Entity grid (2 columns) ────────────────────────────────
+    const entityItems = [];
+
+    if (entities.incident_type) {
+        entityItems.push({ label: 'Incident Type', value: entities.incident_type, icon: '🚨' });
+    }
+    if (entities.location) {
+        entityItems.push({ label: 'Location', value: entities.location, icon: '📍' });
+    }
+    if (entities.people_count !== null && entities.people_count !== undefined) {
+        entityItems.push({ label: 'People Involved', value: String(entities.people_count), icon: '👥' });
+    }
+    if (entities.phones && entities.phones.length > 0) {
+        entityItems.push({ label: 'Phone Numbers', value: entities.phones.join(', '), icon: '📞' });
+    }
+    if (entities.caller_name) {
+        entityItems.push({ label: 'Caller Name', value: entities.caller_name, icon: '🧑' });
+    }
+    if (entities.victim_names && entities.victim_names.length > 0) {
+        entityItems.push({ label: 'Victim Names', value: entities.victim_names.join(', '), icon: '🏥' });
+    }
+    if (entities.time_mentioned) {
+        entityItems.push({ label: 'Time Mentioned', value: entities.time_mentioned, icon: '🕐' });
+    }
+    if (entities.date_mentioned) {
+        entityItems.push({ label: 'Date Mentioned', value: entities.date_mentioned, icon: '📅' });
+    }
+    if (entities.additional_details) {
+        entityItems.push({ label: 'Additional Details', value: entities.additional_details, icon: '📝', fullWidth: true });
+    }
+
+    if (entityItems.length === 0) {
+        doc.font(fontFor('latin')).fontSize(11).fillColor('#94a3b8')
+            .text('No specific entities detected in this transcription.', contentX, cursorY);
+        cursorY = doc.y + 12;
+        return cursorY;
+    }
+
+    const halfW = (contentW - 12) / 2;
+    let col = 0;
+    let rowY = cursorY;
+    let maxRowHeight = 0;
+
+    entityItems.forEach((item, idx) => {
+        // Check for page break
+        if (rowY > H - 120) {
+            doc.addPage();
+            addContinuationHeader(doc, W, MID_BLUE, LIGHT_BLUE);
+            rowY = 40;
+            col = 0;
+            maxRowHeight = 0;
+        }
+
+        const isFullWidth = item.fullWidth;
+        const boxW = isFullWidth ? contentW : halfW;
+        const boxX = isFullWidth ? contentX : contentX + col * (halfW + 12);
+
+        // Box background
+        doc.rect(boxX, rowY, boxW, 52).fill('#f8fbff');
+        doc.rect(boxX, rowY, boxW, 52).stroke('#e0eaf4');
+
+        // Label
+        doc.font(fontFor('latin')).fontSize(8).fillColor('#94a3b8')
+            .text(`${item.icon}  ${item.label.toUpperCase()}`, boxX + 10, rowY + 8, { width: boxW - 20 });
+
+        // Value
+        const valueScript = detectScript(item.value);
+        doc.font(fontFor(valueScript)).fontSize(11).fillColor(DARK_BLUE)
+            .text(item.value, boxX + 10, rowY + 22, {
+                width: boxW - 20,
+                lineBreak: true,
+                height: 24,
+            });
+
+        maxRowHeight = Math.max(maxRowHeight, 52);
+
+        if (isFullWidth) {
+            rowY += maxRowHeight + 8;
+            maxRowHeight = 0;
+            col = 0;
+        } else {
+            col++;
+            if (col === 2) {
+                rowY += maxRowHeight + 8;
+                maxRowHeight = 0;
+                col = 0;
+            }
+        }
+    });
+
+    // If last row had only 1 item
+    if (col === 1) {
+        rowY += maxRowHeight + 8;
+    }
+
+    return rowY + 8;
+}
+
+// ── Render a labelled section ──────────────────────────────────
 function renderSection(doc, title, text, contentX, contentW, cursorY, H, W, MID_BLUE, LIGHT_BLUE, fontFor, DARK_BLUE, GRAY_700) {
     doc.rect(contentX, cursorY, 4, 18).fill(LIGHT_BLUE);
     doc.font(fontFor('latin')).fontSize(13).fillColor(DARK_BLUE)
@@ -311,10 +410,6 @@ function renderSection(doc, title, text, contentX, contentW, cursorY, H, W, MID_
     return cursorY;
 }
 
-/**
- * Renders a text block that may contain multiple scripts (Arabic, CJK, Latin).
- * Splits into same-script runs and renders each with the appropriate font.
- */
 function renderMixedText(doc, text, x, y, width, fontSize, color, fontFor, justify) {
     if (!text) return;
 
@@ -322,22 +417,13 @@ function renderMixedText(doc, text, x, y, width, fontSize, color, fontFor, justi
     const isRTL = script === 'arabic';
     const align = isRTL ? 'right' : (justify ? 'justify' : 'left');
 
-    const options = {
-        width,
-        lineGap: 3,
-        paragraphGap: 6,
-        align,
-    };
-
+    const options = { width, lineGap: 3, paragraphGap: 6, align };
     if (isRTL) {
         options.features = ['rtla'];
         options.textDirection = 'rtl';
     }
 
-    doc.font(fontFor(script))
-        .fontSize(fontSize)
-        .fillColor(color)
-        .text(text, x, y, options);
+    doc.font(fontFor(script)).fontSize(fontSize).fillColor(color).text(text, x, y, options);
 }
 
 function addContinuationHeader(doc, W, MID_BLUE, LIGHT_BLUE) {
@@ -345,16 +431,11 @@ function addContinuationHeader(doc, W, MID_BLUE, LIGHT_BLUE) {
     doc.rect(0, 8, W, 3).fill(LIGHT_BLUE);
 }
 
-/**
- * Split long text into chunks at sentence / word boundaries.
- */
 function chunkText(text, maxCharsPerChunk = 500) {
     if (!text || text.length <= maxCharsPerChunk) return [text || ''];
 
-    // Try sentence splits first (works for languages with punctuation)
     const sentences = text.match(/[^.!?؟。！？\n]+[.!?؟。！？\n]*/g) || [];
     if (sentences.length <= 1) {
-        // No sentence breaks (e.g. CJK without punctuation) — split by char count
         const chunks = [];
         for (let i = 0; i < text.length; i += maxCharsPerChunk) {
             chunks.push(text.slice(i, i + maxCharsPerChunk));
@@ -374,13 +455,6 @@ function chunkText(text, maxCharsPerChunk = 500) {
     }
     if (current.trim()) chunks.push(current.trim());
     return chunks;
-}
-
-function detectScript(text) {
-    if (!text) return 'latin';
-    if (/[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF]/.test(text)) return 'cjk';
-    if (/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)) return 'arabic';
-    return 'latin';
 }
 
 module.exports = { generateTranscriptionPDF };
