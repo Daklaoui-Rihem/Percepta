@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Globe, PlusCircle, Bell, Star } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Bell, Star } from 'lucide-react';
 import { useTranslation } from '../../context/TranslationContext';
 import LanguageSwitcher from '../Atoms/LanguageSwitcher';
 

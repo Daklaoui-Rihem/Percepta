@@ -161,6 +161,22 @@ export const settingsApi = {
         request<{ message: string }>('POST', '/settings/smtp/test', { testEmail }),
 };
 
+// ── Extracted Entities Type (NEW) ──────────────────────────────
+export interface ExtractedEntities {
+    location:           string | null;
+    phones:             string[];
+    people_count:       number | null;
+    incident_type:      string | null;
+    severity:           'low' | 'medium' | 'high' | 'critical' | null;
+    victim_names:       string[];
+    caller_name:        string | null;
+    date_mentioned:     string | null;
+    time_mentioned:     string | null;
+    additional_details: string | null;
+    confidence:         number | null;
+    extraction_method:  'llm_anthropic' | 'llm_openai' | 'rule_based' | null;
+}
+
 // ── Analyses ───────────────────────────────────────────────────
 export interface AnalysisRecord {
     _id: string;
@@ -170,16 +186,16 @@ export interface AnalysisRecord {
     status: 'pending' | 'processing' | 'done' | 'error';
     createdAt: string;
     transcription?: string;
-    translatedText?: string;       // ← NEW: translated transcription
-    translationLang?: string;      // ← NEW: target language code e.g. 'fr','en','ar'
+    translatedText?: string;
+    translationLang?: string;
     summary?: string;
     errorMessage?: string;
     hasPdf?: boolean;
     pdfGeneratedAt?: string | null;
+    extractedEntities?: ExtractedEntities | null;   // ← NEW
 }
 
 export const analysisApi = {
-    // Upload audio file — now accepts optional translateTo language
     uploadAudio: (file: File, translateTo?: string) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -195,7 +211,6 @@ export const analysisApi = {
         });
     },
 
-    // Upload video file
     uploadVideo: (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -210,37 +225,32 @@ export const analysisApi = {
         });
     },
 
-    // Get current user's analyses (history)
     getMyAnalyses: () =>
         request<AnalysisRecord[]>('GET', '/analyses'),
 
-    // Get single analysis
     getAnalysisById: (id: string) =>
         request<AnalysisRecord>('GET', `/analyses/${id}`),
 
-    // Delete analysis
     deleteAnalysis: (id: string) =>
         request<{ message: string }>('DELETE', `/analyses/${id}`),
 
-    // Poll status
     getAnalysisStatus: (id: string) =>
         request<{
             id: string;
             status: 'pending' | 'processing' | 'done' | 'error';
             errorMessage: string | null;
             transcription: string | null;
-            translatedText: string | null;       // ← NEW
-            translationLang: string | null;      // ← NEW
+            translatedText: string | null;
+            translationLang: string | null;
             summary: string | null;
+            extractedEntities: ExtractedEntities | null;   // ← NEW
             hasPdf: boolean;
             pdfGeneratedAt: string | null;
         }>('GET', `/analyses/${id}/status`),
 
-    // Retry a failed analysis
     retryAnalysis: (id: string) =>
         request<{ message: string; queue: { jobId: string } }>('POST', `/analyses/${id}/retry`),
 
-    // ── PDF report ────────────────────────────────────────────────
     downloadReport: async (id: string, originalName?: string): Promise<void> => {
         const token = getToken();
         const res = await fetch(`${BASE_URL}/analyses/${id}/report`, {
