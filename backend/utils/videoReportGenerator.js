@@ -154,8 +154,11 @@ async function generateVideoReportPDF(opts) {
             cursorY += 28;
 
             for (const incident of incidents) {
-                checkPageBreak(doc, cursorY, H, W, MID_BLUE, LIGHT_BLUE);
-                cursorY = Math.max(cursorY, doc.y);
+                if (checkPageBreak(doc, cursorY + 60, H, W, MID_BLUE, LIGHT_BLUE)) {
+                    cursorY = doc.y + 20;
+                } else {
+                    cursorY = Math.max(cursorY, doc.y);
+                }
 
                 const sev = SEVERITY_COLORS[incident.severity] || SEVERITY_COLORS.medium;
                 const incLabel = INCIDENT_LABELS[incident.type] || incident.type;
@@ -179,8 +182,11 @@ async function generateVideoReportPDF(opts) {
         const framesToShow   = [...incidentFrames, ...regularFrames].slice(0, 12);
 
         if (framesToShow.length > 0) {
-            checkPageBreak(doc, cursorY, H, W, MID_BLUE, LIGHT_BLUE);
-            cursorY = Math.max(cursorY, doc.y);
+            if (checkPageBreak(doc, cursorY + 40, H, W, MID_BLUE, LIGHT_BLUE)) {
+                cursorY = doc.y + 20;
+            } else {
+                cursorY = Math.max(cursorY, doc.y);
+            }
 
             sectionHeader(doc, 'Keyframes', cX, cursorY, LIGHT_BLUE, DARK_BLUE);
             cursorY += 28;
@@ -194,8 +200,11 @@ async function generateVideoReportPDF(opts) {
                 const imgX  = cX + col * (imgW + 16);
 
                 if (col === 0) {
-                    checkPageBreak(doc, cursorY + imgH + 40, H, W, MID_BLUE, LIGHT_BLUE);
-                    cursorY = Math.max(cursorY, doc.y);
+                    if (checkPageBreak(doc, cursorY + imgH + 40, H, W, MID_BLUE, LIGHT_BLUE)) {
+                        cursorY = doc.y + 20;
+                    } else {
+                        cursorY = Math.max(cursorY, doc.y);
+                    }
                 }
 
                 // Frame image
@@ -255,7 +264,9 @@ function checkPageBreak(doc, y, H, W, midBlue, lightBlue) {
         doc.addPage();
         doc.rect(0, 0, W, 8).fill(midBlue);
         doc.rect(0, 8, W, 3).fill(lightBlue);
+        return true;
     }
+    return false;
 }
 
 function secondsToHMS(s) {

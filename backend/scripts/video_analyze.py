@@ -8,26 +8,23 @@ from pathlib import Path
 # Incident class mappings from COCO dataset classes
 # Map YOLO class names to incident types
 INCIDENT_CLASSES = {
-    "person":      None,           # tracked for crowd counting only
-    "knife":       "assault",
-    "scissors":    "assault",
-    "gun":         "assault",
-    "baseball bat":"assault",
-    "fire":        "fire",
-    "smoke":       "fire",
-    "car":         None,
-    "truck":       None,
-    "motorcycle":  None,
-    "bicycle":     None,
-    "bus":         None,
+    "person": None,
+    "knife": "assault",
+    "scissors": "assault", 
+    "gun": "assault",
+    "baseball bat": "assault",
+    "fire": "fire",
+    "smoke": "fire",
 }
 
 SEVERITY_MAP = {
-    "assault":     "critical",
-    "fire":        "high",
-    "crowd":       "medium",
-    "suspicious":  "medium",
-    "fall":        "high",
+    "assault": "critical",
+    "fire": "high",
+    "vehicle_collision": "critical",
+    "person_accident": "high",
+    "crowd": "medium",
+    "suspicious": "medium",
+    "fall": "high",
 }
 
 def main():
@@ -86,11 +83,19 @@ def run_yolo_detection(video_path, output_dir, fps, total_frames, duration):
     cap = cv2.VideoCapture(video_path)
     frame_idx = 0
     saved_count = 0
+    vehicle_classes = {"car", "truck", "motorcycle", "bicycle", "bus"}
+    prev_vehicle_boxes = []
+    recent_gray_frames = []
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+            
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        recent_gray_frames.append(gray)
+        if len(recent_gray_frames) > 2:
+            recent_gray_frames.pop(0)
 
         if frame_idx % sample_interval == 0:
             timestamp = frame_idx / fps
@@ -120,6 +125,47 @@ def run_yolo_detection(video_path, output_dir, fps, total_frames, duration):
                     })
 
             person_counts.append(person_count)
+
+            vehicle_boxes = [d for d in detections if d["class"] in vehicle_classes]
+            persons = [d for d in detections if d["class"] == "person"]
+
+            # Detect vehicle overlap/collision (boxes significantly overlapping)
+            if len(vehicle_boxes) >= 2:
+                for i in range(len(vehicle_boxes)):
+                    for j in range(i+1, len(vehicle_boxes)):
+                        if boxes_overlap(vehicle_boxes[i]["bbox"], vehicle_boxes[j]["bbox"], threshold=0.15):
+                            incident_found = "vehicle_collision"
+
+            # Detect person on ground near vehicles (person bbox much lower than vehicles)
+            if persons and vehicle_boxes and incident_found is None:
+                for person in persons:
+                    px1, py1, px2, py2 = person["bbox"]
+                    person_area = (px2-px1) * (py2-py1)
+                    if person_area < 5000:  # small/fallen person
+                        incident_found = "person_accident"
+
+            # Detect close person interaction with HIGH TEMPORAL MOTION (action recognition proxy)
+            if len(persons) >= 2 and incident_found is None:
+                for i in range(len(persons)):
+                    for j in range(i+1, len(persons)):
+                        if boxes_overlap(persons[i]["bbox"], persons[j]["bbox"], threshold=0.08):
+                            # Calculate intersection bounding box
+                            bx1 = max(persons[i]["bbox"][0], persons[j]["bbox"][0])
+                            by1 = max(persons[i]["bbox"][1], persons[j]["bbox"][1])
+                            bx2 = min(persons[i]["bbox"][2], persons[j]["bbox"][2])
+                            by2 = min(persons[i]["bbox"][3], persons[j]["bbox"][3])
+                            
+                            # Check rapid motion within intersection (fighting vs hugging)
+                            if bx2 > bx1 and by2 > by1 and len(recent_gray_frames) >= 2:
+                                roi_curr = recent_gray_frames[-1][by1:by2, bx1:bx2]
+                                roi_prev = recent_gray_frames[-2][by1:by2, bx1:bx2]
+                                
+                                diff = cv2.absdiff(roi_curr, roi_prev)
+                                motion_score = float(cv2.mean(diff)[0])
+                                
+                                # Significant motion in overlap = Active Assault/Struggle
+                                if motion_score > 6.0:
+                                    incident_found = "assault"
 
             # Save keyframe if incident detected or at regular intervals (every 30s)
             is_incident_frame = incident_found is not None
@@ -197,6 +243,19 @@ def run_yolo_detection(video_path, output_dir, fps, total_frames, duration):
         "avg_people":      round(sum(person_counts)/len(person_counts), 1) if person_counts else 0,
         "detection_model": "yolov8n",
     }
+
+def boxes_overlap(box1, box2, threshold=0.1):
+    x1 = max(box1[0], box2[0])
+    y1 = max(box1[1], box2[1])
+    x2 = min(box1[2], box2[2])
+    y2 = min(box1[3], box2[3])
+    if x2 <= x1 or y2 <= y1:
+        return False
+    intersection = (x2-x1) * (y2-y1)
+    area1 = (box1[2]-box1[0]) * (box1[3]-box1[1])
+    area2 = (box2[2]-box2[0]) * (box2[3]-box2[1])
+    union = area1 + area2 - intersection
+    return (intersection / union) > threshold
 
 
 def run_frame_extraction_only(video_path, output_dir, fps, total_frames, duration):

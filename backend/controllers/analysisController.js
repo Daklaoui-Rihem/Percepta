@@ -46,7 +46,8 @@ async function processInBackground(analysisId, type, filePath, userId, translate
             summary: result.summary,
             translatedText: result.translatedText || '',
             translationLang: result.translationLang || '',
-            extractedEntities: result.extractedEntities || null,   // ← NEW
+            extractedEntities: result.extractedEntities || null,
+            videoAnalysisData: result.videoResult || null,
             pdfPath: result.pdfPath || '',
             pdfGeneratedAt: result.pdfPath ? new Date() : null,
             errorMessage: '',
