@@ -1,31 +1,72 @@
+#!/usr/bin/env python3
+"""
+video_analyze.py — Anomaly / Crime Incident Detection
+======================================================
+Supports two modes (auto-detected from available checkpoint):
+
+  1. BINARY MODE  (anomaly_classifier.pth present)
+     Normal vs Anomaly binary classification.
+     Best when you have limited training data.
+
+  2. 14-CLASS MODE  (ucf_crime_classifier.pth present)
+     Full UCF-Crime 14 category classification.
+
+  3. FALLBACK  (no checkpoint)
+     Uses Kinetics-pretrained R3D-18 as rough proxy.
+
+Called by videoProcessor.js:
+    python video_analyze.py <video_file> <output_dir>
+
+Requirements:
+    pip install torch torchvision opencv-python numpy
+
+Stdout: JSON result
+Exit 0 = success, 1 = error
+"""
+
 import sys
 import json
 import os
 import cv2
-import math
+import numpy as np
 from pathlib import Path
 
-# Incident class mappings from COCO dataset classes
-# Map YOLO class names to incident types
-INCIDENT_CLASSES = {
-    "person": None,
-    "knife": "assault",
-    "scissors": "assault", 
-    "gun": "assault",
-    "baseball bat": "assault",
-    "fire": "fire",
-    "smoke": "fire",
-}
+# ── Categories ──────────────────────────────────────────────────
+CATEGORIES_14 = [
+    "Abuse", "Arrest", "Arson", "Assault", "Burglary",
+    "Explosion", "Fighting", "Normal", "RoadAccident",
+    "Robbery", "Shooting", "Shoplifting", "Stealing", "Vandalism",
+]
+
+CATEGORIES_BINARY = ["Normal", "Anomaly"]
 
 SEVERITY_MAP = {
-    "assault": "critical",
-    "fire": "high",
-    "vehicle_collision": "critical",
-    "person_accident": "high",
-    "crowd": "medium",
-    "suspicious": "medium",
-    "fall": "high",
+    "Abuse":       "high",
+    "Arrest":      "medium",
+    "Arson":       "critical",
+    "Assault":     "high",
+    "Burglary":    "high",
+    "Explosion":   "critical",
+    "Fighting":    "high",
+    "Normal":      "low",
+    "RoadAccident":"critical",
+    "Robbery":     "critical",
+    "Shooting":    "critical",
+    "Shoplifting": "medium",
+    "Stealing":    "medium",
+    "Vandalism":   "medium",
+    "Anomaly":     "high",
 }
+
+# ── Config ──────────────────────────────────────────────────────
+CLIP_LEN              = 16
+CLIP_STEP             = 8
+FRAME_SIZE            = 112
+CONFIDENCE_TH         = 0.55    # Higher threshold to reduce false positives
+NORMAL_TH             = 0.70
+MIN_INCIDENT_GAP_SEC  = 4.0
+MAX_KEYFRAMES         = 20
+
 
 def main():
     if len(sys.argv) < 3:
@@ -39,290 +80,319 @@ def main():
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Load video metadata first
+    # ── Load model ──────────────────────────────────────────────
+    model, device, categories, mode = load_model()
+    print(f"[CrimeDetector] Mode: {mode} | Classes: {categories}", file=sys.stderr)
+
+    # ── Open video ──────────────────────────────────────────────
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         _fail(f"Cannot open video: {video_path}")
 
-    fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+    fps          = cap.get(cv2.CAP_PROP_FPS) or 25.0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration = total_frames / fps if fps > 0 else 0
-    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    duration     = total_frames / fps if fps > 0 else 0
+    width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height       = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
 
-    # Try YOLO detection, fall back to frame-only extraction
-    try:
-        result = run_yolo_detection(video_path, output_dir, fps, total_frames, duration)
-    except ImportError:
-        result = run_frame_extraction_only(video_path, output_dir, fps, total_frames, duration)
-    except Exception as e:
-        result = run_frame_extraction_only(video_path, output_dir, fps, total_frames, duration)
-        result["detection_note"] = f"YOLO unavailable, frame extraction only: {str(e)}"
+    # ── Extract clips and classify ───────────────────────────────
+    all_frames = read_all_frames(video_path, FRAME_SIZE)
+    n_frames   = len(all_frames)
 
-    result["duration"] = round(duration, 2)
-    result["fps"] = round(fps, 2)
-    result["total_frames"] = total_frames
-    result["resolution"] = f"{width}x{height}"
+    clip_results = []  # list of (start_frame, scores_dict)
 
-    print(json.dumps(result, ensure_ascii=False))
-    sys.exit(0)
+    i = 0
+    while i + CLIP_LEN <= n_frames:
+        clip   = all_frames[i : i + CLIP_LEN]
+        scores = classify_clip(clip, model, device, categories)
+        clip_results.append((i, scores))
+        i += CLIP_STEP
 
+    # Handle tail clip
+    if n_frames > 0 and (len(clip_results) == 0 or clip_results[-1][0] + CLIP_LEN < n_frames):
+        tail = all_frames[-CLIP_LEN:] if n_frames >= CLIP_LEN else all_frames
+        while len(tail) < CLIP_LEN:
+            tail.append(tail[-1])
+        start_f = max(0, n_frames - CLIP_LEN)
+        scores  = classify_clip(tail, model, device, categories)
+        clip_results.append((start_f, scores))
 
-def run_yolo_detection(video_path, output_dir, fps, total_frames, duration):
-    from ultralytics import YOLO
+    # ── Build incident list ──────────────────────────────────────
+    incidents   = []
+    keyframes   = []
+    last_ts_per_category = {}
 
-    model = YOLO("yolov8n.pt")   # nano — fast, downloads ~6MB on first run
+    # Periodic keyframe indices (one every ~10s, up to MAX_KEYFRAMES)
+    kf_interval_frames = max(1, int(fps * 10))
+    saved_kf_indices   = set()
+    fi = 0
+    kf_count = 0
+    while fi < n_frames and kf_count < MAX_KEYFRAMES:
+        saved_kf_indices.add(fi)
+        fi += kf_interval_frames
+        kf_count += 1
 
-    incidents = []
-    keyframes = []
-    person_counts = []
+    for (start_f, scores) in clip_results:
+        mid_f  = min(start_f + CLIP_LEN // 2, n_frames - 1)
+        ts     = mid_f / fps
 
-    # Sample one frame per second
-    sample_interval = max(1, int(fps))
-    cap = cv2.VideoCapture(video_path)
-    frame_idx = 0
-    saved_count = 0
-    vehicle_classes = {"car", "truck", "motorcycle", "bicycle", "bus"}
-    prev_vehicle_boxes = []
-    recent_gray_frames = []
+        top_cat   = max(scores, key=scores.get)
+        top_score = scores[top_cat]
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-            
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        recent_gray_frames.append(gray)
-        if len(recent_gray_frames) > 2:
-            recent_gray_frames.pop(0)
+        # Skip clearly normal clips
+        if top_cat == "Normal" and top_score >= NORMAL_TH:
+            continue
 
-        if frame_idx % sample_interval == 0:
-            timestamp = frame_idx / fps
-            results = model(frame, verbose=False, conf=0.4)
+        # Get suspicious (non-Normal) categories above threshold
+        suspicious = [
+            (cat, sc) for cat, sc in scores.items()
+            if cat != "Normal" and sc >= CONFIDENCE_TH
+        ]
 
-            detections = []
-            person_count = 0
-            incident_found = None
+        if not suspicious:
+            continue
 
-            for r in results:
-                for box in r.boxes:
-                    cls_name = model.names[int(box.cls[0])]
-                    conf     = float(box.conf[0])
-                    x1, y1, x2, y2 = [int(v) for v in box.xyxy[0]]
+        suspicious.sort(key=lambda x: x[1], reverse=True)
 
-                    if cls_name == "person":
-                        person_count += 1
+        for cat, score in suspicious:
+            # Temporal deduplication
+            last_ts = last_ts_per_category.get(cat, -9999)
+            if ts - last_ts < MIN_INCIDENT_GAP_SEC:
+                continue
 
-                    incident_type = INCIDENT_CLASSES.get(cls_name)
-                    if incident_type:
-                        incident_found = incident_type
+            last_ts_per_category[cat] = ts
+            severity = SEVERITY_MAP.get(cat, "high")
 
-                    detections.append({
-                        "class": cls_name,
-                        "confidence": round(conf, 3),
-                        "bbox": [x1, y1, x2, y2],
-                    })
+            # Save keyframe — USE ABSOLUTE PATH
+            kf_filename = f"frame_{mid_f:06d}.jpg"
+            kf_abs_path = os.path.join(output_dir, kf_filename)
 
-            person_counts.append(person_count)
+            if mid_f not in saved_kf_indices:
+                saved_kf_indices.add(mid_f)
 
-            vehicle_boxes = [d for d in detections if d["class"] in vehicle_classes]
-            persons = [d for d in detections if d["class"] == "person"]
+            # Always save the incident frame (full resolution)
+            raw = read_frame_at(video_path, mid_f)
+            if raw is not None:
+                cv2.imwrite(kf_abs_path, raw)
 
-            # Detect vehicle overlap/collision (boxes significantly overlapping)
-            if len(vehicle_boxes) >= 2:
-                for i in range(len(vehicle_boxes)):
-                    for j in range(i+1, len(vehicle_boxes)):
-                        if boxes_overlap(vehicle_boxes[i]["bbox"], vehicle_boxes[j]["bbox"], threshold=0.15):
-                            incident_found = "vehicle_collision"
-
-            # Detect person on ground near vehicles (person bbox much lower than vehicles)
-            if persons and vehicle_boxes and incident_found is None:
-                for person in persons:
-                    px1, py1, px2, py2 = person["bbox"]
-                    person_area = (px2-px1) * (py2-py1)
-                    if person_area < 5000:  # small/fallen person
-                        incident_found = "person_accident"
-
-            # Detect close person interaction with HIGH TEMPORAL MOTION (action recognition proxy)
-            if len(persons) >= 2 and incident_found is None:
-                for i in range(len(persons)):
-                    for j in range(i+1, len(persons)):
-                        if boxes_overlap(persons[i]["bbox"], persons[j]["bbox"], threshold=0.08):
-                            # Calculate intersection bounding box
-                            bx1 = max(persons[i]["bbox"][0], persons[j]["bbox"][0])
-                            by1 = max(persons[i]["bbox"][1], persons[j]["bbox"][1])
-                            bx2 = min(persons[i]["bbox"][2], persons[j]["bbox"][2])
-                            by2 = min(persons[i]["bbox"][3], persons[j]["bbox"][3])
-                            
-                            # Check rapid motion within intersection (fighting vs hugging)
-                            if bx2 > bx1 and by2 > by1 and len(recent_gray_frames) >= 2:
-                                roi_curr = recent_gray_frames[-1][by1:by2, bx1:bx2]
-                                roi_prev = recent_gray_frames[-2][by1:by2, bx1:bx2]
-                                
-                                diff = cv2.absdiff(roi_curr, roi_prev)
-                                motion_score = float(cv2.mean(diff)[0])
-                                
-                                # Significant motion in overlap = Active Assault/Struggle
-                                if motion_score > 6.0:
-                                    incident_found = "assault"
-
-            # Save keyframe if incident detected or at regular intervals (every 30s)
-            is_incident_frame = incident_found is not None
-            is_periodic       = saved_count < 10 and frame_idx % (int(fps) * 30) == 0
-
-            if is_incident_frame or is_periodic or saved_count == 0:
-                frame_filename = f"frame_{frame_idx:06d}.jpg"
-                frame_path     = os.path.join(output_dir, frame_filename)
-
-                # Draw bounding boxes on saved frame
-                annotated = frame.copy()
-                for det in detections:
-                    x1, y1, x2, y2 = det["bbox"]
-                    color = (0, 0, 255) if INCIDENT_CLASSES.get(det["class"]) else (0, 200, 0)
-                    cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
-                    label = f"{det['class']} {det['confidence']:.2f}"
-                    cv2.putText(annotated, label, (x1, y1 - 8),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-                cv2.imwrite(frame_path, annotated)
-
-                keyframes.append({
-                    "frame_index":   frame_idx,
-                    "timestamp":     round(timestamp, 2),
-                    "timestamp_str": seconds_to_hms(timestamp),
-                    "path":          frame_path,
-                    "filename":      frame_filename,
-                    "detections":    detections,
-                    "is_incident":   is_incident_frame,
-                    "people_count":  person_count,
-                })
-                saved_count += 1
-
-            if is_incident_frame:
-                severity = SEVERITY_MAP.get(incident_found, "medium")
-
-                # Avoid duplicate incidents within 5 seconds
-                last_ts = incidents[-1]["timestamp"] if incidents else -999
-                if timestamp - last_ts > 5:
-                    incidents.append({
-                        "type":          incident_found,
-                        "severity":      severity,
-                        "timestamp":     round(timestamp, 2),
-                        "timestamp_str": seconds_to_hms(timestamp),
-                        "frame_index":   frame_idx,
-                        "frame_file":    frame_filename,
-                        "detections":    detections,
-                    })
-
-        frame_idx += 1
-
-    cap.release()
-
-    # Crowd detection: flag if avg > 5 people for sustained period
-    if person_counts:
-        avg_people = sum(person_counts) / len(person_counts)
-        max_people = max(person_counts)
-        if max_people >= 8 and not any(i["type"] == "crowd" for i in incidents):
-            incidents.insert(0, {
-                "type":          "crowd",
-                "severity":      "medium",
-                "timestamp":     0,
-                "timestamp_str": "00:00:00",
-                "frame_index":   0,
-                "details":       f"Max {max_people} people detected, avg {avg_people:.1f}",
+            keyframes.append({
+                "frame_index":   mid_f,
+                "timestamp":     round(ts, 2),
+                "timestamp_str": seconds_to_hms(ts),
+                "filename":      kf_filename,
+                "path":          kf_abs_path,   # ← ABSOLUTE PATH for report generator
+                "is_incident":   True,
+                "people_count":  0,
+                "detections":    [],
+                "category":      cat,
+                "confidence":    round(score, 3),
             })
+
+            incidents.append({
+                "type":          cat,
+                "severity":      severity,
+                "timestamp":     round(ts, 2),
+                "timestamp_str": seconds_to_hms(ts),
+                "frame_index":   mid_f,
+                "frame_file":    kf_filename,
+                "path":          kf_abs_path,   # ← ABSOLUTE PATH
+                "confidence":    round(score, 3),
+                "details":       f"{cat} detected with {round(score*100, 1)}% confidence",
+                "detections":    [],
+            })
+            break  # Only report top category per clip
+
+    # ── Save periodic (non-incident) keyframes ───────────────────
+    incident_frame_indices = {kf["frame_index"] for kf in keyframes}
+
+    for fi in sorted(saved_kf_indices):
+        if fi in incident_frame_indices:
+            continue  # Already saved as incident frame
+        kf_filename = f"frame_{fi:06d}.jpg"
+        kf_abs_path = os.path.join(output_dir, kf_filename)
+        raw = read_frame_at(video_path, fi)
+        if raw is not None:
+            cv2.imwrite(kf_abs_path, raw)
+        keyframes.append({
+            "frame_index":   fi,
+            "timestamp":     round(fi / fps, 2),
+            "timestamp_str": seconds_to_hms(fi / fps),
+            "filename":      kf_filename,
+            "path":          kf_abs_path,   # ← ABSOLUTE PATH
+            "is_incident":   False,
+            "people_count":  0,
+            "detections":    [],
+        })
+
+    keyframes.sort(key=lambda x: x["timestamp"])
+    incidents.sort(key=lambda x: x["timestamp"])
 
     summary = build_summary(incidents, keyframes, duration)
 
-    return {
+    result = {
         "incidents":       incidents,
         "keyframes":       keyframes,
         "summary":         summary,
         "incident_count":  len(incidents),
         "keyframe_count":  len(keyframes),
-        "avg_people":      round(sum(person_counts)/len(person_counts), 1) if person_counts else 0,
-        "detection_model": "yolov8n",
+        "duration":        round(duration, 2),
+        "fps":             round(fps, 2),
+        "total_frames":    total_frames,
+        "resolution":      f"{width}x{height}",
+        "avg_people":      0,
+        "detection_model": f"CNN-Crime-Classifier ({mode})",
+        "mode":            mode,
     }
 
-def boxes_overlap(box1, box2, threshold=0.1):
-    x1 = max(box1[0], box2[0])
-    y1 = max(box1[1], box2[1])
-    x2 = min(box1[2], box2[2])
-    y2 = min(box1[3], box2[3])
-    if x2 <= x1 or y2 <= y1:
-        return False
-    intersection = (x2-x1) * (y2-y1)
-    area1 = (box1[2]-box1[0]) * (box1[3]-box1[1])
-    area2 = (box2[2]-box2[0]) * (box2[3]-box2[1])
-    union = area1 + area2 - intersection
-    return (intersection / union) > threshold
+    print(json.dumps(result, ensure_ascii=False))
+    sys.exit(0)
 
 
-def run_frame_extraction_only(video_path, output_dir, fps, total_frames, duration):
-    """Fallback: extract key frames without YOLO (no detection boxes)."""
-    cap = cv2.VideoCapture(video_path)
-    keyframes = []
-    interval = max(1, int(fps * 10))   # one frame every 10 seconds
-    frame_idx = 0
-    saved = 0
+# ── Model loading ─────────────────────────────────────────────────
 
-    while saved < 12:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+def load_model():
+    """
+    Priority order:
+      1. anomaly_classifier.pth  → binary Normal vs Anomaly
+      2. ucf_crime_classifier.pth → 14-class UCF-Crime
+      3. Kinetics pretrained (no fine-tuning, fallback)
+    """
+    import torch
+    import torch.nn as nn
+    from torchvision.models.video import r3d_18, R3D_18_Weights
+
+    device     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    models_dir = os.path.join(script_dir, "..", "models")
+
+    binary_ckpt   = os.path.join(models_dir, "anomaly_classifier.pth")
+    crime14_ckpt  = os.path.join(models_dir, "ucf_crime_classifier.pth")
+
+    # ── Case 1: Binary anomaly checkpoint ──────────────────────
+    if os.path.isfile(binary_ckpt):
+        categories = CATEGORIES_BINARY
+        model = r3d_18(weights=None)
+        in_f  = model.fc.in_features
+        model.fc = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(in_f, 256),
+            nn.ReLU(),
+            nn.Dropout(p=0.3),
+            nn.Linear(256, 2),
+        )
+        state = torch.load(binary_ckpt, map_location=device)
+        model.load_state_dict(state, strict=False)
+        print(f"[CrimeDetector] Loaded binary anomaly checkpoint: {binary_ckpt}", file=sys.stderr)
+        mode = "Binary Anomaly Detector"
+
+    # ── Case 2: 14-class UCF-Crime checkpoint ──────────────────
+    elif os.path.isfile(crime14_ckpt):
+        categories = CATEGORIES_14
+        model = r3d_18(weights=None)
+        in_f  = model.fc.in_features
+        model.fc = nn.Linear(in_f, len(categories))
+        state = torch.load(crime14_ckpt, map_location=device)
+        model.load_state_dict(state, strict=False)
+        print(f"[CrimeDetector] Loaded 14-class UCF-Crime checkpoint: {crime14_ckpt}", file=sys.stderr)
+        mode = "UCF-Crime 14-class Classifier"
+
+    # ── Case 3: No checkpoint — Kinetics pretrained fallback ───
+    else:
+        categories = CATEGORIES_14
+        model = r3d_18(weights=R3D_18_Weights.DEFAULT)
+        in_f  = model.fc.in_features
+        model.fc = nn.Linear(in_f, len(categories))
+        print("[CrimeDetector] WARNING: No fine-tuned checkpoint found.", file=sys.stderr)
+        print("[CrimeDetector] Using Kinetics-pretrained weights (reduced accuracy).", file=sys.stderr)
+        print(f"[CrimeDetector] Train a model and place it in: {models_dir}/", file=sys.stderr)
+        mode = "Kinetics Pretrained (No Fine-Tuning)"
+
+    model = model.to(device)
+    model.eval()
+    return model, device, categories, mode
+
+
+# ── Inference ────────────────────────────────────────────────────
+
+def classify_clip(frames_bgr, model, device, categories):
+    import torch
+    import torch.nn.functional as F
+
+    tensor = preprocess_clip(frames_bgr)
+    tensor = tensor.to(device)
+
+    with torch.no_grad():
+        logits = model(tensor)
+
+    probs = F.softmax(logits, dim=1)[0].cpu().numpy()
+    return {cat: float(probs[i]) for i, cat in enumerate(categories)}
+
+
+def preprocess_clip(frames_bgr):
+    import torch
+    clips = []
+    for frame in frames_bgr:
+        frame_rgb     = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_resized = cv2.resize(frame_rgb, (FRAME_SIZE, FRAME_SIZE))
+        clips.append(frame_resized)
+
+    arr  = np.stack(clips, axis=0).astype(np.float32) / 255.0
+    mean = np.array([0.43216, 0.394666, 0.37645], dtype=np.float32)
+    std  = np.array([0.22803, 0.22145,  0.216989], dtype=np.float32)
+    arr  = (arr - mean) / std
+    tensor = torch.from_numpy(arr).permute(3, 0, 1, 2).unsqueeze(0)  # (1,3,T,H,W)
+    return tensor
+
+
+# ── Frame I/O ─────────────────────────────────────────────────────
+
+def read_all_frames(video_path, target_size):
+    cap    = cv2.VideoCapture(video_path)
+    frames = []
+    while True:
         ret, frame = cap.read()
         if not ret:
             break
-
-        timestamp = frame_idx / fps
-        fname = f"frame_{frame_idx:06d}.jpg"
-        fpath = os.path.join(output_dir, fname)
-        cv2.imwrite(fpath, frame)
-
-        keyframes.append({
-            "frame_index":   frame_idx,
-            "timestamp":     round(timestamp, 2),
-            "timestamp_str": seconds_to_hms(timestamp),
-            "path":          fpath,
-            "filename":      fname,
-            "detections":    [],
-            "is_incident":   False,
-            "people_count":  0,
-        })
-        saved += 1
-        frame_idx += interval
-
+        frame = cv2.resize(frame, (target_size, target_size))
+        frames.append(frame)
     cap.release()
+    return frames
 
-    return {
-        "incidents":       [],
-        "keyframes":       keyframes,
-        "summary":         f"Frame extraction completed. {len(keyframes)} keyframes saved. Install ultralytics for incident detection.",
-        "incident_count":  0,
-        "keyframe_count":  len(keyframes),
-        "avg_people":      0,
-        "detection_model": "frame_extraction_only",
-    }
 
+def read_frame_at(video_path, frame_index):
+    """Read a single frame at given index at FULL resolution for keyframe saving."""
+    cap = cv2.VideoCapture(video_path)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+    ret, frame = cap.read()
+    cap.release()
+    return frame if ret else None
+
+
+# ── Helpers ───────────────────────────────────────────────────────
 
 def build_summary(incidents, keyframes, duration):
     if not incidents:
-        return f"No incidents detected in {seconds_to_hms(duration)} video. {len(keyframes)} keyframes extracted."
-
-    types = list({i["type"] for i in incidents})
+        return (f"No incidents detected in {seconds_to_hms(duration)} video. "
+                f"{len(keyframes)} keyframes extracted. Video classified as normal.")
+    types    = list({i["type"] for i in incidents})
     critical = [i for i in incidents if i["severity"] == "critical"]
-
-    parts = [f"{len(incidents)} incident(s) detected"]
+    high     = [i for i in incidents if i["severity"] == "high"]
+    parts    = [f"{len(incidents)} incident(s) detected"]
     if critical:
         parts.append(f"{len(critical)} critical")
+    if high:
+        parts.append(f"{len(high)} high severity")
     parts.append(f"Types: {', '.join(types)}")
     parts.append(f"{len(keyframes)} keyframes saved")
     return ". ".join(parts) + "."
 
 
-def seconds_to_hms(seconds):
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    s = int(seconds % 60)
-    return f"{h:02d}:{m:02d}:{s:02d}"
+def seconds_to_hms(s):
+    h   = int(s // 3600)
+    m   = int((s % 3600) // 60)
+    sec = int(s % 60)
+    return f"{h:02d}:{m:02d}:{sec:02d}"
 
 
 def _fail(msg):
