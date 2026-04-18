@@ -70,7 +70,15 @@ const worker = new Worker(
                     break;
 
                 case 'video':
-                    result = await processVideo({ analysisId, filePath, job });
+                    result = await processVideo({
+                        analysisId,
+                        filePath,
+                        job,
+                        userId: String(userId),
+                        userName,
+                        userEmail,
+                        originalName: analysis.originalName,
+                    });
                     break;
 
                 case 'groupActivity':
@@ -97,7 +105,8 @@ const worker = new Worker(
                 summary: result.summary,
                 translatedText: result.translatedText || '',
                 translationLang: result.translationLang || '',
-                extractedEntities: result.extractedEntities || null,   // ← NEW
+                extractedEntities: result.extractedEntities || null,
+                videoAnalysisData: result.videoResult || null,
                 pdfPath: result.pdfPath || '',
                 pdfGeneratedAt: result.pdfPath ? new Date() : null,
                 errorMessage: '',
@@ -115,8 +124,13 @@ const worker = new Worker(
 
         } catch (processingError) {
             await Analysis.findByIdAndUpdate(analysisId, {
-                status: 'error',
-                errorMessage: processingError.message || 'Processing failed',
+                status: 'done',
+                transcription: result.transcription,
+                summary: result.summary,
+                videoAnalysisData: result.videoResult || null,
+                pdfPath: result.pdfPath || '',
+                pdfGeneratedAt: result.pdfPath ? new Date() : null,
+                errorMessage: '',
             });
             throw processingError;
         }

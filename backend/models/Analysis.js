@@ -2,22 +2,22 @@ const mongoose = require('mongoose');
 
 // ── Extracted Entities Sub-Schema ─────────────────────────────
 const extractedEntitiesSchema = new mongoose.Schema({
-    location:           { type: String, default: null },
-    phones:             { type: [String], default: [] },
-    people_count:       { type: Number, default: null },
-    incident_type:      { type: String, default: null },
-    severity:           {
+    location: { type: String, default: null },
+    phones: { type: [String], default: [] },
+    people_count: { type: Number, default: null },
+    incident_type: { type: String, default: null },
+    severity: {
         type: String,
         enum: ['low', 'medium', 'high', 'critical'],
         default: null,
     },
-    victim_names:       { type: [String], default: [] },
-    caller_name:        { type: String, default: null },
-    date_mentioned:     { type: String, default: null },
-    time_mentioned:     { type: String, default: null },
+    victim_names: { type: [String], default: [] },
+    caller_name: { type: String, default: null },
+    date_mentioned: { type: String, default: null },
+    time_mentioned: { type: String, default: null },
     additional_details: { type: String, default: null },
-    confidence:         { type: Number, default: null },
-    extraction_method:  {
+    confidence: { type: Number, default: null },
+    extraction_method: {
         type: String,
         enum: ['llm_anthropic', 'llm_openai', 'rule_based'],
         default: null,
@@ -65,7 +65,14 @@ const analysisSchema = new mongoose.Schema({
 
     // ── Translation ──────────────────────────────────────────────
     translationLang: { type: String, default: '' },
-    translatedText:  { type: String, default: '' },
+    translatedText: { type: String, default: '' },
+
+    // ── Video analysis data ──────────────────────────────────────
+    videoAnalysisData: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null,
+    },
+    videoFramesDir: { type: String, default: '' },
 
     // ── Key Entity Extraction (NEW) ──────────────────────────────
     extractedEntities: {

@@ -163,18 +163,59 @@ export const settingsApi = {
 
 // ── Extracted Entities Type (NEW) ──────────────────────────────
 export interface ExtractedEntities {
-    location:           string | null;
-    phones:             string[];
-    people_count:       number | null;
-    incident_type:      string | null;
-    severity:           'low' | 'medium' | 'high' | 'critical' | null;
-    victim_names:       string[];
-    caller_name:        string | null;
-    date_mentioned:     string | null;
-    time_mentioned:     string | null;
+    location: string | null;
+    phones: string[];
+    people_count: number | null;
+    incident_type: string | null;
+    severity: 'low' | 'medium' | 'high' | 'critical' | null;
+    victim_names: string[];
+    caller_name: string | null;
+    date_mentioned: string | null;
+    time_mentioned: string | null;
     additional_details: string | null;
-    confidence:         number | null;
-    extraction_method:  'llm_anthropic' | 'llm_openai' | 'rule_based' | null;
+    confidence: number | null;
+    extraction_method: 'llm_anthropic' | 'llm_openai' | 'rule_based' | null;
+}
+
+// ── Video analysis types ───────────────────────────────────────
+export interface VideoDetection {
+    class: string;
+    confidence: number;
+    bbox: [number, number, number, number];
+}
+
+export interface VideoKeyframe {
+    frame_index: number;
+    timestamp: number;
+    timestamp_str: string;
+    filename: string;
+    is_incident: boolean;
+    people_count: number;
+    detections: VideoDetection[];
+}
+
+export interface VideoIncident {
+    type: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    timestamp: number;
+    timestamp_str: string;
+    frame_index?: number;
+    frame_file?: string;
+    details?: string;
+}
+
+export interface VideoAnalysisResult {
+    incidents: VideoIncident[];
+    keyframes: VideoKeyframe[];
+    summary: string;
+    incident_count: number;
+    keyframe_count: number;
+    duration: number;
+    fps: number;
+    total_frames: number;
+    resolution: string;
+    avg_people: number;
+    detection_model: string;
 }
 
 // ── Analyses ───────────────────────────────────────────────────
@@ -287,6 +328,11 @@ export const analysisApi = {
 
     getUserAnalyses: (userId: string) =>
         request<AnalysisRecord[]>('GET', `/analyses/user/${userId}`),
+
+    getVideoResult: (id: string) =>
+        request<{ status: string; videoAnalysisData: VideoAnalysisResult | null }>(
+            'GET', `/analyses/${id}/video-result`
+        ),
 };
 
 // ── Auth helpers ───────────────────────────────────────────────

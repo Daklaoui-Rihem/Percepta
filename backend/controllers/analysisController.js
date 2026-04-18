@@ -46,7 +46,8 @@ async function processInBackground(analysisId, type, filePath, userId, translate
             summary: result.summary,
             translatedText: result.translatedText || '',
             translationLang: result.translationLang || '',
-            extractedEntities: result.extractedEntities || null,   // ← NEW
+            extractedEntities: result.extractedEntities || null,
+            videoAnalysisData: result.videoResult || null,
             pdfPath: result.pdfPath || '',
             pdfGeneratedAt: result.pdfPath ? new Date() : null,
             errorMessage: '',
@@ -320,7 +321,7 @@ exports.generateReport = async (req, res) => {
             return res.status(400).json({ message: 'No transcription data available.' });
         }
 
-        const { generateTranscriptionPDF } = require('../utils/pdfReportGenerator');
+        const { generateTranscriptionPDF } = require('../utils/Pdfreportgenerator');
         const User = require('../models/User');
 
         let userName = 'User';
@@ -469,6 +470,28 @@ exports.deleteAnalysis = async (req, res) => {
 
         await Analysis.findByIdAndDelete(req.params.id);
         res.json({ message: 'Analysis deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// ── Get Video Result ───────────────────────────────────────────
+exports.getVideoResult = async (req, res) => {
+    try {
+        const analysis = await Analysis.findById(req.params.id)
+            .select('status videoAnalysisData userId');
+
+        if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
+
+        if (String(analysis.userId) !== String(req.user.id) &&
+            req.user.role === 'Client') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        res.json({
+            status: analysis.status,
+            videoAnalysisData: analysis.videoAnalysisData || null,
+        });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }

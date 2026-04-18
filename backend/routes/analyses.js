@@ -48,4 +48,6 @@ router.delete('/:id', authMiddleware, analysisController.deleteAnalysis);
 router.get('/:id/report', authMiddleware, analysisController.downloadReport);
 router.post('/:id/report/generate', authMiddleware, analysisController.generateReport);
 
+router.get('/:id/video-result', authMiddleware, analysisController.getVideoResult);
+
 module.exports = router;
