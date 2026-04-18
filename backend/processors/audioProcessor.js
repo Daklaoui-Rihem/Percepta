@@ -24,10 +24,17 @@ const path = require('path');
 const { generateTranscriptionPDF } = require('../utils/pdfReportGenerator');
 
 // ── Config ─────────────────────────────────────────────────────
+// ── Config ─────────────────────────────────────────────────────
 const PYTHON_BIN = process.env.WHISPER_PYTHON || 'python';
+
+// Choix du moteur selon la variable d'environnement
+const TRANSCRIPTION_ENGINE = process.env.TRANSCRIPTION_ENGINE || 'whisper'; // 'whisper' | 'voxtral'
 
 const SCRIPT_PATH = process.env.WHISPER_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'whisper_transcribe.py');
+
+const VOXTRAL_SCRIPT_PATH = process.env.VOXTRAL_SCRIPT ||
+    path.join(__dirname, '..', 'scripts', 'voxtral_transcribe.py');
 
 const EXTRACT_SCRIPT_PATH = process.env.EXTRACT_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'extract_entities.py');
@@ -36,7 +43,7 @@ const TRANSLATE_SCRIPT_PATH = process.env.TRANSLATE_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'translate_text.py');
 
 const DEFAULT_LANG = process.env.WHISPER_LANG || 'auto';
-const TIMEOUT_MS = parseInt(process.env.WHISPER_TIMEOUT || '600000');
+const TIMEOUT_MS   = parseInt(process.env.WHISPER_TIMEOUT || '600000');
 
 // ── Main ───────────────────────────────────────────────────────
 async function processAudio({ analysisId, filePath, job, userId, userName, userEmail, originalName, translateTo }) {
@@ -56,7 +63,12 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
     await job.updateProgress(10);
 
     // ── Step 1: Transcription ──────────────────────────────────
-    const result = await runWhisper(filePath, DEFAULT_LANG);
+    // APRÈS
+const result = TRANSCRIPTION_ENGINE === 'voxtral'
+    ? await runVoxtral(filePath, DEFAULT_LANG)
+    : await runWhisper(filePath, DEFAULT_LANG);
+
+console.log(`🤖 [AudioProcessor] Moteur utilisé: ${TRANSCRIPTION_ENGINE}`);
 
     await job.updateProgress(60);
 
@@ -191,6 +203,72 @@ function runWhisper(filePath, language) {
             clearTimeout(timer);
             if (err.code === 'ENOENT') {
                 reject(new Error(`Python not found: "${PYTHON_BIN}"\nAdd Python to PATH or set WHISPER_PYTHON in .env`));
+            } else {
+                reject(err);
+            }
+        });
+    });
+}
+// ── Spawn Voxtral Python ───────────────────────────────────────
+function runVoxtral(filePath, language) {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(VOXTRAL_SCRIPT_PATH)) {
+            return reject(new Error(
+                `voxtral_transcribe.py introuvable à: ${VOXTRAL_SCRIPT_PATH}`
+            ));
+        }
+
+        const args = [VOXTRAL_SCRIPT_PATH, filePath, language];
+
+        console.log(`🐍 [AudioProcessor] Lancement Voxtral: ${PYTHON_BIN} ${args.join(' ')}`);
+
+        const proc = spawn(PYTHON_BIN, args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: {
+                ...process.env,
+                PYTHONIOENCODING: 'utf-8',
+                PYTHONUTF8: '1',
+                MISTRAL_API_KEY: process.env.MISTRAL_API_KEY || '',
+            },
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', chunk => { stdout += chunk.toString(); });
+        proc.stderr.on('data', chunk => {
+            const line = chunk.toString().trimEnd();
+            stderr += line + '\n';
+            if (line) process.stdout.write(`  [Voxtral] ${line}\n`);
+        });
+
+        const timer = setTimeout(() => {
+            proc.kill();
+            reject(new Error(`Voxtral a dépassé le délai de ${TIMEOUT_MS / 1000}s.`));
+        }, TIMEOUT_MS);
+
+        proc.on('close', code => {
+            clearTimeout(timer);
+            let parsed;
+            try {
+                parsed = JSON.parse(stdout.trim());
+            } catch (_) {
+                return reject(new Error(
+                    `Voxtral a retourné un résultat non-JSON (exit ${code}).\n` +
+                    `stdout: ${stdout.slice(0, 400)}\nstderr: ${stderr.slice(0, 400)}`
+                ));
+            }
+
+            if (code !== 0 || parsed.error) {
+                return reject(new Error(parsed.error || `Voxtral a échoué avec le code ${code}`));
+            }
+            resolve(parsed);
+        });
+
+        proc.on('error', err => {
+            clearTimeout(timer);
+            if (err.code === 'ENOENT') {
+                reject(new Error(`Python introuvable: "${PYTHON_BIN}"`));
             } else {
                 reject(err);
             }
