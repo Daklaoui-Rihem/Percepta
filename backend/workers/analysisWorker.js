@@ -107,6 +107,7 @@ const worker = new Worker(
                 translationLang: result.translationLang || '',
                 extractedEntities: result.extractedEntities || null,
                 videoAnalysisData: result.videoResult || null,
+                videoFramesDir: result.videoFramesDir || '',
                 pdfPath: result.pdfPath || '',
                 pdfGeneratedAt: result.pdfPath ? new Date() : null,
                 errorMessage: '',

@@ -75,6 +75,7 @@ async function processVideo({ analysisId, filePath, job, userId, userName, userE
         summary,
         pdfPath,
         videoResult,   // stored on Analysis doc as videoAnalysisData
+        videoFramesDir: framesDir,  // stored on Analysis doc for keyframe serving
     };
 }
 

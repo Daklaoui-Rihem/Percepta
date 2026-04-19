@@ -48,6 +48,7 @@ async function processInBackground(analysisId, type, filePath, userId, translate
             translationLang: result.translationLang || '',
             extractedEntities: result.extractedEntities || null,
             videoAnalysisData: result.videoResult || null,
+            videoFramesDir: result.videoFramesDir || '',
             pdfPath: result.pdfPath || '',
             pdfGeneratedAt: result.pdfPath ? new Date() : null,
             errorMessage: '',
@@ -479,7 +480,7 @@ exports.deleteAnalysis = async (req, res) => {
 exports.getVideoResult = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id)
-            .select('status videoAnalysisData userId');
+            .select('status videoAnalysisData videoFramesDir userId');
 
         if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
 
@@ -491,8 +492,45 @@ exports.getVideoResult = async (req, res) => {
         res.json({
             status: analysis.status,
             videoAnalysisData: analysis.videoAnalysisData || null,
+            videoFramesDir: analysis.videoFramesDir || '',
         });
     } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// ── Serve Keyframe Image ───────────────────────────────────────
+exports.serveKeyframe = async (req, res) => {
+    try {
+        const analysis = await Analysis.findById(req.params.id)
+            .select('videoFramesDir userId');
+
+        if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
+
+        if (String(analysis.userId) !== String(req.user.id) &&
+            req.user.role === 'Client') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const framesDir = analysis.videoFramesDir;
+        if (!framesDir) {
+            return res.status(404).json({ message: 'No frames directory for this analysis' });
+        }
+
+        const filename = req.params.filename;
+        // Sanitize filename to prevent directory traversal
+        const safeName = path.basename(filename);
+        const framePath = path.join(framesDir, safeName);
+
+        if (!fs.existsSync(framePath)) {
+            return res.status(404).json({ message: 'Keyframe not found' });
+        }
+
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        fs.createReadStream(framePath).pipe(res);
+    } catch (error) {
+        console.error('Serve keyframe error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };

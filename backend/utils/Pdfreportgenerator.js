@@ -94,6 +94,7 @@ async function generateTranscriptionPDF(opts) {
         const doc = new PDFDocument({
             size: 'A4',
             margins: { top: 0, bottom: 40, left: 0, right: 0 },
+            bufferPages: true,
             info: {
                 Title: `Transcription Report — ${originalName}`,
                 Author: 'Percepta Platform',
@@ -287,31 +288,31 @@ function renderEntitiesSection(doc, entities, contentX, contentW, cursorY, H, W,
     const entityItems = [];
 
     if (entities.incident_type) {
-        entityItems.push({ label: 'Incident Type', value: entities.incident_type, icon: '🚨' });
+        entityItems.push({ label: 'Incident Type', value: entities.incident_type, icon: '[!]' });
     }
     if (entities.location) {
-        entityItems.push({ label: 'Location', value: entities.location, icon: '📍' });
+        entityItems.push({ label: 'Location', value: entities.location, icon: '[@]' });
     }
     if (entities.people_count !== null && entities.people_count !== undefined) {
-        entityItems.push({ label: 'People Involved', value: String(entities.people_count), icon: '👥' });
+        entityItems.push({ label: 'People Involved', value: String(entities.people_count), icon: '[P]' });
     }
     if (entities.phones && entities.phones.length > 0) {
-        entityItems.push({ label: 'Phone Numbers', value: entities.phones.join(', '), icon: '📞' });
+        entityItems.push({ label: 'Phone Numbers', value: entities.phones.join(', '), icon: '[#]' });
     }
     if (entities.caller_name) {
-        entityItems.push({ label: 'Caller Name', value: entities.caller_name, icon: '🧑' });
+        entityItems.push({ label: 'Caller Name', value: entities.caller_name, icon: '[N]' });
     }
     if (entities.victim_names && entities.victim_names.length > 0) {
-        entityItems.push({ label: 'Victim Names', value: entities.victim_names.join(', '), icon: '🏥' });
+        entityItems.push({ label: 'Victim Names', value: entities.victim_names.join(', '), icon: '[V]' });
     }
     if (entities.time_mentioned) {
-        entityItems.push({ label: 'Time Mentioned', value: entities.time_mentioned, icon: '🕐' });
+        entityItems.push({ label: 'Time Mentioned', value: entities.time_mentioned, icon: '[T]' });
     }
     if (entities.date_mentioned) {
-        entityItems.push({ label: 'Date Mentioned', value: entities.date_mentioned, icon: '📅' });
+        entityItems.push({ label: 'Date Mentioned', value: entities.date_mentioned, icon: '[D]' });
     }
     if (entities.additional_details) {
-        entityItems.push({ label: 'Additional Details', value: entities.additional_details, icon: '📝', fullWidth: true });
+        entityItems.push({ label: 'Additional Details', value: entities.additional_details, icon: '[i]', fullWidth: true });
     }
 
     if (entityItems.length === 0) {

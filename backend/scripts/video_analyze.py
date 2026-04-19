@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-video_analyze.py — Anomaly / Crime Incident Detection
-======================================================
+video_analyze.py — Anomaly / Crime Incident Detection + YOLO Person Counting
+=============================================================================
 Supports two modes (auto-detected from available checkpoint):
 
   1. BINARY MODE  (anomaly_classifier.pth present)
@@ -14,11 +14,13 @@ Supports two modes (auto-detected from available checkpoint):
   3. FALLBACK  (no checkpoint)
      Uses Kinetics-pretrained R3D-18 as rough proxy.
 
+Additionally uses YOLOv8 for person detection and counting.
+
 Called by videoProcessor.js:
     python video_analyze.py <video_file> <output_dir>
 
 Requirements:
-    pip install torch torchvision opencv-python numpy
+    pip install torch torchvision opencv-python numpy ultralytics
 
 Stdout: JSON result
 Exit 0 = success, 1 = error
@@ -66,6 +68,8 @@ CONFIDENCE_TH         = 0.55    # Higher threshold to reduce false positives
 NORMAL_TH             = 0.70
 MIN_INCIDENT_GAP_SEC  = 4.0
 MAX_KEYFRAMES         = 20
+YOLO_PERSON_CONF      = 0.35    # Confidence threshold for YOLO person detection
+YOLO_SAMPLE_INTERVAL  = 30      # Sample every N frames for person counting
 
 
 def main():
@@ -80,9 +84,12 @@ def main():
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # ── Load model ──────────────────────────────────────────────
+    # ── Load crime/anomaly classification model ──────────────────
     model, device, categories, mode = load_model()
     print(f"[CrimeDetector] Mode: {mode} | Classes: {categories}", file=sys.stderr)
+
+    # ── Load YOLO model for person detection ─────────────────────
+    yolo_model = load_yolo_model()
 
     # ── Open video ──────────────────────────────────────────────
     cap = cv2.VideoCapture(video_path)
@@ -95,6 +102,18 @@ def main():
     width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height       = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
+
+    # ── Count people using YOLO on sampled frames ────────────────
+    people_counts = []
+    if yolo_model is not None:
+        print(f"[YOLO] Counting people across video ({total_frames} frames)...", file=sys.stderr)
+        people_counts = count_people_in_video(video_path, yolo_model, total_frames, YOLO_SAMPLE_INTERVAL)
+        avg_people = round(sum(people_counts) / max(len(people_counts), 1), 1)
+        max_people = max(people_counts) if people_counts else 0
+        print(f"[YOLO] Avg people: {avg_people}, Max: {max_people}, Samples: {len(people_counts)}", file=sys.stderr)
+    else:
+        avg_people = 0
+        max_people = 0
 
     # ── Extract clips and classify ───────────────────────────────
     all_frames = read_all_frames(video_path, FRAME_SIZE)
@@ -176,6 +195,11 @@ def main():
             if raw is not None:
                 cv2.imwrite(kf_abs_path, raw)
 
+            # Get people count for this frame using YOLO
+            frame_people_count = 0
+            if yolo_model is not None and raw is not None:
+                frame_people_count = detect_people_in_frame(yolo_model, raw)
+
             keyframes.append({
                 "frame_index":   mid_f,
                 "timestamp":     round(ts, 2),
@@ -183,7 +207,7 @@ def main():
                 "filename":      kf_filename,
                 "path":          kf_abs_path,   # ← ABSOLUTE PATH for report generator
                 "is_incident":   True,
-                "people_count":  0,
+                "people_count":  frame_people_count,
                 "detections":    [],
                 "category":      cat,
                 "confidence":    round(score, 3),
@@ -200,6 +224,7 @@ def main():
                 "confidence":    round(score, 3),
                 "details":       f"{cat} detected with {round(score*100, 1)}% confidence",
                 "detections":    [],
+                "people_count":  frame_people_count,
             })
             break  # Only report top category per clip
 
@@ -214,6 +239,12 @@ def main():
         raw = read_frame_at(video_path, fi)
         if raw is not None:
             cv2.imwrite(kf_abs_path, raw)
+
+        # Get people count for this frame using YOLO
+        frame_people_count = 0
+        if yolo_model is not None and raw is not None:
+            frame_people_count = detect_people_in_frame(yolo_model, raw)
+
         keyframes.append({
             "frame_index":   fi,
             "timestamp":     round(fi / fps, 2),
@@ -221,32 +252,139 @@ def main():
             "filename":      kf_filename,
             "path":          kf_abs_path,   # ← ABSOLUTE PATH
             "is_incident":   False,
-            "people_count":  0,
+            "people_count":  frame_people_count,
             "detections":    [],
         })
 
     keyframes.sort(key=lambda x: x["timestamp"])
     incidents.sort(key=lambda x: x["timestamp"])
 
-    summary = build_summary(incidents, keyframes, duration)
+    # ── Determine violence status and danger level ───────────────
+    violence_detected = len(incidents) > 0
+    danger_level = compute_danger_level(incidents)
+
+    summary = build_summary(incidents, keyframes, duration, violence_detected, danger_level, avg_people)
 
     result = {
-        "incidents":       incidents,
-        "keyframes":       keyframes,
-        "summary":         summary,
-        "incident_count":  len(incidents),
-        "keyframe_count":  len(keyframes),
-        "duration":        round(duration, 2),
-        "fps":             round(fps, 2),
-        "total_frames":    total_frames,
-        "resolution":      f"{width}x{height}",
-        "avg_people":      0,
-        "detection_model": f"CNN-Crime-Classifier ({mode})",
-        "mode":            mode,
+        "incidents":          incidents,
+        "keyframes":          keyframes,
+        "summary":            summary,
+        "incident_count":     len(incidents),
+        "keyframe_count":     len(keyframes),
+        "duration":           round(duration, 2),
+        "fps":                round(fps, 2),
+        "total_frames":       total_frames,
+        "resolution":         f"{width}x{height}",
+        "avg_people":         avg_people,
+        "max_people":         max_people,
+        "violence_detected":  violence_detected,
+        "danger_level":       danger_level,
+        "detection_model":    f"CNN-Crime-Classifier ({mode})",
+        "mode":               mode,
     }
 
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0)
+
+
+# ── YOLO Person Detection ────────────────────────────────────────
+
+def load_yolo_model():
+    """Load YOLOv8 model for person detection."""
+    try:
+        from ultralytics import YOLO
+
+        # Look for yolov8n.pt in common locations
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        backend_dir = os.path.join(script_dir, "..")
+        
+        possible_paths = [
+            os.path.join(backend_dir, "yolov8n.pt"),
+            os.path.join(script_dir, "yolov8n.pt"),
+            "yolov8n.pt",  # Will download if not found
+        ]
+
+        model_path = None
+        for p in possible_paths:
+            if os.path.isfile(p):
+                model_path = p
+                break
+
+        if model_path:
+            yolo = YOLO(model_path)
+            print(f"[YOLO] Loaded model from: {model_path}", file=sys.stderr)
+        else:
+            # ultralytics will auto-download yolov8n.pt
+            yolo = YOLO("yolov8n.pt")
+            print("[YOLO] Auto-downloaded yolov8n.pt", file=sys.stderr)
+
+        return yolo
+
+    except ImportError:
+        print("[YOLO] WARNING: ultralytics not installed. Person counting disabled.", file=sys.stderr)
+        print("[YOLO] Install with: pip install ultralytics", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"[YOLO] WARNING: Failed to load YOLO model: {e}", file=sys.stderr)
+        return None
+
+
+def detect_people_in_frame(yolo_model, frame_bgr):
+    """Detect and count people in a single frame using YOLO."""
+    try:
+        results = yolo_model(frame_bgr, verbose=False, conf=YOLO_PERSON_CONF)
+        person_count = 0
+        for r in results:
+            for box in r.boxes:
+                cls_id = int(box.cls[0])
+                # Class 0 = person in COCO dataset
+                if cls_id == 0:
+                    person_count += 1
+        return person_count
+    except Exception:
+        return 0
+
+
+def count_people_in_video(video_path, yolo_model, total_frames, sample_interval):
+    """Sample frames at intervals and count people in each."""
+    counts = []
+    cap = cv2.VideoCapture(video_path)
+
+    frame_idx = 0
+    while frame_idx < total_frames:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+        ret, frame = cap.read()
+        if not ret:
+            break
+        count = detect_people_in_frame(yolo_model, frame)
+        counts.append(count)
+        frame_idx += sample_interval
+
+    cap.release()
+    return counts
+
+
+# ── Danger Level Computation ─────────────────────────────────────
+
+def compute_danger_level(incidents):
+    """Compute overall danger level based on incidents."""
+    if not incidents:
+        return "safe"
+
+    severities = [i["severity"] for i in incidents]
+
+    if "critical" in severities:
+        return "critical"
+    elif "high" in severities:
+        if severities.count("high") >= 3:
+            return "critical"
+        return "high"
+    elif "medium" in severities:
+        if severities.count("medium") >= 3:
+            return "high"
+        return "medium"
+    else:
+        return "low"
 
 
 # ── Model loading ─────────────────────────────────────────────────
@@ -371,20 +509,29 @@ def read_frame_at(video_path, frame_index):
 
 # ── Helpers ───────────────────────────────────────────────────────
 
-def build_summary(incidents, keyframes, duration):
-    if not incidents:
-        return (f"No incidents detected in {seconds_to_hms(duration)} video. "
-                f"{len(keyframes)} keyframes extracted. Video classified as normal.")
-    types    = list({i["type"] for i in incidents})
-    critical = [i for i in incidents if i["severity"] == "critical"]
-    high     = [i for i in incidents if i["severity"] == "high"]
-    parts    = [f"{len(incidents)} incident(s) detected"]
-    if critical:
-        parts.append(f"{len(critical)} critical")
-    if high:
-        parts.append(f"{len(high)} high severity")
-    parts.append(f"Types: {', '.join(types)}")
+def build_summary(incidents, keyframes, duration, violence_detected, danger_level, avg_people):
+    parts = []
+
+    if violence_detected:
+        parts.append(f"VIOLENCE DETECTED — Danger Level: {danger_level.upper()}")
+        types = list({i["type"] for i in incidents})
+        critical = [i for i in incidents if i["severity"] == "critical"]
+        high     = [i for i in incidents if i["severity"] == "high"]
+        parts.append(f"{len(incidents)} incident(s) detected in {seconds_to_hms(duration)} video")
+        if critical:
+            parts.append(f"{len(critical)} critical")
+        if high:
+            parts.append(f"{len(high)} high severity")
+        parts.append(f"Types: {', '.join(types)}")
+    else:
+        parts.append(f"NO VIOLENCE DETECTED — Video is safe")
+        parts.append(f"Video duration: {seconds_to_hms(duration)}")
+
+    if avg_people > 0:
+        parts.append(f"Average {avg_people} people detected")
+
     parts.append(f"{len(keyframes)} keyframes saved")
+
     return ". ".join(parts) + "."
 
 

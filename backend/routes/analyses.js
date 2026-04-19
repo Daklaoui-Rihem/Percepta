@@ -49,5 +49,6 @@ router.get('/:id/report', authMiddleware, analysisController.downloadReport);
 router.post('/:id/report/generate', authMiddleware, analysisController.generateReport);
 
 router.get('/:id/video-result', authMiddleware, analysisController.getVideoResult);
+router.get('/:id/keyframe/:filename', authMiddleware, analysisController.serveKeyframe);
 
 module.exports = router;

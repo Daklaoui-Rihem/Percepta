@@ -24,23 +24,23 @@ const SEVERITY_COLORS = {
 
 const INCIDENT_LABELS = {
     // Binary
-    Anomaly: '⚠  Anomaly Detected',
-    anomaly: '⚠  Anomaly Detected',
+    Anomaly: '[!] Anomaly Detected',
+    anomaly: '[!] Anomaly Detected',
     // UCF-Crime 14
-    Abuse: '⚠  Abuse',
-    Arrest: '🚔  Arrest',
-    Arson: '🔥  Arson',
-    Assault: '👊  Assault',
-    Burglary: '🏠  Burglary',
-    Explosion: '💥  Explosion',
-    Fighting: '⚔  Fighting',
-    Normal: '✅  Normal',
-    RoadAccident: '🚗  Road Accident',
-    Robbery: '🔫  Robbery',
-    Shooting: '🎯  Shooting',
-    Shoplifting: '🛒  Shoplifting',
-    Stealing: '💼  Stealing',
-    Vandalism: '🪣  Vandalism',
+    Abuse: '[?] Abuse',
+    Arrest: '[!] Arrest',
+    Arson: '[*] Arson',
+    Assault: '[!] Assault',
+    Burglary: '[*] Burglary',
+    Explosion: '[*] Explosion',
+    Fighting: '[!] Fighting',
+    Normal: '[i] Normal',
+    RoadAccident: '[!] Road Accident',
+    Robbery: '[!] Robbery',
+    Shooting: '[*] Shooting',
+    Shoplifting: '[?] Shoplifting',
+    Stealing: '[?] Stealing',
+    Vandalism: '[?] Vandalism',
 };
 
 /**
@@ -111,6 +111,7 @@ async function generateVideoReportPDF(opts) {
         const doc = new PDFDocument({
             size: 'A4',
             margins: { top: 0, bottom: 40, left: 0, right: 0 },
+            bufferPages: true,
         });
 
         const W = doc.page.width;
@@ -210,51 +211,8 @@ async function generateVideoReportPDF(opts) {
         });
         cursorY += 66;
 
-        // ── Incident list ────────────────────────────────────────
-        if (incidents.length > 0) {
-            if (checkPageBreak(doc, cursorY, H, W, MID_BLUE, LIGHT_BLUE)) {
-                cursorY = doc.y + 20;
-            }
-
-            sectionHeader(doc, 'Detected Incidents', cX, cursorY, '#dc2626', DARK_BLUE);
-            cursorY += 28;
-
-            for (const incident of incidents) {
-                if (checkPageBreak(doc, cursorY + 60, H, W, MID_BLUE, LIGHT_BLUE)) {
-                    cursorY = doc.y + 20;
-                } else {
-                    cursorY = Math.max(cursorY, doc.y);
-                }
-
-                const sev = SEVERITY_COLORS[incident.severity] || SEVERITY_COLORS.medium;
-                const incLabel = INCIDENT_LABELS[incident.type]
-                    || INCIDENT_LABELS[incident.type?.toLowerCase()]
-                    || incident.type;
-
-                doc.rect(cX, cursorY, 4, 52).fill(sev.text);
-                doc.rect(cX + 4, cursorY, cW - 4, 52).fill(sev.bg);
-
-                doc.font('Helvetica-Bold').fontSize(13).fillColor(sev.text)
-                    .text(incLabel, cX + 14, cursorY + 8);
-
-                const subtextParts = [
-                    `Time: ${incident.timestamp_str || secondsToHMS(incident.timestamp || 0)}`,
-                    `Severity: ${sev.label}`,
-                ];
-                if (incident.confidence) {
-                    subtextParts.push(`Confidence: ${Math.round(incident.confidence * 100)}%`);
-                }
-                if (incident.details) {
-                    subtextParts.push(incident.details);
-                }
-
-                doc.font('Helvetica').fontSize(10).fillColor(GRAY_700)
-                    .text(subtextParts.slice(0, 3).join('   ·   '), cX + 14, cursorY + 28);
-
-                cursorY += 62;
-            }
-            cursorY += 10;
-        }
+        // ── Incident list removed ─────────────────────────────────
+        // (User requested removal from PDF)
 
         // ── Keyframes section ────────────────────────────────────
         const incidentFrames = keyframes.filter(f => f.is_incident);
