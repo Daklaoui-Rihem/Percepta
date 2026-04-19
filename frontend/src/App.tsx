@@ -10,6 +10,7 @@ import ClientDashboardPage from './Pages/ClientDashboardPage';
 import NewTranscriptionPage from './Pages/NewTranscriptionPage';
 import NewVideoAnalysisPage from './Pages/NewVideoAnalysisPage';
 import AudioHistoryPage from './Pages/Audiohistorypage';
+import VideoHistoryPage from './Pages/Videohistorypage';
 import SuperAdminDashboardPage from './Pages/SuperAdminDashboardPage';
 import ClientProfilePage from './Pages/ClientProfilePage';
 import AdminProfilePage from './Pages/AdminProfilePage';
@@ -85,10 +86,15 @@ export default function App() {
           </ProtectedRoute>
         } />
 
-        {/* Audio history + PDF reports */}
+        {/* History + PDF reports */}
         <Route path="/client/history" element={
           <ProtectedRoute allowedRoles={['Client']}>
             <AudioHistoryPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/video-history" element={
+          <ProtectedRoute allowedRoles={['Client']}>
+            <VideoHistoryPage />
           </ProtectedRoute>
         } />
 

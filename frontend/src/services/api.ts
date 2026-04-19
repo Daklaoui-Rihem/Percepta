@@ -192,6 +192,8 @@ export interface VideoKeyframe {
     is_incident: boolean;
     people_count: number;
     detections: VideoDetection[];
+    category?: string;
+    confidence?: number;
 }
 
 export interface VideoIncident {
@@ -202,6 +204,8 @@ export interface VideoIncident {
     frame_index?: number;
     frame_file?: string;
     details?: string;
+    confidence?: number;
+    people_count?: number;
 }
 
 export interface VideoAnalysisResult {
@@ -215,6 +219,9 @@ export interface VideoAnalysisResult {
     total_frames: number;
     resolution: string;
     avg_people: number;
+    max_people: number;
+    violence_detected: boolean;
+    danger_level: 'safe' | 'low' | 'medium' | 'high' | 'critical';
     detection_model: string;
 }
 
@@ -330,9 +337,14 @@ export const analysisApi = {
         request<AnalysisRecord[]>('GET', `/analyses/user/${userId}`),
 
     getVideoResult: (id: string) =>
-        request<{ status: string; videoAnalysisData: VideoAnalysisResult | null }>(
+        request<{ status: string; videoAnalysisData: VideoAnalysisResult | null; videoFramesDir?: string }>(
             'GET', `/analyses/${id}/video-result`
         ),
+
+    getKeyframeUrl: (analysisId: string, filename: string): string => {
+        const token = getToken();
+        return `${BASE_URL}/analyses/${analysisId}/keyframe/${filename}?token=${token}`;
+    },
 };
 
 // ── Auth helpers ───────────────────────────────────────────────

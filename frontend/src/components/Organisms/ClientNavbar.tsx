@@ -19,7 +19,8 @@ export default function ClientNavbar({ activePage, onNavigate }: Props) {
     { icon: Home, label: 'Home', translatedLabel: t('home'), path: '/client/dashboard' },
     { icon: FileText, label: 'Transcriptions', translatedLabel: t('transcriptions'), path: '/client/transcriptions/new' },
     { icon: Video, label: 'Video Analysis', translatedLabel: t('videoAnalysis'), path: '/client/video-analysis/new' },
-    { icon: History, label: 'History', translatedLabel: t('audioHistory') || 'History', path: '/client/history' },
+    { icon: History, label: 'Audio History', translatedLabel: t('audioHistory') || 'Audio History', path: '/client/history' },
+    { icon: History, label: 'Video History', translatedLabel: t('videoHistory') || 'Video History', path: '/client/video-history' },
   ];
 
   return (

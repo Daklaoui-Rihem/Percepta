@@ -1,25 +1,15 @@
 /**
- * AudioHistoryPage.tsx
+ * Videohistorypage.tsx
  *
- * Full audio analysis history for Clients.
- * Features:
- *  - List all audio analyses with status badges
- *  - Download PDF report
- *  - Re-generate PDF if missing
- *  - Retry failed analyses
- *  - Delete with confirmation
- *  - Search + filter by status
- *  - View full transcription inline
- *
- * Route: /client/history  (add to App.tsx)
+ * Full video analysis history for Clients.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-    FileAudio, Download, Trash2, RefreshCw, Search,
-    ChevronDown, ChevronUp, FileText, Clock, CheckCircle,
-    XCircle, Loader2, AlertTriangle, Eye, EyeOff,
-    Filter, RotateCcw, Calendar, HardDrive, Hash
+    Film, Download, Trash2, RefreshCw, Search,
+    FileText, Clock, CheckCircle,
+    XCircle, Loader2, AlertTriangle,
+    Filter
 } from 'lucide-react';
 import ClientTemplate from '../components/Templates/ClientTemplate';
 import { analysisApi, type AnalysisRecord } from '../services/api';
@@ -73,7 +63,7 @@ function DeleteModal({
                 </h3>
                 <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.6, marginBottom: 28 }}>
                     <strong>{name}</strong><br />
-                    <span style={{ color: '#94a3b8', fontSize: 13 }}>{t('deleteCannotUndo')}</span>
+                    <span style={{ color: '#94a3b8', fontSize: 13 }}>{t('deleteCannotUndo') || 'This action cannot be undone.'}</span>
                 </p>
                 <div style={{ display: 'flex', gap: 12 }}>
                     <button
@@ -81,7 +71,7 @@ function DeleteModal({
                         disabled={deleting}
                         style={{ flex: 1, padding: 12, borderRadius: 10, border: '1.5px solid #e2e8f0', background: 'white', cursor: 'pointer', fontWeight: 600, color: '#475569' }}
                     >
-                        {t('cancel')}
+                        {t('cancel') || 'Cancel'}
                     </button>
                     <button
                         onClick={onConfirm}
@@ -94,7 +84,7 @@ function DeleteModal({
                         }}
                     >
                         <Trash2 size={15} />
-                        {deleting ? (t('deleting') || 'Deleting…') : t('delete')}
+                        {deleting ? (t('deleting') || 'Deleting…') : (t('delete') || 'Delete')}
                     </button>
                 </div>
             </div>
@@ -120,8 +110,6 @@ function AnalysisRow({
     onPdfAction: (id: string, hasPdf: boolean, name: string) => void;
 }) {
     const { t } = useTranslation();
-    const [expanded, setExpanded] = useState(false);
-    const [showTranscription, setShowTranscription] = useState(false);
     const [pdfLoading, setPdfLoading] = useState(false);
 
     const cfg = STATUS_CFG[record.status] || STATUS_CFG.pending;
@@ -167,7 +155,7 @@ function AnalysisRow({
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0,
                 }}>
-                    <FileAudio size={22} color="#2563eb" />
+                    <Film size={22} color="#2563eb" />
                 </div>
 
                 {/* Main info */}
@@ -189,9 +177,9 @@ function AnalysisRow({
                             fontSize: 12, fontWeight: 600,
                         }}>
                             {cfg.icon}
-                            {record.status === 'done' ? t('completed') :
-                                record.status === 'processing' ? t('processing') :
-                                    record.status === 'error' ? t('failed') : t('pending')}
+                            {record.status === 'done' ? (t('completed') || 'Completed') :
+                                record.status === 'processing' ? (t('processing') || 'Processing') :
+                                    record.status === 'error' ? (t('failed') || 'Failed') : (t('pending') || 'Pending')}
                         </span>
 
                         {/* PDF badge */}
@@ -203,136 +191,24 @@ function AnalysisRow({
                                 padding: '3px 8px', borderRadius: 20,
                                 fontSize: 11, fontWeight: 600,
                             }}>
-                                <FileText size={11} /> PDF
+                                <FileText size={12} /> PDF Ready
                             </span>
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: 16, color: '#94a3b8', fontSize: 12, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 14, fontSize: 13, color: '#64748b' }}>
+                        <span>{sizeMB} MB</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <Calendar size={13} /> {dateStr} · {timeStr}
+                            {dateStr} {timeStr}
                         </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <HardDrive size={13} /> {sizeMB} MB
-                        </span>
-                        {record.status === 'done' && record.transcription && (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <Hash size={13} /> ~{record.transcription.split(/\s+/).filter(Boolean).length.toLocaleString()} {t('wordsLabel')}
-                            </span>
-                        )}
                     </div>
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                    {/* Expand / collapse row */}
-                    <button
-                        onClick={() => setExpanded(e => !e)}
-                        style={iconBtn('#eff6ff', '#1a3a6b')}
-                        title={expanded ? 'Collapse' : 'Expand'}
-                    >
-                        {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                    </button>
-
-                    {/* PDF download / generate */}
-                    {record.status === 'done' && (
-                        <button
-                            onClick={handlePdf}
-                            disabled={pdfLoading}
-                            style={iconBtn(record.hasPdf ? '#dcfce7' : '#f1f5f9', record.hasPdf ? '#16a34a' : '#64748b')}
-                            title={record.hasPdf ? t('downloadPdf') || 'Download PDF' : t('generatePdf') || 'Generate PDF'}
-                        >
-                            {pdfLoading
-                                ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} />
-                                : <Download size={15} />
-                            }
-                        </button>
-                    )}
-
-                    {/* Retry on error */}
-                    {record.status === 'error' && (
-                        <button
-                            onClick={() => onRetry(record._id)}
-                            style={iconBtn('#fff7ed', '#c2410c')}
-                            title={t('retry')}
-                        >
-                            <RotateCcw size={15} />
-                        </button>
-                    )}
-
-                    {/* Delete */}
-                    <button
-                        onClick={() => onDelete(record._id, record.originalName)}
-                        style={iconBtn('#fee2e2', '#dc2626')}
-                        title={t('delete')}
-                    >
-                        <Trash2 size={15} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Expanded section */}
-            {expanded && (record.status === 'done' || record.status === 'error') && (
-                <div style={{
-                    borderTop: '1px solid #f1f5f9',
-                    padding: '16px 20px',
-                    background: '#fafcff',
-                }}>
-                    {/* Summary */}
-                    {record.summary && (
-                        <div style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                {t('summary')}
-                            </div>
-                            <div style={{
-                                background: '#f0fdf4', border: '1px solid #bbf7d0',
-                                borderRadius: 8, padding: '12px 14px',
-                                fontSize: 13, color: '#166534', lineHeight: 1.6,
-                                whiteSpace: 'pre-line',
-                            }}>
-                                {record.summary}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Transcription toggle */}
-                    {record.transcription && (
-                        <div>
-                            <button
-                                onClick={() => setShowTranscription(s => !s)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 6,
-                                    background: 'none', border: 'none', cursor: 'pointer',
-                                    color: '#1a3a6b', fontSize: 13, fontWeight: 600,
-                                    padding: '4px 0', marginBottom: showTranscription ? 10 : 0,
-                                }}
-                            >
-                                {showTranscription ? <EyeOff size={14} /> : <Eye size={14} />}
-                                {showTranscription ? (t('hideTranscription') || 'Hide transcription') : (t('showTranscription') || 'Show transcription')}
-                            </button>
-
-                            {showTranscription && (
-                                <div
-                                    dir="auto"
-                                    style={{
-                                        background: 'white', border: '1px solid #e2e8f0',
-                                        borderRadius: 8, padding: '14px 16px',
-                                        maxHeight: 240, overflowY: 'auto',
-                                        fontSize: 13.5, lineHeight: 1.8, color: '#334155',
-                                        whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                                    }}
-                                >
-                                    {record.transcription}
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     {/* Error detail */}
                     {record.status === 'error' && record.errorMessage && (
                         <div style={{
+                            marginTop: 10,
                             background: '#fff1f2', border: '1px solid #fecaca',
-                            borderRadius: 8, padding: '12px 14px',
+                            borderRadius: 8, padding: '10px 14px',
                             fontSize: 13, color: '#991b1b',
                             fontFamily: 'monospace',
                         }}>
@@ -340,15 +216,47 @@ function AnalysisRow({
                         </div>
                     )}
                 </div>
-            )}
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                    {record.status === 'error' && (
+                        <button
+                            onClick={() => onRetry(record._id)}
+                            title="Retry analysis"
+                            style={iconBtn('#fee2e2', '#dc2626')}
+                        >
+                            <RefreshCw size={16} />
+                        </button>
+                    )}
+
+                    {(record.status === 'done') && (
+                        <button
+                            onClick={handlePdf}
+                            disabled={pdfLoading}
+                            title={record.hasPdf ? "Download PDF Report" : "Generate PDF Report"}
+                            style={iconBtn(record.hasPdf ? '#dcfce7' : '#eff6ff', record.hasPdf ? '#16a34a' : '#2563eb')}
+                        >
+                            {pdfLoading ? <Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Download size={16} />}
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => onDelete(record._id, record.originalName)}
+                        title="Delete analysis"
+                        style={iconBtn('#f1f5f9', '#64748b')}
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
 
 // ── Main Page ──────────────────────────────────────────────────
-export default function AudioHistoryPage() {
+export default function VideoHistoryPage() {
     const { t } = useTranslation();
-    const [activePage, setActivePage] = useState('Transcriptions');
+    const [activePage, setActivePage] = useState('Video History');
 
     const [records, setRecords] = useState<AnalysisRecordExt[]>([]);
     const [loading, setLoading] = useState(true);
@@ -373,9 +281,9 @@ export default function AudioHistoryPage() {
         setError('');
         try {
             const data = await analysisApi.getMyAnalyses();
-            // Only audio analyses
-            const audioOnly = data.filter((r: AnalysisRecord) => r.type === 'audio');
-            setRecords(audioOnly as AnalysisRecordExt[]);
+            // Only video analyses
+            const videoOnly = data.filter((r: AnalysisRecord) => r.type === 'video');
+            setRecords(videoOnly as AnalysisRecordExt[]);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to load');
         } finally {
@@ -414,25 +322,13 @@ export default function AudioHistoryPage() {
         }
     };
 
-    // ── PDF action (download or generate) ────────────────────────
+    // ── PDF action (download) ────────────────────────────────────
     const handlePdfAction = async (id: string, hasPdf: boolean, name: string) => {
-        if (hasPdf) {
-            try {
-                await analysisApi.downloadReport(id, name);
-            } catch (err: unknown) {
-                showNotif(err instanceof Error ? err.message : 'Download failed', false);
-            }
-        } else {
-            try {
-                await analysisApi.generateReport(id);
-                setRecords(prev => prev.map(r => r._id === id
-                    ? { ...r, hasPdf: true, pdfGeneratedAt: new Date().toISOString() }
-                    : r
-                ));
-                showNotif(t('pdfGenerated') || 'PDF report generated!');
-            } catch (err: unknown) {
-                showNotif(err instanceof Error ? err.message : 'PDF generation failed', false);
-            }
+        // Since video PDF is generated at run time by report generator, we just download it.
+        try {
+            await analysisApi.downloadReport(id, name);
+        } catch (err: unknown) {
+            showNotif(err instanceof Error ? err.message : 'Download failed', false);
         }
     };
 
@@ -457,7 +353,8 @@ export default function AudioHistoryPage() {
     const toggleOne = (id: string) => {
         setSelected(prev => {
             const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
             return next;
         });
     };
@@ -516,10 +413,10 @@ export default function AudioHistoryPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
                 <div>
                     <h2 style={{ color: '#1a3a6b', fontSize: 26, fontWeight: 800, margin: 0, marginBottom: 4 }}>
-                        {t('audioHistory') || 'Audio History'}
+                        {t('videoHistory') || 'Video History'}
                     </h2>
                     <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>
-                        {t('audioHistoryDesc') || 'All your audio transcriptions and reports'}
+                        {t('videoHistoryDesc') || 'All your video analyses and reports'}
                     </p>
                 </div>
                 <div style={{ display: 'flex', gap: 12 }}>
@@ -533,7 +430,7 @@ export default function AudioHistoryPage() {
                                 padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                             }}
                         >
-                            <Trash2 size={15} /> {t('delete')} ({selected.size})
+                            <Trash2 size={15} /> {t('delete') || 'Delete'} ({selected.size})
                         </button>
                     )}
                     <button
@@ -545,7 +442,7 @@ export default function AudioHistoryPage() {
                             padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                         }}
                     >
-                        <RefreshCw size={15} /> {t('refresh')}
+                        <RefreshCw size={15} /> {t('refresh') || 'Refresh'}
                     </button>
                 </div>
             </div>
@@ -554,8 +451,8 @@ export default function AudioHistoryPage() {
             <div style={{ display: 'flex', gap: 16, marginBottom: 28 }}>
                 {[
                     { label: t('totalAnalyses') || 'Total', value: total, color: '#3b82f6', bg: '#eff6ff' },
-                    { label: t('completed'), value: doneCount, color: '#16a34a', bg: '#f0fdf4' },
-                    { label: t('failed'), value: errorCount, color: '#dc2626', bg: '#fef2f2' },
+                    { label: t('completed') || 'Completed', value: doneCount, color: '#16a34a', bg: '#f0fdf4' },
+                    { label: t('failed') || 'Failed', value: errorCount, color: '#dc2626', bg: '#fef2f2' },
                     { label: t('pdfReports') || 'PDF Reports', value: pdfCount, color: '#7c3aed', bg: '#f5f3ff' },
                 ].map(s => (
                     <div key={s.label} style={{
@@ -608,16 +505,16 @@ export default function AudioHistoryPage() {
                             cursor: 'pointer', color: '#1e293b',
                         }}
                     >
-                        <option value="all">{t('allStatus')}</option>
-                        <option value="done">{t('completed')}</option>
-                        <option value="processing">{t('processing')}</option>
-                        <option value="pending">{t('pending')}</option>
-                        <option value="error">{t('failed')}</option>
+                        <option value="all">{t('allStatus') || 'All Status'}</option>
+                        <option value="done">{t('completed') || 'Completed'}</option>
+                        <option value="processing">{t('processing') || 'Processing'}</option>
+                        <option value="pending">{t('pending') || 'Pending'}</option>
+                        <option value="error">{t('failed') || 'Failed'}</option>
                     </select>
                 </div>
 
                 <span style={{ color: '#94a3b8', fontSize: 13, whiteSpace: 'nowrap' }}>
-                    {t('showing')} <strong style={{ color: '#1a3a6b' }}>{filtered.length}</strong> {t('of')} {total}
+                    {t('showing') || 'Showing'} <strong style={{ color: '#1a3a6b' }}>{filtered.length}</strong> {t('of') || 'of'} {total}
                 </span>
 
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -626,9 +523,9 @@ export default function AudioHistoryPage() {
                         checked={allFilteredSelected}
                         onChange={toggleAll}
                         style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#1a3a6b' }}
-                        id="select-all"
+                        id="select-all-video"
                     />
-                    <label htmlFor="select-all" style={{ fontSize: 13, color: '#1a3a6b', fontWeight: 600, cursor: 'pointer' }}>
+                    <label htmlFor="select-all-video" style={{ fontSize: 13, color: '#1a3a6b', fontWeight: 600, cursor: 'pointer' }}>
                         Select All
                     </label>
                 </div>
@@ -638,7 +535,7 @@ export default function AudioHistoryPage() {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
                     <Loader2 size={40} style={{ animation: 'spin 0.8s linear infinite', marginBottom: 12 }} />
-                    <p>{t('loading')}</p>
+                    <p>{t('loading') || 'Loading...'}</p>
                 </div>
             ) : error ? (
                 <div style={{ textAlign: 'center', padding: '60px', color: '#dc2626', background: 'white', borderRadius: 12 }}>
@@ -651,15 +548,15 @@ export default function AudioHistoryPage() {
                     borderRadius: 16, color: '#94a3b8',
                     border: '2px dashed #e2e8f0',
                 }}>
-                    <FileAudio size={56} style={{ opacity: 0.2, marginBottom: 16 }} />
+                    <Film size={56} style={{ opacity: 0.2, marginBottom: 16 }} />
                     <p style={{ fontSize: 16, fontWeight: 600 }}>
                         {search || filterStatus !== 'all'
                             ? (t('noResults') || 'No results found')
-                            : (t('noAudioHistoryYet') || 'No audio analyses yet')
+                            : (t('noVideoHistoryYet') || 'No video analyses yet')
                         }
                     </p>
                     <p style={{ fontSize: 13, marginTop: 8 }}>
-                        {!search && filterStatus === 'all' && (t('uploadFirstAudio') || 'Upload your first audio file to get started.')}
+                        {!search && filterStatus === 'all' && (t('uploadFirstVideo') || 'Upload your first video file to get started.')}
                     </p>
                 </div>
             ) : (

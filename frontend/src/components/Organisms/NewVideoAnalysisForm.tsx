@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef } from 'react';
-import { Home, Video, PlayCircle, XCircle, FolderOpen } from 'lucide-react';
+import { Home, Video, PlayCircle, XCircle, FolderOpen, Loader2 } from 'lucide-react';
 import Breadcrumb from '../Atoms/Breadcrumb';
 import FileDropZone from '../Molecules/FileDropZone';
 import { useTranslation } from '../../context/TranslationContext';
@@ -105,7 +105,7 @@ export default function NewVideoAnalysisForm() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                        {uploading ? <>⏳ {t('uploading')}</> : <><PlayCircle size={20} /> {t('startVideoAnalysis')}</>}
+                        {uploading ? <><Loader2 size={20} style={{ animation: 'spin 1.5s linear infinite' }} /> {t('uploading')}</> : <><PlayCircle size={20} /> {t('startVideoAnalysis')}</>}
                       </div>
                     </button>
                     <button

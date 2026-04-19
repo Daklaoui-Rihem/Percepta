@@ -366,6 +366,12 @@ const translations = {
   showTranscription: { fr: 'Afficher la transcription', en: 'Show transcription', ar: 'عرض النص' },
   hideTranscription: { fr: 'Masquer la transcription', en: 'Hide transcription', ar: 'إخفاء النص' },
 
+  // ── Video History Page ────────────────────────────────────────
+  videoHistory: { fr: 'Historique vidéo', en: 'Video History', ar: 'سجل الفيديو' },
+  videoHistoryDesc: { fr: 'Toutes vos analyses et rapports vidéo', en: 'All your video analyses and reports', ar: 'جميع تحليلاتك وتقاريرك للفيديو' },
+  noVideoHistoryYet: { fr: "Aucune analyse vidéo pour l'instant.", en: 'No video analyses yet.', ar: 'لا توجد تحليلات فيديو بعد.' },
+  uploadFirstVideo: { fr: 'Téléchargez votre première vidéo pour commencer.', en: 'Upload your first video file to get started.', ar: 'ارفع أول فيديو للبدء.' },
+
   translateResultTo: { fr: 'Traduire le résultat vers', en: 'Translate result to', ar: 'ترجمة النتيجة إلى' },
   optional: { fr: 'optionnel', en: 'optional', ar: 'اختياري' },
   willTranslateTo: { fr: 'La transcription sera également traduite en', en: 'The transcription will also be translated to', ar: 'سيتم ترجمة النص أيضاً إلى' },
