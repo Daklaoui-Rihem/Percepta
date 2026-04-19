@@ -8,9 +8,6 @@ from collections import Counter
 
 
 def main():
-    import os
-    os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin" + os.pathsep + r"C:\Users\LENOVO\AppData\Local\Microsoft\WinGet\Links"
-    
     if len(sys.argv) < 2:
         _fail("Usage: whisper_transcribe.py <file_path> [language]")
 
