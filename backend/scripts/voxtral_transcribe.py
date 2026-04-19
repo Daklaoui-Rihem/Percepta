@@ -35,7 +35,36 @@ import re
 import math
 from collections import Counter
 from xmlrpc import client
+def detect_language_from_text(text: str) -> str:
+    """Simple heuristic language detection from transcribed text."""
+    if not text:
+        return "fr"
 
+    import re
+    arabic_chars = len(re.findall(r'[\u0600-\u06FF]', text))
+    total_chars = len(text.replace(' ', ''))
+
+    if total_chars == 0:
+        return "fr"
+
+    if arabic_chars / total_chars > 0.2:
+        return "ar"
+
+    french_words = ['je', 'vous', 'nous', 'est', 'les', 'des', 'une', 'pour',
+                    'avec', 'dans', 'sur', 'qui', 'que', 'bonjour', 'merci']
+    english_words = ['the', 'and', 'is', 'are', 'you', 'have', 'this', 'that',
+                     'with', 'for', 'hello', 'please', 'thank']
+
+    text_lower = text.lower()
+    fr_score = sum(1 for w in french_words if f' {w} ' in f' {text_lower} ')
+    en_score = sum(1 for w in english_words if f' {w} ' in f' {text_lower} ')
+
+    if fr_score > en_score:
+        return "fr"
+    elif en_score > fr_score:
+        return "en"
+    else:
+        return "fr"  # default to French for your use case
 
 def main():
     # ── Arguments ──────────────────────────────────────────
@@ -97,13 +126,16 @@ def main():
                 )
 
         transcribed_text = response.text.strip()
-        detected_language = getattr(response, "language", language if language != "auto" else "fr")
+
+        # Try to get language from response, otherwise detect from text
+        detected_language = getattr(response, "language", None)
+        if not detected_language or detected_language == "auto":
+            detected_language = detect_language_from_text(transcribed_text)
 
     except ImportError as e:
         _fail(f"ImportError: {str(e)}")
     except Exception as e:
         error_msg = str(e)
-        # Erreurs communes avec explications claires
         if "401" in error_msg or "Unauthorized" in error_msg:
             _fail("Clé API Mistral invalide. Vérifie MISTRAL_API_KEY dans ton .env")
         elif "429" in error_msg or "rate" in error_msg.lower():

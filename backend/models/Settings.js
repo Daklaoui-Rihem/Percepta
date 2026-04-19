@@ -6,7 +6,14 @@ const settingsSchema = new mongoose.Schema({
   smtpUser:   { type: String, default: '' },
   smtpPass:   { type: String, default: '' },
   smtpFrom:   { type: String, default: '' },
-  smtpSecure: { type: String, default: 'STARTTLS' }, // or 'SSL'
+  smtpSecure: { type: String, default: 'STARTTLS' },
+
+  // ── Transcription engine ──────────────────────────────────────
+  transcriptionEngine: {
+    type: String,
+    enum: ['whisper', 'voxtral'],
+    default: 'whisper',
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Settings', settingsSchema);

@@ -26,6 +26,9 @@ const { generateTranscriptionPDF } = require('../utils/Pdfreportgenerator');
 // ── Config ─────────────────────────────────────────────────────
 // ── Config ─────────────────────────────────────────────────────
 const PYTHON_BIN = process.env.WHISPER_PYTHON || 'python';
+const PYTHON_ARGS_PREFIX = process.env.WHISPER_PYTHON_VERSION 
+    ? ['-' + process.env.WHISPER_PYTHON_VERSION] 
+    : [];
 
 // Choix du moteur selon la variable d'environnement
 const TRANSCRIPTION_ENGINE = process.env.TRANSCRIPTION_ENGINE || 'whisper'; // 'whisper' | 'voxtral'
@@ -64,11 +67,21 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     // ── Step 1: Transcription ──────────────────────────────────
     // APRÈS
-const result = TRANSCRIPTION_ENGINE === 'voxtral'
-    ? await runVoxtral(filePath, DEFAULT_LANG)
-    : await runWhisper(filePath, DEFAULT_LANG);
+// Read engine from DB (admin setting), fall back to env
+    let activeEngine = TRANSCRIPTION_ENGINE;
+    try {
+        const Settings = require('../models/Settings');
+        const dbSettings = await Settings.findOne();
+        if (dbSettings?.transcriptionEngine) {
+            activeEngine = dbSettings.transcriptionEngine;
+        }
+    } catch (_) {}
 
-console.log(`🤖 [AudioProcessor] Moteur utilisé: ${TRANSCRIPTION_ENGINE}`);
+    const result = activeEngine === 'voxtral'
+        ? await runVoxtral(filePath, DEFAULT_LANG)
+        : await runWhisper(filePath, DEFAULT_LANG);
+
+    console.log(`🤖 [AudioProcessor] Engine used: ${activeEngine}`);
 
     await job.updateProgress(60);
 
@@ -157,7 +170,7 @@ console.log(`🤖 [AudioProcessor] Moteur utilisé: ${TRANSCRIPTION_ENGINE}`);
 // ── Spawn Whisper Python ───────────────────────────────────────
 function runWhisper(filePath, language) {
     return new Promise((resolve, reject) => {
-        const args = [SCRIPT_PATH, filePath, language];
+        const args = [...PYTHON_ARGS_PREFIX,SCRIPT_PATH, filePath, language];
 
         console.log(`🐍 [AudioProcessor] Spawning: ${PYTHON_BIN} ${args.join(' ')}`);
 
@@ -218,7 +231,7 @@ function runVoxtral(filePath, language) {
             ));
         }
 
-        const args = [VOXTRAL_SCRIPT_PATH, filePath, language];
+        const args = [...PYTHON_ARGS_PREFIX,VOXTRAL_SCRIPT_PATH, filePath, language];
 
         console.log(`🐍 [AudioProcessor] Lancement Voxtral: ${PYTHON_BIN} ${args.join(' ')}`);
 
@@ -287,7 +300,7 @@ async function runEntityExtraction(text, language) {
     fs.writeFileSync(tmpFile, text, 'utf-8');
 
     return new Promise((resolve, reject) => {
-        const args = [EXTRACT_SCRIPT_PATH, tmpFile, language || 'auto'];
+        const args = [...PYTHON_ARGS_PREFIX,EXTRACT_SCRIPT_PATH, tmpFile, language || 'auto'];
 
         const proc = spawn(PYTHON_BIN, args, {
             stdio: ['ignore', 'pipe', 'pipe'],
