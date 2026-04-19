@@ -124,17 +124,12 @@ const worker = new Worker(
             };
 
         } catch (processingError) {
-            await Analysis.findByIdAndUpdate(analysisId, {
-                status: 'done',
-                transcription: result.transcription,
-                summary: result.summary,
-                videoAnalysisData: result.videoResult || null,
-                pdfPath: result.pdfPath || '',
-                pdfGeneratedAt: result.pdfPath ? new Date() : null,
-                errorMessage: '',
-            });
-            throw processingError;
-        }
+    await Analysis.findByIdAndUpdate(analysisId, {
+        status: 'error',
+        errorMessage: processingError.message || 'Processing failed',
+    });
+    throw processingError;
+}
     },
     {
         connection: redisConnection,

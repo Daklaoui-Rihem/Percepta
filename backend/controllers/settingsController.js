@@ -7,7 +7,7 @@ exports.getSmtp = async (req, res) => {
         let settings = await Settings.findOne();
         if (!settings) settings = await Settings.create({});
         const safe = settings.toObject();
-        safe.smtpPass = safe.smtpPass ? '••••••••' : ''; // never expose password
+        safe.smtpPass = safe.smtpPass ? '••••••••' : '';
         res.json(safe);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
@@ -26,7 +26,6 @@ exports.saveSmtp = async (req, res) => {
         settings.smtpUser = smtpUser || settings.smtpUser;
         settings.smtpFrom = smtpFrom || settings.smtpFrom;
         settings.smtpSecure = smtpSecure || settings.smtpSecure;
-        // Only update password if a new one was provided (not the masked placeholder)
         if (smtpPass && smtpPass !== '••••••••') {
             settings.smtpPass = smtpPass;
         }
@@ -66,5 +65,35 @@ exports.testSmtp = async (req, res) => {
     } catch (err) {
         console.error('SMTP test error:', err);
         res.status(500).json({ message: `SMTP error: ${err.message}` });
+    }
+};
+
+// GET /api/settings/transcription
+exports.getTranscription = async (req, res) => {
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) settings = await Settings.create({});
+        res.json({
+            transcriptionEngine: settings.transcriptionEngine || 'whisper',
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// PUT /api/settings/transcription
+exports.saveTranscription = async (req, res) => {
+    try {
+        const { transcriptionEngine } = req.body;
+        if (!['whisper', 'voxtral'].includes(transcriptionEngine)) {
+            return res.status(400).json({ message: 'Invalid engine. Use whisper or voxtral.' });
+        }
+        let settings = await Settings.findOne();
+        if (!settings) settings = new Settings();
+        settings.transcriptionEngine = transcriptionEngine;
+        await settings.save();
+        res.json({ message: `Transcription engine set to ${transcriptionEngine}` });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
     }
 };

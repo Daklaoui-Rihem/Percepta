@@ -24,10 +24,20 @@ const path = require('path');
 const { generateTranscriptionPDF } = require('../utils/Pdfreportgenerator');
 
 // ── Config ─────────────────────────────────────────────────────
+// ── Config ─────────────────────────────────────────────────────
 const PYTHON_BIN = process.env.WHISPER_PYTHON || 'python';
+const PYTHON_ARGS_PREFIX = process.env.WHISPER_PYTHON_VERSION 
+    ? ['-' + process.env.WHISPER_PYTHON_VERSION] 
+    : [];
+
+// Choix du moteur selon la variable d'environnement
+const TRANSCRIPTION_ENGINE = process.env.TRANSCRIPTION_ENGINE || 'whisper'; // 'whisper' | 'voxtral'
 
 const SCRIPT_PATH = process.env.WHISPER_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'whisper_transcribe.py');
+
+const VOXTRAL_SCRIPT_PATH = process.env.VOXTRAL_SCRIPT ||
+    path.join(__dirname, '..', 'scripts', 'voxtral_transcribe.py');
 
 const EXTRACT_SCRIPT_PATH = process.env.EXTRACT_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'extract_entities.py');
@@ -36,7 +46,7 @@ const TRANSLATE_SCRIPT_PATH = process.env.TRANSLATE_SCRIPT ||
     path.join(__dirname, '..', 'scripts', 'translate_text.py');
 
 const DEFAULT_LANG = process.env.WHISPER_LANG || 'auto';
-const TIMEOUT_MS = parseInt(process.env.WHISPER_TIMEOUT || '600000');
+const TIMEOUT_MS   = parseInt(process.env.WHISPER_TIMEOUT || '600000');
 
 // ── Main ───────────────────────────────────────────────────────
 async function processAudio({ analysisId, filePath, job, userId, userName, userEmail, originalName, translateTo }) {
@@ -56,7 +66,22 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
     await job.updateProgress(10);
 
     // ── Step 1: Transcription ──────────────────────────────────
-    const result = await runWhisper(filePath, DEFAULT_LANG);
+    // APRÈS
+// Read engine from DB (admin setting), fall back to env
+    let activeEngine = TRANSCRIPTION_ENGINE;
+    try {
+        const Settings = require('../models/Settings');
+        const dbSettings = await Settings.findOne();
+        if (dbSettings?.transcriptionEngine) {
+            activeEngine = dbSettings.transcriptionEngine;
+        }
+    } catch (_) {}
+
+    const result = activeEngine === 'voxtral'
+        ? await runVoxtral(filePath, DEFAULT_LANG)
+        : await runWhisper(filePath, DEFAULT_LANG);
+
+    console.log(`🤖 [AudioProcessor] Engine used: ${activeEngine}`);
 
     await job.updateProgress(60);
 
@@ -145,7 +170,7 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 // ── Spawn Whisper Python ───────────────────────────────────────
 function runWhisper(filePath, language) {
     return new Promise((resolve, reject) => {
-        const args = [SCRIPT_PATH, filePath, language];
+        const args = [...PYTHON_ARGS_PREFIX,SCRIPT_PATH, filePath, language];
 
         console.log(`🐍 [AudioProcessor] Spawning: ${PYTHON_BIN} ${args.join(' ')}`);
 
@@ -197,6 +222,72 @@ function runWhisper(filePath, language) {
         });
     });
 }
+// ── Spawn Voxtral Python ───────────────────────────────────────
+function runVoxtral(filePath, language) {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(VOXTRAL_SCRIPT_PATH)) {
+            return reject(new Error(
+                `voxtral_transcribe.py introuvable à: ${VOXTRAL_SCRIPT_PATH}`
+            ));
+        }
+
+        const args = [...PYTHON_ARGS_PREFIX,VOXTRAL_SCRIPT_PATH, filePath, language];
+
+        console.log(`🐍 [AudioProcessor] Lancement Voxtral: ${PYTHON_BIN} ${args.join(' ')}`);
+
+        const proc = spawn(PYTHON_BIN, args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: {
+                ...process.env,
+                PYTHONIOENCODING: 'utf-8',
+                PYTHONUTF8: '1',
+                MISTRAL_API_KEY: process.env.MISTRAL_API_KEY || '',
+            },
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', chunk => { stdout += chunk.toString(); });
+        proc.stderr.on('data', chunk => {
+            const line = chunk.toString().trimEnd();
+            stderr += line + '\n';
+            if (line) process.stdout.write(`  [Voxtral] ${line}\n`);
+        });
+
+        const timer = setTimeout(() => {
+            proc.kill();
+            reject(new Error(`Voxtral a dépassé le délai de ${TIMEOUT_MS / 1000}s.`));
+        }, TIMEOUT_MS);
+
+        proc.on('close', code => {
+            clearTimeout(timer);
+            let parsed;
+            try {
+                parsed = JSON.parse(stdout.trim());
+            } catch (_) {
+                return reject(new Error(
+                    `Voxtral a retourné un résultat non-JSON (exit ${code}).\n` +
+                    `stdout: ${stdout.slice(0, 400)}\nstderr: ${stderr.slice(0, 400)}`
+                ));
+            }
+
+            if (code !== 0 || parsed.error) {
+                return reject(new Error(parsed.error || `Voxtral a échoué avec le code ${code}`));
+            }
+            resolve(parsed);
+        });
+
+        proc.on('error', err => {
+            clearTimeout(timer);
+            if (err.code === 'ENOENT') {
+                reject(new Error(`Python introuvable: "${PYTHON_BIN}"`));
+            } else {
+                reject(err);
+            }
+        });
+    });
+}
 
 // ── Run Entity Extraction ──────────────────────────────────────
 async function runEntityExtraction(text, language) {
@@ -209,7 +300,7 @@ async function runEntityExtraction(text, language) {
     fs.writeFileSync(tmpFile, text, 'utf-8');
 
     return new Promise((resolve, reject) => {
-        const args = [EXTRACT_SCRIPT_PATH, tmpFile, language || 'auto'];
+        const args = [...PYTHON_ARGS_PREFIX,EXTRACT_SCRIPT_PATH, tmpFile, language || 'auto'];
 
         const proc = spawn(PYTHON_BIN, args, {
             stdio: ['ignore', 'pipe', 'pipe'],
