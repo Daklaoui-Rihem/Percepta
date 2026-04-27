@@ -7,7 +7,7 @@
  * Usage:
  *   import { pollAnalysisStatus } from '../services/analysisPolling';
  *
- *   const { transcription, summary } = await pollAnalysisStatus(analysisId, {
+ *   const { transcription } = await pollAnalysisStatus(analysisId, {
  *       onProgress: (status) => setStatus(status),
  *   });
  */
@@ -19,7 +19,6 @@ interface StatusResponse {
     status: 'pending' | 'processing' | 'done' | 'error';
     errorMessage: string | null;
     transcription: string | null;
-    summary: string | null;
 }
 
 interface PollOptions {
@@ -38,7 +37,7 @@ interface PollOptions {
 export async function pollAnalysisStatus(
     analysisId: string,
     options: PollOptions = {}
-): Promise<{ transcription: string; summary: string }> {
+): Promise<{ transcription: string }> {
     const {
         onProgress,
         intervalMs = 3000,
@@ -69,7 +68,6 @@ export async function pollAnalysisStatus(
                     clearInterval(interval);
                     resolve({
                         transcription: data.transcription ?? '',
-                        summary: data.summary ?? '',
                     });
                 } else if (data.status === 'error') {
                     clearInterval(interval);

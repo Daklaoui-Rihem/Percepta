@@ -12,7 +12,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
     CheckCircle, XCircle, Clock, Copy,
     RefreshCw, Globe, FileText,
-    Download, Loader2, Target, Hash, Sparkles, Languages
+    Download, Loader2, Target, Hash, Languages
 } from 'lucide-react';
 import { analysisApi } from '../../services/api';
 import type { ExtractedEntities } from '../../services/api';
@@ -25,9 +25,10 @@ type StatusData = {
     status: 'pending' | 'processing' | 'done' | 'error';
     errorMessage: string | null;
     transcription: string | null;
+    language: string | null;
+    duration: number | null;
     translatedText: string | null;
     translationLang: string | null;
-    summary: string | null;
     extractedEntities: ExtractedEntities | null;
     hasPdf: boolean;
     pdfGeneratedAt: string | null;
@@ -61,14 +62,13 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
     const [fetchError, setFetchError] = useState('');
     const [copied, setCopied] = useState(false);
     const [copiedTranslation, setCopiedTranslation] = useState(false);
-    const [showSummary, setShowSummary] = useState(true);
     const [pdfLoading, setPdfLoading] = useState(false);
     const [pdfError, setPdfError] = useState('');
     const [activeTab, setActiveTab] = useState<'original' | 'translation'>('original');
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const detectedLang = data?.summary?.match(/Language:\s*([^|]+)/i)?.[1]?.trim() ?? '';
-    const langLabel = LANG_NAMES[detectedLang.toLowerCase()] ?? detectedLang ?? 'Auto';
+    const detectedLang = data?.language ? LANG_NAMES[data.language.toLowerCase()] || data.language : 'Auto';
+    const langLabel = detectedLang;
 
     // Generate fake timestamp segments for display
     const generateFakeSegments = (text: string, durationSec: number) => {
@@ -89,23 +89,19 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         return segments;
     };
 
-    const summaryRaw = data?.summary || '';
-    const durMatch = summaryRaw.match(/Duration:\s*(\d+)m\s*(\d+)s/i);
     let durationStr = "0:00";
-    let durationSec = 0;
-    if (durMatch) {
-        const m = parseInt(durMatch[1] || '0');
-        const s = parseInt(durMatch[2] || '0');
+    let durationSec = data?.duration || 120;
+    
+    if (data?.duration) {
+        const m = Math.floor(data.duration / 60);
+        const s = Math.round(data.duration % 60);
         durationStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        durationSec = m * 60 + s;
     }
 
-    const wordsMatch = summaryRaw.match(/~(\d+)\s*words/i);
-    const wordCount = wordsMatch ? parseInt(wordsMatch[1]).toLocaleString() : (data?.transcription?.split(/\s+/).filter(Boolean).length.toLocaleString() || '0');
-    const confMatch = summaryRaw.match(/Confidence:\s*([\d.]+)%/i);
-    const confidence = confMatch ? `${confMatch[1]}%` : '—';
+    const wordCount = data?.transcription?.split(/\s+/).filter(Boolean).length.toLocaleString() || '0';
+    const confidence = '—'; // Could fetch from data if added later
 
-    const segments = generateFakeSegments(data?.transcription || '', durationSec || 120);
+    const segments = generateFakeSegments(data?.transcription || '', durationSec);
 
     const handleDownloadTxt = (text: string, suffix = '') => {
         const blob = new Blob([text], { type: 'text/plain' });
@@ -269,19 +265,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                             </div>
                         )}
 
-                        {/* Summary toggle */}
-                        <button
-                            onClick={() => setShowSummary(s => !s)}
-                            style={{ background: '#4b6884', color: 'white', border: 'none', padding: '14px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-                        >
-                            <Sparkles size={16} /> {showSummary ? 'Hide Summary' : 'Show Summary'}
-                        </button>
 
-                        {showSummary && data?.summary && (
-                            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px', fontSize: 13, color: '#334155', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                                {data.summary.replace(/Duration:.*?\n\n/i, '')}
-                            </div>
-                        )}
                     </div>
 
                     {/* Right Column: Transcription */}

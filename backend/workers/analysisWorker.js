@@ -102,7 +102,8 @@ const worker = new Worker(
             await Analysis.findByIdAndUpdate(analysisId, {
                 status: 'done',
                 transcription: result.transcription,
-                summary: result.summary,
+                language: result.language,
+                duration: result.duration,
                 translatedText: result.translatedText || '',
                 translationLang: result.translationLang || '',
                 extractedEntities: result.extractedEntities || null,

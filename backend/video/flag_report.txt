@@ -1,0 +1,1679 @@
+FLAG REPORT — ./video/data_video_non_violence
+============================================================
+Total videos: 1150
+Flagged: 417
+Clean: 733
+Failed to read: 0
+
+FLAGGED VIDEOS (moved to ./video/review_these):
+------------------------------------------------------------
+  Normal_Videos_010_x264.mp4
+    Reason: dark (brightness=52.3)
+    Stats:  brightness=52.3  motion=1.5  flash=0.1  duration=35.1s  320x240
+
+  Normal_Videos_059_x264.mp4
+    Reason: high motion (30.4)
+    Stats:  brightness=110.1  motion=30.4  flash=14.6  duration=61.2s  320x240
+
+  Normal_Videos_175_x264.mp4
+    Reason: dark (brightness=47.1)
+    Stats:  brightness=47.1  motion=4.8  flash=1.9  duration=294.9s  320x240
+
+  Normal_Videos_189_x264.mp4
+    Reason: dark (brightness=47.6)
+    Stats:  brightness=47.6  motion=14.7  flash=4.0  duration=24.6s  320x240
+
+  Normal_Videos_452_x264.mp4
+    Reason: high motion (25.7)
+    Stats:  brightness=82.9  motion=25.7  flash=4.7  duration=14.8s  320x240
+
+  Normal_Videos_597_x264.mp4
+    Reason: dark (brightness=54.3)
+    Stats:  brightness=54.3  motion=3.9  flash=0.4  duration=74.3s  320x240
+
+  Normal_Videos_758_x264.mp4
+    Reason: high motion (20.3)
+    Stats:  brightness=109.0  motion=20.3  flash=1.6  duration=53.0s  320x240
+
+  Normal_Videos_868_x264.mp4
+    Reason: dark (brightness=53.0)
+    Stats:  brightness=53.0  motion=4.2  flash=0.9  duration=80.0s  320x240
+
+  Normal_Videos_871_x264.mp4
+    Reason: high motion (19.4)
+    Stats:  brightness=103.6  motion=19.4  flash=5.8  duration=145.3s  320x240
+
+  Normal_Videos_872_x264.mp4
+    Reason: dark (brightness=55.7)
+    Stats:  brightness=55.7  motion=9.2  flash=1.8  duration=17.7s  320x240
+
+  Normal_Videos_875_x264.mp4
+    Reason: high motion (19.6)
+    Stats:  brightness=95.3  motion=19.6  flash=3.0  duration=85.5s  320x240
+
+  Normal_Videos_882_x264.mp4
+    Reason: high motion (55.6)
+    Stats:  brightness=106.2  motion=55.6  flash=11.5  duration=55.1s  320x240
+
+  Normal_Videos_887_x264.mp4
+    Reason: high motion (19.0)
+    Stats:  brightness=63.5  motion=19.0  flash=15.6  duration=254.3s  320x240
+
+  Normal_Videos_927_x264.mp4
+    Reason: dark (brightness=55.9)
+    Stats:  brightness=55.9  motion=6.1  flash=1.7  duration=54.4s  320x240
+
+  Normal_Videos_940_x264.mp4
+    Reason: high motion (22.3)
+    Stats:  brightness=111.9  motion=22.3  flash=9.1  duration=1200.6s  320x240
+
+  NV_10.mp4
+    Reason: high motion (21.2)
+    Stats:  brightness=92.5  motion=21.2  flash=1.3  duration=5.0s  224x224
+
+  NV_100.mp4
+    Reason: high motion (25.6)
+    Stats:  brightness=107.9  motion=25.6  flash=1.1  duration=5.0s  224x224
+
+  NV_102.mp4
+    Reason: high motion (20.1)
+    Stats:  brightness=104.6  motion=20.1  flash=1.3  duration=5.0s  224x224
+
+  NV_104.mp4
+    Reason: high motion (35.2)
+    Stats:  brightness=70.1  motion=35.2  flash=4.7  duration=5.0s  224x224
+
+  NV_105.mp4
+    Reason: high motion (20.5)
+    Stats:  brightness=60.5  motion=20.5  flash=6.7  duration=5.0s  224x224
+
+  NV_106.mp4
+    Reason: high motion (20.6)
+    Stats:  brightness=88.3  motion=20.6  flash=1.8  duration=5.0s  224x224
+
+  NV_107.mp4
+    Reason: high motion (24.1)
+    Stats:  brightness=105.1  motion=24.1  flash=2.6  duration=5.0s  224x224
+
+  NV_108.mp4
+    Reason: high motion (24.3)
+    Stats:  brightness=123.1  motion=24.3  flash=2.7  duration=5.0s  224x224
+
+  NV_116.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=105.6  motion=18.8  flash=3.2  duration=5.0s  224x224
+
+  NV_118.mp4
+    Reason: high motion (25.8)
+    Stats:  brightness=107.5  motion=25.8  flash=3.5  duration=5.0s  224x224
+
+  NV_119.mp4
+    Reason: high motion (29.2)
+    Stats:  brightness=85.7  motion=29.2  flash=2.6  duration=5.0s  224x224
+
+  NV_128.mp4
+    Reason: high motion (26.5)
+    Stats:  brightness=90.3  motion=26.5  flash=2.0  duration=5.0s  224x224
+
+  NV_138.mp4
+    Reason: high motion (26.5)
+    Stats:  brightness=114.0  motion=26.5  flash=1.0  duration=3.9s  640x360
+
+  NV_139.mp4
+    Reason: high motion (35.5)
+    Stats:  brightness=99.9  motion=35.5  flash=4.0  duration=4.5s  640x360
+
+  NV_14.mp4
+    Reason: high motion (21.2)
+    Stats:  brightness=100.2  motion=21.2  flash=0.8  duration=4.4s  1280x720
+
+  NV_140.mp4
+    Reason: high motion (22.2)
+    Stats:  brightness=136.6  motion=22.2  flash=1.2  duration=4.6s  640x360
+
+  NV_141.mp4
+    Reason: high motion (28.3)
+    Stats:  brightness=113.2  motion=28.3  flash=1.3  duration=4.2s  640x360
+
+  NV_142.mp4
+    Reason: high motion (27.5)
+    Stats:  brightness=129.6  motion=27.5  flash=0.9  duration=3.8s  640x360
+
+  NV_143.mp4
+    Reason: high motion (29.2)
+    Stats:  brightness=109.5  motion=29.2  flash=8.7  duration=5.0s  224x224
+
+  NV_144.mp4
+    Reason: high motion (21.2)
+    Stats:  brightness=143.0  motion=21.2  flash=1.2  duration=4.5s  640x360
+
+  NV_145.mp4
+    Reason: high motion (18.3)
+    Stats:  brightness=151.4  motion=18.3  flash=1.1  duration=5.0s  640x360
+
+  NV_152.mp4
+    Reason: high motion (21.0)
+    Stats:  brightness=94.1  motion=21.0  flash=3.0  duration=5.0s  224x224
+
+  NV_153.mp4
+    Reason: high motion (38.7)
+    Stats:  brightness=91.4  motion=38.7  flash=3.7  duration=5.0s  224x224
+
+  NV_161.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=75.1  motion=18.8  flash=2.7  duration=5.0s  224x224
+
+  NV_162.mp4
+    Reason: high motion (19.9)
+    Stats:  brightness=95.5  motion=19.9  flash=2.4  duration=5.0s  224x224
+
+  NV_163.mp4
+    Reason: high motion (29.0)
+    Stats:  brightness=87.2  motion=29.0  flash=1.8  duration=5.0s  224x224
+
+  NV_167.mp4
+    Reason: high motion (21.1)
+    Stats:  brightness=87.1  motion=21.1  flash=2.1  duration=5.0s  224x224
+
+  NV_168.mp4
+    Reason: high motion (29.7)
+    Stats:  brightness=104.4  motion=29.7  flash=3.7  duration=5.0s  224x224
+
+  NV_169.mp4
+    Reason: high motion (23.5)
+    Stats:  brightness=87.0  motion=23.5  flash=1.8  duration=5.0s  224x224
+
+  NV_173.mp4
+    Reason: dark (brightness=37.2)
+    Stats:  brightness=37.2  motion=2.4  flash=0.4  duration=5.0s  224x224
+
+  NV_179.mp4
+    Reason: high motion (37.2)
+    Stats:  brightness=94.0  motion=37.2  flash=5.8  duration=5.0s  224x224
+
+  NV_18.mp4
+    Reason: high motion (27.2)
+    Stats:  brightness=111.9  motion=27.2  flash=3.2  duration=4.8s  1280x720
+
+  NV_180.mp4
+    Reason: high motion (28.3)
+    Stats:  brightness=144.3  motion=28.3  flash=1.2  duration=4.3s  640x360
+
+  NV_181.mp4
+    Reason: high motion (18.9)
+    Stats:  brightness=153.8  motion=18.9  flash=1.1  duration=4.3s  640x360
+
+  NV_19.mp4
+    Reason: high motion (27.2)
+    Stats:  brightness=111.9  motion=27.2  flash=3.2  duration=4.8s  1280x720
+
+  NV_194.mp4
+    Reason: high motion (18.9)
+    Stats:  brightness=121.9  motion=18.9  flash=1.0  duration=4.7s  1080x1920
+
+  NV_196.mp4
+    Reason: high motion (20.8)
+    Stats:  brightness=97.3  motion=20.8  flash=1.3  duration=5.0s  224x224
+
+  NV_198.mp4
+    Reason: high motion (24.0)
+    Stats:  brightness=93.1  motion=24.0  flash=1.8  duration=5.0s  224x224
+
+  NV_199.mp4
+    Reason: high motion (21.5)
+    Stats:  brightness=91.4  motion=21.5  flash=2.8  duration=5.0s  224x224
+
+  NV_2.mp4
+    Reason: high motion (31.7)
+    Stats:  brightness=97.1  motion=31.7  flash=5.1  duration=5.0s  224x224
+
+  NV_20.mp4
+    Reason: high motion (31.6)
+    Stats:  brightness=119.7  motion=31.6  flash=6.2  duration=5.0s  1280x720
+
+  NV_202.mp4
+    Reason: high motion (19.7)
+    Stats:  brightness=95.4  motion=19.7  flash=2.6  duration=4.5s  640x360
+
+  NV_203.mp4
+    Reason: high motion (28.2)
+    Stats:  brightness=99.7  motion=28.2  flash=6.5  duration=5.0s  224x224
+
+  NV_205.mp4
+    Reason: high motion (24.6)
+    Stats:  brightness=141.4  motion=24.6  flash=1.8  duration=4.6s  640x360
+
+  NV_206.mp4
+    Reason: high motion (26.4)
+    Stats:  brightness=94.3  motion=26.4  flash=7.8  duration=5.0s  224x224
+
+  NV_208.mp4
+    Reason: high motion (21.1)
+    Stats:  brightness=107.6  motion=21.1  flash=5.6  duration=5.0s  224x224
+
+  NV_209.mp4
+    Reason: high motion (27.2)
+    Stats:  brightness=107.4  motion=27.2  flash=1.6  duration=5.0s  224x224
+
+  NV_21.mp4
+    Reason: high motion (18.2)
+    Stats:  brightness=111.9  motion=18.2  flash=2.9  duration=4.8s  1280x720
+
+  NV_210.mp4
+    Reason: high motion (19.0)
+    Stats:  brightness=98.9  motion=19.0  flash=1.3  duration=5.0s  224x224
+
+  NV_212.mp4
+    Reason: high motion (21.2)
+    Stats:  brightness=98.2  motion=21.2  flash=3.9  duration=5.0s  224x224
+
+  NV_213.mp4
+    Reason: high motion (21.5)
+    Stats:  brightness=96.6  motion=21.5  flash=1.7  duration=5.0s  224x224
+
+  NV_214.mp4
+    Reason: high motion (23.7)
+    Stats:  brightness=91.5  motion=23.7  flash=1.5  duration=5.0s  224x224
+
+  NV_215.mp4
+    Reason: high motion (18.3)
+    Stats:  brightness=84.7  motion=18.3  flash=2.5  duration=5.0s  224x224
+
+  NV_216.mp4
+    Reason: high motion (18.1)
+    Stats:  brightness=149.5  motion=18.1  flash=0.8  duration=4.6s  640x360
+
+  NV_219.mp4
+    Reason: high motion (22.7)
+    Stats:  brightness=84.6  motion=22.7  flash=2.7  duration=5.0s  224x224
+
+  NV_22.mp4
+    Reason: high motion (28.3)
+    Stats:  brightness=65.0  motion=28.3  flash=7.0  duration=4.0s  1280x720
+
+  NV_227.mp4
+    Reason: high motion (32.0)
+    Stats:  brightness=77.7  motion=32.0  flash=3.0  duration=5.0s  224x224
+
+  NV_23.mp4
+    Reason: high motion (19.6)
+    Stats:  brightness=121.6  motion=19.6  flash=0.8  duration=4.4s  1280x720
+
+  NV_239.mp4
+    Reason: high motion (19.8)
+    Stats:  brightness=84.0  motion=19.8  flash=0.9  duration=5.0s  224x224
+
+  NV_25.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=124.7  motion=18.8  flash=5.0  duration=4.3s  1280x720
+
+  NV_250.mp4
+    Reason: high motion (25.5)
+    Stats:  brightness=124.5  motion=25.5  flash=1.0  duration=5.0s  640x360
+
+  NV_26.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=124.7  motion=18.8  flash=5.0  duration=4.3s  1280x720
+
+  NV_269.mp4
+    Reason: high motion (26.5)
+    Stats:  brightness=83.3  motion=26.5  flash=3.0  duration=4.3s  1280x720
+
+  NV_27.mp4
+    Reason: high motion (31.6)
+    Stats:  brightness=119.7  motion=31.6  flash=6.2  duration=5.0s  1280x720
+
+  NV_28.mp4
+    Reason: high motion (19.4)
+    Stats:  brightness=78.1  motion=19.4  flash=3.0  duration=4.0s  1280x720
+
+  NV_29.mp4
+    Reason: high motion (21.9)
+    Stats:  brightness=116.8  motion=21.9  flash=1.4  duration=4.1s  1280x720
+
+  NV_295.mp4
+    Reason: high motion (34.1)
+    Stats:  brightness=159.0  motion=34.1  flash=3.0  duration=4.4s  1280x720
+
+  NV_296.mp4
+    Reason: high motion (20.0)
+    Stats:  brightness=187.9  motion=20.0  flash=0.3  duration=4.1s  1280x720
+
+  NV_299.mp4
+    Reason: high motion (18.2)
+    Stats:  brightness=177.0  motion=18.2  flash=0.3  duration=4.5s  1280x720
+
+  NV_30.mp4
+    Reason: high motion (27.6)
+    Stats:  brightness=133.3  motion=27.6  flash=9.0  duration=4.4s  1280x720
+
+  NV_305.mp4
+    Reason: dark (brightness=59.8)
+    Stats:  brightness=59.8  motion=14.1  flash=1.6  duration=5.6s  640x360
+
+  NV_315.mp4
+    Reason: dark (brightness=56.2)
+    Stats:  brightness=56.2  motion=11.1  flash=2.4  duration=4.3s  640x360
+
+  NV_316.mp4
+    Reason: dark (brightness=56.7), high motion (18.8)
+    Stats:  brightness=56.7  motion=18.8  flash=2.1  duration=4.6s  1280x720
+
+  NV_317.mp4
+    Reason: dark (brightness=49.6)
+    Stats:  brightness=49.6  motion=17.1  flash=1.7  duration=4.4s  1280x720
+
+  NV_318.mp4
+    Reason: high motion (19.9)
+    Stats:  brightness=82.2  motion=19.9  flash=2.9  duration=4.1s  1280x720
+
+  NV_319.mp4
+    Reason: dark (brightness=51.0)
+    Stats:  brightness=51.0  motion=17.5  flash=2.1  duration=5.5s  1280x720
+
+  NV_32.mp4
+    Reason: high motion (19.9)
+    Stats:  brightness=121.8  motion=19.9  flash=1.0  duration=4.2s  1280x720
+
+  NV_320.mp4
+    Reason: dark (brightness=50.4), high motion (23.1)
+    Stats:  brightness=50.4  motion=23.1  flash=3.5  duration=5.0s  1280x720
+
+  NV_321.mp4
+    Reason: dark (brightness=43.5)
+    Stats:  brightness=43.5  motion=13.8  flash=1.1  duration=3.7s  1280x720
+
+  NV_327.mp4
+    Reason: high motion (21.6)
+    Stats:  brightness=94.2  motion=21.6  flash=2.3  duration=5.0s  224x224
+
+  NV_329.mp4
+    Reason: high motion (21.0)
+    Stats:  brightness=101.8  motion=21.0  flash=0.9  duration=5.0s  224x224
+
+  NV_33.mp4
+    Reason: high motion (26.4)
+    Stats:  brightness=86.7  motion=26.4  flash=4.0  duration=5.3s  640x360
+
+  NV_330.mp4
+    Reason: high motion (22.3)
+    Stats:  brightness=106.3  motion=22.3  flash=2.5  duration=5.0s  224x224
+
+  NV_331.mp4
+    Reason: high motion (21.0)
+    Stats:  brightness=115.6  motion=21.0  flash=1.8  duration=5.0s  224x224
+
+  NV_333.mp4
+    Reason: high motion (37.9)
+    Stats:  brightness=115.3  motion=37.9  flash=2.4  duration=5.0s  224x224
+
+  NV_339.mp4
+    Reason: high motion (18.2)
+    Stats:  brightness=137.3  motion=18.2  flash=3.2  duration=4.8s  640x360
+
+  NV_34.mp4
+    Reason: high motion (28.6)
+    Stats:  brightness=61.1  motion=28.6  flash=1.7  duration=5.3s  640x360
+
+  NV_340.mp4
+    Reason: dark (brightness=31.5)
+    Stats:  brightness=31.5  motion=15.2  flash=0.8  duration=4.1s  640x360
+
+  NV_345.mp4
+    Reason: dark (brightness=58.7)
+    Stats:  brightness=58.7  motion=8.1  flash=1.8  duration=4.5s  640x360
+
+  NV_355.mp4
+    Reason: high motion (19.4)
+    Stats:  brightness=125.9  motion=19.4  flash=2.2  duration=3.8s  1080x1920
+
+  NV_356.mp4
+    Reason: high motion (24.7)
+    Stats:  brightness=118.8  motion=24.7  flash=3.7  duration=4.2s  1920x1080
+
+  NV_357.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=118.1  motion=18.8  flash=1.0  duration=2.8s  1920x1080
+
+  NV_361.mp4
+    Reason: high motion (30.1)
+    Stats:  brightness=93.9  motion=30.1  flash=5.2  duration=6.0s  1080x1920
+
+  NV_366.mp4
+    Reason: dark (brightness=47.9)
+    Stats:  brightness=47.9  motion=0.6  flash=0.0  duration=5.0s  224x224
+
+  NV_369.mp4
+    Reason: dark (brightness=58.8)
+    Stats:  brightness=58.8  motion=8.4  flash=0.7  duration=5.0s  224x224
+
+  NV_37.mp4
+    Reason: high motion (24.6)
+    Stats:  brightness=79.0  motion=24.6  flash=1.7  duration=4.8s  640x360
+
+  NV_370.mp4
+    Reason: dark (brightness=52.3)
+    Stats:  brightness=52.3  motion=10.9  flash=0.8  duration=5.0s  224x224
+
+  NV_371.mp4
+    Reason: dark (brightness=46.0)
+    Stats:  brightness=46.0  motion=9.8  flash=0.6  duration=5.0s  224x224
+
+  NV_375.mp4
+    Reason: dark (brightness=59.5)
+    Stats:  brightness=59.5  motion=3.7  flash=0.5  duration=5.0s  224x224
+
+  NV_376.mp4
+    Reason: dark (brightness=55.3)
+    Stats:  brightness=55.3  motion=5.4  flash=0.6  duration=5.0s  224x224
+
+  NV_379.mp4
+    Reason: dark (brightness=58.4)
+    Stats:  brightness=58.4  motion=3.4  flash=0.6  duration=5.0s  224x224
+
+  NV_380.mp4
+    Reason: dark (brightness=49.5)
+    Stats:  brightness=49.5  motion=1.6  flash=0.1  duration=5.0s  224x224
+
+  NV_381.mp4
+    Reason: dark (brightness=54.3)
+    Stats:  brightness=54.3  motion=6.3  flash=0.5  duration=5.0s  224x224
+
+  NV_382.mp4
+    Reason: dark (brightness=58.1)
+    Stats:  brightness=58.1  motion=6.1  flash=0.8  duration=5.0s  224x224
+
+  NV_385.mp4
+    Reason: dark (brightness=56.6)
+    Stats:  brightness=56.6  motion=4.9  flash=0.2  duration=5.0s  224x224
+
+  NV_386.mp4
+    Reason: dark (brightness=56.4)
+    Stats:  brightness=56.4  motion=5.9  flash=1.1  duration=5.0s  224x224
+
+  NV_387.mp4
+    Reason: dark (brightness=56.0)
+    Stats:  brightness=56.0  motion=0.9  flash=0.1  duration=5.0s  224x224
+
+  NV_388.mp4
+    Reason: dark (brightness=57.1)
+    Stats:  brightness=57.1  motion=3.3  flash=0.1  duration=5.0s  224x224
+
+  NV_389.mp4
+    Reason: dark (brightness=57.8)
+    Stats:  brightness=57.8  motion=2.5  flash=0.1  duration=5.0s  224x224
+
+  NV_39.mp4
+    Reason: dark (brightness=58.7), high motion (24.5)
+    Stats:  brightness=58.7  motion=24.5  flash=6.7  duration=4.6s  640x360
+
+  NV_390.mp4
+    Reason: dark (brightness=58.2)
+    Stats:  brightness=58.2  motion=2.4  flash=0.1  duration=5.0s  224x224
+
+  NV_391.mp4
+    Reason: dark (brightness=58.5)
+    Stats:  brightness=58.5  motion=2.7  flash=0.1  duration=5.0s  224x224
+
+  NV_392.mp4
+    Reason: dark (brightness=56.5)
+    Stats:  brightness=56.5  motion=2.3  flash=0.2  duration=5.0s  224x224
+
+  NV_393.mp4
+    Reason: dark (brightness=56.4)
+    Stats:  brightness=56.4  motion=1.3  flash=0.1  duration=5.0s  224x224
+
+  NV_394.mp4
+    Reason: dark (brightness=56.1)
+    Stats:  brightness=56.1  motion=5.9  flash=0.3  duration=5.0s  224x224
+
+  NV_395.mp4
+    Reason: dark (brightness=57.5)
+    Stats:  brightness=57.5  motion=6.9  flash=0.5  duration=5.0s  224x224
+
+  NV_396.mp4
+    Reason: dark (brightness=56.4)
+    Stats:  brightness=56.4  motion=4.2  flash=0.3  duration=5.0s  224x224
+
+  NV_397.mp4
+    Reason: dark (brightness=46.4)
+    Stats:  brightness=46.4  motion=9.1  flash=0.8  duration=5.0s  224x224
+
+  NV_398.mp4
+    Reason: dark (brightness=45.2)
+    Stats:  brightness=45.2  motion=13.0  flash=0.5  duration=5.0s  224x224
+
+  NV_399.mp4
+    Reason: dark (brightness=45.1)
+    Stats:  brightness=45.1  motion=6.9  flash=0.4  duration=5.0s  224x224
+
+  NV_40.mp4
+    Reason: high motion (32.6)
+    Stats:  brightness=62.3  motion=32.6  flash=3.4  duration=5.3s  640x360
+
+  NV_400.mp4
+    Reason: dark (brightness=45.1)
+    Stats:  brightness=45.1  motion=8.6  flash=0.5  duration=5.0s  224x224
+
+  NV_401.mp4
+    Reason: dark (brightness=44.2)
+    Stats:  brightness=44.2  motion=4.0  flash=0.2  duration=5.0s  224x224
+
+  NV_402.mp4
+    Reason: dark (brightness=46.5)
+    Stats:  brightness=46.5  motion=7.6  flash=0.2  duration=5.0s  224x224
+
+  NV_405.mp4
+    Reason: high motion (19.1)
+    Stats:  brightness=73.5  motion=19.1  flash=2.7  duration=5.0s  224x224
+
+  NV_406.mp4
+    Reason: dark (brightness=59.9)
+    Stats:  brightness=59.9  motion=5.6  flash=0.3  duration=5.0s  224x224
+
+  NV_407.mp4
+    Reason: dark (brightness=60.0)
+    Stats:  brightness=60.0  motion=16.0  flash=2.4  duration=5.0s  224x224
+
+  NV_409.mp4
+    Reason: high motion (20.1)
+    Stats:  brightness=87.9  motion=20.1  flash=2.7  duration=5.0s  224x224
+
+  NV_41.mp4
+    Reason: high motion (26.5)
+    Stats:  brightness=74.5  motion=26.5  flash=1.4  duration=4.9s  640x360
+
+  NV_410.mp4
+    Reason: high motion (18.4)
+    Stats:  brightness=84.6  motion=18.4  flash=3.4  duration=5.0s  224x224
+
+  NV_411.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=63.3  motion=18.8  flash=2.9  duration=5.0s  224x224
+
+  NV_412.mp4
+    Reason: dark (brightness=49.6), high motion (19.0)
+    Stats:  brightness=49.6  motion=19.0  flash=3.1  duration=5.0s  224x224
+
+  NV_415.mp4
+    Reason: dark (brightness=59.5)
+    Stats:  brightness=59.5  motion=1.3  flash=0.1  duration=5.0s  224x224
+
+  NV_416.mp4
+    Reason: dark (brightness=59.9)
+    Stats:  brightness=59.9  motion=3.7  flash=0.1  duration=5.0s  224x224
+
+  NV_418.mp4
+    Reason: dark (brightness=53.5)
+    Stats:  brightness=53.5  motion=6.1  flash=0.5  duration=5.0s  224x224
+
+  NV_419.mp4
+    Reason: dark (brightness=42.5)
+    Stats:  brightness=42.5  motion=7.1  flash=0.4  duration=5.0s  224x224
+
+  NV_420.mp4
+    Reason: dark (brightness=55.4)
+    Stats:  brightness=55.4  motion=7.3  flash=0.8  duration=5.0s  224x224
+
+  NV_422.mp4
+    Reason: dark (brightness=54.9)
+    Stats:  brightness=54.9  motion=1.9  flash=0.4  duration=5.0s  224x224
+
+  NV_423.mp4
+    Reason: dark (brightness=58.0)
+    Stats:  brightness=58.0  motion=2.8  flash=1.0  duration=5.0s  224x224
+
+  NV_437.mp4
+    Reason: dark (brightness=59.4)
+    Stats:  brightness=59.4  motion=8.1  flash=0.3  duration=5.0s  224x224
+
+  NV_439.mp4
+    Reason: dark (brightness=51.7)
+    Stats:  brightness=51.7  motion=6.2  flash=0.5  duration=5.0s  224x224
+
+  NV_44.mp4
+    Reason: high motion (27.2)
+    Stats:  brightness=65.3  motion=27.2  flash=1.3  duration=5.3s  640x360
+
+  NV_440.mp4
+    Reason: dark (brightness=52.3)
+    Stats:  brightness=52.3  motion=3.5  flash=0.4  duration=5.0s  224x224
+
+  NV_441.mp4
+    Reason: dark (brightness=58.9)
+    Stats:  brightness=58.9  motion=5.8  flash=0.9  duration=5.0s  224x224
+
+  NV_451.mp4
+    Reason: dark (brightness=59.7)
+    Stats:  brightness=59.7  motion=11.1  flash=0.3  duration=5.0s  224x224
+
+  NV_452.mp4
+    Reason: dark (brightness=54.4)
+    Stats:  brightness=54.4  motion=8.5  flash=0.3  duration=5.0s  224x224
+
+  NV_453.mp4
+    Reason: dark (brightness=51.7)
+    Stats:  brightness=51.7  motion=3.1  flash=0.2  duration=5.0s  224x224
+
+  NV_46.mp4
+    Reason: high motion (25.8)
+    Stats:  brightness=97.8  motion=25.8  flash=2.2  duration=5.0s  224x224
+
+  NV_463.mp4
+    Reason: high motion (19.1)
+    Stats:  brightness=151.3  motion=19.1  flash=2.6  duration=5.0s  224x224
+
+  NV_464.mp4
+    Reason: high motion (31.5)
+    Stats:  brightness=173.1  motion=31.5  flash=4.2  duration=5.0s  224x224
+
+  NV_465.mp4
+    Reason: high motion (36.2)
+    Stats:  brightness=130.1  motion=36.2  flash=10.2  duration=5.0s  224x224
+
+  NV_466.mp4
+    Reason: high motion (18.2)
+    Stats:  brightness=95.0  motion=18.2  flash=10.2  duration=5.0s  224x224
+
+  NV_469.mp4
+    Reason: high motion (31.8)
+    Stats:  brightness=102.0  motion=31.8  flash=3.5  duration=5.0s  224x224
+
+  NV_470.mp4
+    Reason: high motion (25.6)
+    Stats:  brightness=120.2  motion=25.6  flash=6.7  duration=5.0s  224x224
+
+  NV_473.mp4
+    Reason: high motion (21.9)
+    Stats:  brightness=108.2  motion=21.9  flash=2.6  duration=5.0s  224x224
+
+  NV_474.mp4
+    Reason: high motion (24.5)
+    Stats:  brightness=79.5  motion=24.5  flash=3.0  duration=5.0s  224x224
+
+  NV_476.mp4
+    Reason: dark (brightness=56.2), high motion (19.9)
+    Stats:  brightness=56.2  motion=19.9  flash=3.2  duration=5.0s  224x224
+
+  NV_478.mp4
+    Reason: dark (brightness=41.3), high motion (19.3)
+    Stats:  brightness=41.3  motion=19.3  flash=1.9  duration=5.0s  224x224
+
+  NV_484.mp4
+    Reason: high motion (20.9)
+    Stats:  brightness=85.0  motion=20.9  flash=3.1  duration=5.0s  224x224
+
+  NV_485.mp4
+    Reason: high motion (18.6)
+    Stats:  brightness=70.4  motion=18.6  flash=1.3  duration=5.0s  224x224
+
+  NV_489.mp4
+    Reason: high motion (31.7)
+    Stats:  brightness=123.7  motion=31.7  flash=4.9  duration=5.0s  224x224
+
+  NV_499.mp4
+    Reason: high motion (19.0)
+    Stats:  brightness=91.4  motion=19.0  flash=5.2  duration=5.0s  224x224
+
+  NV_500.mp4
+    Reason: dark (brightness=43.5)
+    Stats:  brightness=43.5  motion=10.9  flash=3.4  duration=5.0s  224x224
+
+  NV_502.mp4
+    Reason: high motion (22.4)
+    Stats:  brightness=103.5  motion=22.4  flash=2.5  duration=5.0s  224x224
+
+  NV_505.mp4
+    Reason: high motion (26.6)
+    Stats:  brightness=163.4  motion=26.6  flash=3.1  duration=5.0s  224x224
+
+  NV_530.mp4
+    Reason: high motion (22.6)
+    Stats:  brightness=124.5  motion=22.6  flash=3.4  duration=5.0s  224x224
+
+  NV_538.mp4
+    Reason: high motion (22.8)
+    Stats:  brightness=105.0  motion=22.8  flash=2.7  duration=5.0s  224x224
+
+  NV_542.mp4
+    Reason: high motion (22.2)
+    Stats:  brightness=102.6  motion=22.2  flash=1.4  duration=5.0s  224x224
+
+  NV_543.mp4
+    Reason: high motion (39.5)
+    Stats:  brightness=106.2  motion=39.5  flash=2.0  duration=5.0s  224x224
+
+  NV_544.mp4
+    Reason: high motion (48.7)
+    Stats:  brightness=103.3  motion=48.7  flash=1.6  duration=5.0s  224x224
+
+  NV_545.mp4
+    Reason: high motion (45.8)
+    Stats:  brightness=109.1  motion=45.8  flash=2.0  duration=5.0s  224x224
+
+  NV_546.mp4
+    Reason: high motion (28.9)
+    Stats:  brightness=68.4  motion=28.9  flash=2.9  duration=5.0s  224x224
+
+  NV_553.mp4
+    Reason: high motion (28.3)
+    Stats:  brightness=98.7  motion=28.3  flash=1.3  duration=5.0s  224x224
+
+  NV_554.mp4
+    Reason: high motion (27.0)
+    Stats:  brightness=92.5  motion=27.0  flash=2.4  duration=5.0s  224x224
+
+  NV_556.mp4
+    Reason: high motion (21.0)
+    Stats:  brightness=100.9  motion=21.0  flash=2.2  duration=5.0s  224x224
+
+  NV_557.mp4
+    Reason: high motion (29.2)
+    Stats:  brightness=85.5  motion=29.2  flash=2.3  duration=5.0s  224x224
+
+  NV_558.mp4
+    Reason: high motion (28.6)
+    Stats:  brightness=79.2  motion=28.6  flash=1.3  duration=5.0s  224x224
+
+  NV_559.mp4
+    Reason: high motion (22.3)
+    Stats:  brightness=89.2  motion=22.3  flash=2.0  duration=5.0s  224x224
+
+  NV_565.mp4
+    Reason: high motion (31.5)
+    Stats:  brightness=97.9  motion=31.5  flash=1.7  duration=5.0s  224x224
+
+  NV_568.mp4
+    Reason: high motion (18.4)
+    Stats:  brightness=104.9  motion=18.4  flash=0.6  duration=5.0s  224x224
+
+  NV_569.mp4
+    Reason: high motion (20.3)
+    Stats:  brightness=104.4  motion=20.3  flash=0.6  duration=5.0s  224x224
+
+  NV_570.mp4
+    Reason: high motion (20.0)
+    Stats:  brightness=91.1  motion=20.0  flash=2.1  duration=5.0s  224x224
+
+  NV_571.mp4
+    Reason: high motion (25.7)
+    Stats:  brightness=104.3  motion=25.7  flash=7.4  duration=5.0s  224x224
+
+  NV_572.mp4
+    Reason: high motion (25.6)
+    Stats:  brightness=92.1  motion=25.6  flash=4.2  duration=5.0s  224x224
+
+  NV_576.mp4
+    Reason: high motion (19.6)
+    Stats:  brightness=103.0  motion=19.6  flash=1.5  duration=5.0s  224x224
+
+  NV_577.mp4
+    Reason: dark (brightness=38.2)
+    Stats:  brightness=38.2  motion=9.6  flash=2.3  duration=5.0s  224x224
+
+  NV_578.mp4
+    Reason: dark (brightness=55.0)
+    Stats:  brightness=55.0  motion=8.8  flash=1.0  duration=5.0s  224x224
+
+  NV_579.mp4
+    Reason: dark (brightness=52.6)
+    Stats:  brightness=52.6  motion=3.8  flash=0.2  duration=5.0s  224x224
+
+  NV_580.mp4
+    Reason: dark (brightness=54.6)
+    Stats:  brightness=54.6  motion=5.7  flash=1.1  duration=5.0s  224x224
+
+  NV_582.mp4
+    Reason: dark (brightness=34.8)
+    Stats:  brightness=34.8  motion=8.9  flash=2.8  duration=5.0s  224x224
+
+  NV_583.mp4
+    Reason: dark (brightness=27.2)
+    Stats:  brightness=27.2  motion=9.5  flash=0.5  duration=5.0s  224x224
+
+  NV_584.mp4
+    Reason: dark (brightness=57.9)
+    Stats:  brightness=57.9  motion=4.5  flash=0.3  duration=5.0s  224x224
+
+  NV_585.mp4
+    Reason: dark (brightness=32.6)
+    Stats:  brightness=32.6  motion=13.5  flash=2.7  duration=5.0s  224x224
+
+  NV_586.mp4
+    Reason: dark (brightness=28.8)
+    Stats:  brightness=28.8  motion=9.2  flash=1.1  duration=5.0s  224x224
+
+  NV_587.mp4
+    Reason: dark (brightness=39.0)
+    Stats:  brightness=39.0  motion=12.7  flash=3.4  duration=5.0s  224x224
+
+  NV_588.mp4
+    Reason: dark (brightness=46.0)
+    Stats:  brightness=46.0  motion=14.7  flash=2.2  duration=5.0s  224x224
+
+  NV_589.mp4
+    Reason: dark (brightness=58.4)
+    Stats:  brightness=58.4  motion=4.4  flash=0.2  duration=5.0s  224x224
+
+  NV_590.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=106.7  motion=18.8  flash=0.5  duration=5.0s  224x224
+
+  NV_591.mp4
+    Reason: high motion (20.4)
+    Stats:  brightness=115.0  motion=20.4  flash=1.2  duration=5.0s  224x224
+
+  NV_593.mp4
+    Reason: dark (brightness=54.1)
+    Stats:  brightness=54.1  motion=8.2  flash=0.7  duration=5.0s  224x224
+
+  NV_595.mp4
+    Reason: dark (brightness=31.3)
+    Stats:  brightness=31.3  motion=6.0  flash=0.1  duration=5.0s  224x224
+
+  NV_596.mp4
+    Reason: dark (brightness=56.1)
+    Stats:  brightness=56.1  motion=16.6  flash=2.4  duration=5.0s  224x224
+
+  NV_597.mp4
+    Reason: dark (brightness=48.3)
+    Stats:  brightness=48.3  motion=14.2  flash=2.8  duration=5.0s  224x224
+
+  NV_598.mp4
+    Reason: dark (brightness=46.2)
+    Stats:  brightness=46.2  motion=7.6  flash=0.3  duration=5.0s  224x224
+
+  NV_600.mp4
+    Reason: dark (brightness=50.5)
+    Stats:  brightness=50.5  motion=13.1  flash=2.3  duration=3.0s  224x224
+
+  NV_604.mp4
+    Reason: dark (brightness=46.5)
+    Stats:  brightness=46.5  motion=9.2  flash=1.8  duration=5.0s  224x224
+
+  NV_605.mp4
+    Reason: dark (brightness=51.8)
+    Stats:  brightness=51.8  motion=9.4  flash=1.2  duration=5.0s  224x224
+
+  NV_607.mp4
+    Reason: dark (brightness=42.8)
+    Stats:  brightness=42.8  motion=10.6  flash=0.8  duration=5.0s  224x224
+
+  NV_608.mp4
+    Reason: dark (brightness=54.4)
+    Stats:  brightness=54.4  motion=8.0  flash=0.5  duration=5.0s  224x224
+
+  NV_610.mp4
+    Reason: dark (brightness=57.0)
+    Stats:  brightness=57.0  motion=9.3  flash=1.6  duration=5.0s  224x224
+
+  NV_611.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=69.7  motion=18.8  flash=1.2  duration=5.0s  224x224
+
+  NV_612.mp4
+    Reason: dark (brightness=30.8)
+    Stats:  brightness=30.8  motion=9.3  flash=1.2  duration=5.0s  224x224
+
+  NV_613.mp4
+    Reason: dark (brightness=53.5)
+    Stats:  brightness=53.5  motion=10.1  flash=1.9  duration=5.0s  224x224
+
+  NV_614.mp4
+    Reason: dark (brightness=55.6)
+    Stats:  brightness=55.6  motion=9.0  flash=0.8  duration=5.0s  224x224
+
+  NV_615.mp4
+    Reason: dark (brightness=42.0)
+    Stats:  brightness=42.0  motion=12.3  flash=1.4  duration=5.0s  224x224
+
+  NV_616.mp4
+    Reason: dark (brightness=54.4)
+    Stats:  brightness=54.4  motion=15.4  flash=1.5  duration=5.0s  224x224
+
+  NV_617.mp4
+    Reason: dark (brightness=54.3)
+    Stats:  brightness=54.3  motion=10.3  flash=1.5  duration=5.0s  224x224
+
+  NV_618.mp4
+    Reason: dark (brightness=59.3)
+    Stats:  brightness=59.3  motion=15.4  flash=1.0  duration=5.0s  224x224
+
+  NV_619.mp4
+    Reason: dark (brightness=49.3)
+    Stats:  brightness=49.3  motion=11.5  flash=1.7  duration=5.0s  224x224
+
+  NV_620.mp4
+    Reason: dark (brightness=32.2)
+    Stats:  brightness=32.2  motion=12.4  flash=4.7  duration=5.0s  224x224
+
+  NV_621.mp4
+    Reason: dark (brightness=24.1)
+    Stats:  brightness=24.1  motion=6.1  flash=1.3  duration=5.0s  224x224
+
+  NV_622.mp4
+    Reason: dark (brightness=9.9)
+    Stats:  brightness=9.9  motion=3.2  flash=0.3  duration=5.0s  224x224
+
+  NV_623.mp4
+    Reason: dark (brightness=17.9)
+    Stats:  brightness=17.9  motion=6.1  flash=0.8  duration=5.0s  224x224
+
+  NV_624.mp4
+    Reason: dark (brightness=51.7)
+    Stats:  brightness=51.7  motion=4.7  flash=0.6  duration=5.0s  224x224
+
+  NV_625.mp4
+    Reason: dark (brightness=52.8)
+    Stats:  brightness=52.8  motion=5.6  flash=1.3  duration=5.0s  224x224
+
+  NV_626.mp4
+    Reason: dark (brightness=51.4)
+    Stats:  brightness=51.4  motion=4.9  flash=0.6  duration=5.0s  224x224
+
+  NV_627.mp4
+    Reason: dark (brightness=50.9)
+    Stats:  brightness=50.9  motion=8.3  flash=2.6  duration=5.0s  224x224
+
+  NV_628.mp4
+    Reason: dark (brightness=20.0)
+    Stats:  brightness=20.0  motion=8.2  flash=1.7  duration=5.0s  224x224
+
+  NV_63.mp4
+    Reason: high motion (23.2)
+    Stats:  brightness=138.1  motion=23.2  flash=11.0  duration=3.5s  640x360
+
+  NV_631.mp4
+    Reason: dark (brightness=44.1)
+    Stats:  brightness=44.1  motion=5.8  flash=2.9  duration=5.0s  224x224
+
+  NV_632.mp4
+    Reason: dark (brightness=50.7)
+    Stats:  brightness=50.7  motion=4.5  flash=1.5  duration=5.0s  224x224
+
+  NV_634.mp4
+    Reason: dark (brightness=52.6)
+    Stats:  brightness=52.6  motion=7.8  flash=1.4  duration=5.0s  224x224
+
+  NV_635.mp4
+    Reason: dark (brightness=47.2)
+    Stats:  brightness=47.2  motion=10.9  flash=2.4  duration=5.0s  224x224
+
+  NV_636.mp4
+    Reason: dark (brightness=46.0)
+    Stats:  brightness=46.0  motion=7.5  flash=3.3  duration=5.0s  224x224
+
+  NV_637.mp4
+    Reason: dark (brightness=41.1)
+    Stats:  brightness=41.1  motion=3.9  flash=2.1  duration=5.0s  224x224
+
+  NV_638.mp4
+    Reason: dark (brightness=47.6)
+    Stats:  brightness=47.6  motion=8.9  flash=4.4  duration=5.0s  224x224
+
+  NV_639.mp4
+    Reason: dark (brightness=49.8)
+    Stats:  brightness=49.8  motion=2.2  flash=0.1  duration=5.0s  224x224
+
+  NV_640.mp4
+    Reason: dark (brightness=47.9)
+    Stats:  brightness=47.9  motion=1.6  flash=0.1  duration=5.0s  224x224
+
+  NV_641.mp4
+    Reason: dark (brightness=35.0)
+    Stats:  brightness=35.0  motion=2.2  flash=0.1  duration=5.0s  224x224
+
+  NV_642.mp4
+    Reason: dark (brightness=34.8)
+    Stats:  brightness=34.8  motion=1.6  flash=0.1  duration=5.0s  224x224
+
+  NV_652.mp4
+    Reason: high motion (19.2)
+    Stats:  brightness=81.9  motion=19.2  flash=6.8  duration=5.0s  224x224
+
+  NV_653.mp4
+    Reason: dark (brightness=32.5)
+    Stats:  brightness=32.5  motion=2.1  flash=0.3  duration=5.0s  224x224
+
+  NV_654.mp4
+    Reason: dark (brightness=24.5)
+    Stats:  brightness=24.5  motion=7.1  flash=2.1  duration=5.0s  224x224
+
+  NV_655.mp4
+    Reason: dark (brightness=40.8)
+    Stats:  brightness=40.8  motion=1.2  flash=0.1  duration=5.0s  224x224
+
+  NV_657.mp4
+    Reason: dark (brightness=52.4)
+    Stats:  brightness=52.4  motion=9.3  flash=2.5  duration=5.0s  224x224
+
+  NV_658.mp4
+    Reason: dark (brightness=48.2)
+    Stats:  brightness=48.2  motion=6.2  flash=1.7  duration=5.0s  224x224
+
+  NV_660.mp4
+    Reason: dark (brightness=47.4)
+    Stats:  brightness=47.4  motion=7.4  flash=2.0  duration=5.0s  224x224
+
+  NV_664.mp4
+    Reason: dark (brightness=55.7)
+    Stats:  brightness=55.7  motion=6.3  flash=0.5  duration=5.0s  224x224
+
+  NV_665.mp4
+    Reason: dark (brightness=29.2)
+    Stats:  brightness=29.2  motion=5.7  flash=0.4  duration=5.0s  224x224
+
+  NV_666.mp4
+    Reason: high motion (21.8)
+    Stats:  brightness=61.8  motion=21.8  flash=2.2  duration=5.0s  224x224
+
+  NV_667.mp4
+    Reason: dark (brightness=50.4)
+    Stats:  brightness=50.4  motion=5.5  flash=0.7  duration=5.0s  224x224
+
+  NV_668.mp4
+    Reason: dark (brightness=53.8), high motion (21.9)
+    Stats:  brightness=53.8  motion=21.9  flash=1.8  duration=5.0s  224x224
+
+  NV_669.mp4
+    Reason: dark (brightness=43.3)
+    Stats:  brightness=43.3  motion=8.7  flash=0.5  duration=5.0s  224x224
+
+  NV_67.mp4
+    Reason: high motion (26.5)
+    Stats:  brightness=102.4  motion=26.5  flash=2.0  duration=5.0s  224x224
+
+  NV_670.mp4
+    Reason: dark (brightness=32.1)
+    Stats:  brightness=32.1  motion=6.4  flash=0.2  duration=5.0s  224x224
+
+  NV_671.mp4
+    Reason: dark (brightness=46.9)
+    Stats:  brightness=46.9  motion=9.9  flash=0.3  duration=5.0s  224x224
+
+  NV_672.mp4
+    Reason: dark (brightness=59.5)
+    Stats:  brightness=59.5  motion=7.7  flash=0.6  duration=5.0s  224x224
+
+  NV_673.mp4
+    Reason: dark (brightness=46.2)
+    Stats:  brightness=46.2  motion=14.1  flash=1.3  duration=5.0s  224x224
+
+  NV_674.mp4
+    Reason: dark (brightness=58.0)
+    Stats:  brightness=58.0  motion=6.5  flash=3.0  duration=5.0s  224x224
+
+  NV_675.mp4
+    Reason: dark (brightness=48.4)
+    Stats:  brightness=48.4  motion=10.3  flash=0.9  duration=5.0s  224x224
+
+  NV_676.mp4
+    Reason: dark (brightness=40.0)
+    Stats:  brightness=40.0  motion=8.9  flash=0.4  duration=5.0s  224x224
+
+  NV_677.mp4
+    Reason: dark (brightness=40.1)
+    Stats:  brightness=40.1  motion=15.3  flash=1.2  duration=5.0s  224x224
+
+  NV_678.mp4
+    Reason: dark (brightness=42.3)
+    Stats:  brightness=42.3  motion=12.7  flash=2.6  duration=5.0s  224x224
+
+  NV_679.mp4
+    Reason: dark (brightness=33.8)
+    Stats:  brightness=33.8  motion=11.2  flash=3.9  duration=5.0s  224x224
+
+  NV_680.mp4
+    Reason: dark (brightness=32.6)
+    Stats:  brightness=32.6  motion=15.1  flash=3.8  duration=5.0s  224x224
+
+  NV_681.mp4
+    Reason: dark (brightness=47.2)
+    Stats:  brightness=47.2  motion=11.3  flash=3.7  duration=5.0s  224x224
+
+  NV_682.mp4
+    Reason: dark (brightness=51.2)
+    Stats:  brightness=51.2  motion=7.5  flash=0.6  duration=5.0s  224x224
+
+  NV_683.mp4
+    Reason: dark (brightness=56.2)
+    Stats:  brightness=56.2  motion=6.3  flash=1.1  duration=5.0s  224x224
+
+  NV_687.mp4
+    Reason: high motion (37.0)
+    Stats:  brightness=115.5  motion=37.0  flash=9.7  duration=3.8s  228x360
+
+  NV_693.mp4
+    Reason: high motion (20.0)
+    Stats:  brightness=67.6  motion=20.0  flash=2.8  duration=5.0s  224x224
+
+  NV_698.mp4
+    Reason: high motion (26.9)
+    Stats:  brightness=79.5  motion=26.9  flash=2.8  duration=5.0s  224x224
+
+  NV_7.mp4
+    Reason: high motion (37.7)
+    Stats:  brightness=148.5  motion=37.7  flash=1.0  duration=3.8s  1280x720
+
+  NV_70.mp4
+    Reason: high motion (20.8)
+    Stats:  brightness=75.1  motion=20.8  flash=3.0  duration=5.0s  224x224
+
+  NV_702.mp4
+    Reason: high motion (18.5)
+    Stats:  brightness=67.2  motion=18.5  flash=2.4  duration=5.0s  224x224
+
+  NV_707.mp4
+    Reason: high motion (28.2)
+    Stats:  brightness=71.8  motion=28.2  flash=2.4  duration=5.0s  224x224
+
+  NV_71.mp4
+    Reason: high motion (30.3)
+    Stats:  brightness=117.8  motion=30.3  flash=6.3  duration=5.0s  224x224
+
+  NV_711.mp4
+    Reason: high motion (20.6)
+    Stats:  brightness=76.5  motion=20.6  flash=1.1  duration=5.0s  224x224
+
+  NV_715.mp4
+    Reason: high motion (22.5)
+    Stats:  brightness=79.2  motion=22.5  flash=1.6  duration=5.0s  224x224
+
+  NV_716.mp4
+    Reason: high motion (24.7)
+    Stats:  brightness=73.7  motion=24.7  flash=3.3  duration=5.0s  224x224
+
+  NV_717.mp4
+    Reason: high motion (22.1)
+    Stats:  brightness=91.4  motion=22.1  flash=2.9  duration=5.0s  224x224
+
+  NV_718.mp4
+    Reason: high motion (25.5)
+    Stats:  brightness=85.3  motion=25.5  flash=3.9  duration=5.0s  224x224
+
+  NV_719.mp4
+    Reason: high motion (22.4)
+    Stats:  brightness=81.9  motion=22.4  flash=3.4  duration=5.0s  224x224
+
+  NV_720.mp4
+    Reason: high motion (25.5)
+    Stats:  brightness=89.2  motion=25.5  flash=4.1  duration=5.0s  224x224
+
+  NV_721.mp4
+    Reason: high motion (20.9)
+    Stats:  brightness=82.6  motion=20.9  flash=1.6  duration=5.0s  224x224
+
+  NV_722.mp4
+    Reason: high motion (30.1)
+    Stats:  brightness=85.8  motion=30.1  flash=5.5  duration=5.0s  224x224
+
+  NV_723.mp4
+    Reason: high motion (23.6)
+    Stats:  brightness=75.9  motion=23.6  flash=1.8  duration=5.0s  224x224
+
+  NV_739.mp4
+    Reason: dark (brightness=46.2)
+    Stats:  brightness=46.2  motion=15.0  flash=2.7  duration=5.3s  854x480
+
+  NV_742.mp4
+    Reason: dark (brightness=14.1)
+    Stats:  brightness=14.1  motion=2.9  flash=0.1  duration=5.5s  854x480
+
+  NV_743.mp4
+    Reason: dark (brightness=14.2)
+    Stats:  brightness=14.2  motion=2.0  flash=0.1  duration=4.7s  854x480
+
+  NV_745.mp4
+    Reason: dark (brightness=28.4)
+    Stats:  brightness=28.4  motion=1.4  flash=0.1  duration=4.5s  854x480
+
+  NV_746.mp4
+    Reason: dark (brightness=31.9)
+    Stats:  brightness=31.9  motion=3.1  flash=0.2  duration=4.8s  854x480
+
+  NV_747.mp4
+    Reason: dark (brightness=15.9)
+    Stats:  brightness=15.9  motion=4.5  flash=0.3  duration=4.9s  854x480
+
+  NV_749.mp4
+    Reason: dark (brightness=39.9)
+    Stats:  brightness=39.9  motion=6.7  flash=1.2  duration=4.6s  854x480
+
+  NV_750.mp4
+    Reason: dark (brightness=48.7)
+    Stats:  brightness=48.7  motion=8.0  flash=1.4  duration=5.0s  224x224
+
+  NV_751.mp4
+    Reason: dark (brightness=48.3)
+    Stats:  brightness=48.3  motion=9.4  flash=1.5  duration=5.0s  224x224
+
+  NV_752.mp4
+    Reason: dark (brightness=49.6)
+    Stats:  brightness=49.6  motion=9.3  flash=1.4  duration=5.0s  224x224
+
+  NV_753.mp4
+    Reason: dark (brightness=50.8)
+    Stats:  brightness=50.8  motion=9.4  flash=1.7  duration=5.0s  224x224
+
+  NV_754.mp4
+    Reason: dark (brightness=43.5)
+    Stats:  brightness=43.5  motion=4.3  flash=1.1  duration=5.0s  224x224
+
+  NV_755.mp4
+    Reason: dark (brightness=44.9)
+    Stats:  brightness=44.9  motion=5.9  flash=1.2  duration=5.0s  224x224
+
+  NV_756.mp4
+    Reason: dark (brightness=45.6)
+    Stats:  brightness=45.6  motion=8.5  flash=1.5  duration=5.0s  224x224
+
+  NV_757.mp4
+    Reason: dark (brightness=49.4)
+    Stats:  brightness=49.4  motion=6.9  flash=1.0  duration=5.0s  224x224
+
+  NV_758.mp4
+    Reason: dark (brightness=49.0)
+    Stats:  brightness=49.0  motion=7.0  flash=1.2  duration=5.0s  224x224
+
+  NV_759.mp4
+    Reason: dark (brightness=54.1)
+    Stats:  brightness=54.1  motion=13.5  flash=3.3  duration=5.0s  224x224
+
+  NV_760.mp4
+    Reason: dark (brightness=50.0)
+    Stats:  brightness=50.0  motion=9.5  flash=1.4  duration=5.0s  224x224
+
+  NV_762.mp4
+    Reason: high motion (18.1)
+    Stats:  brightness=107.1  motion=18.1  flash=0.4  duration=5.0s  224x224
+
+  NV_763.mp4
+    Reason: high motion (32.8)
+    Stats:  brightness=141.9  motion=32.8  flash=7.6  duration=5.0s  224x224
+
+  NV_764.mp4
+    Reason: high motion (27.3)
+    Stats:  brightness=118.7  motion=27.3  flash=2.5  duration=5.0s  224x224
+
+  NV_765.mp4
+    Reason: high motion (30.4)
+    Stats:  brightness=93.2  motion=30.4  flash=1.4  duration=5.0s  224x224
+
+  NV_766.mp4
+    Reason: high motion (19.6)
+    Stats:  brightness=110.4  motion=19.6  flash=1.1  duration=5.0s  224x224
+
+  NV_768.mp4
+    Reason: high motion (19.4)
+    Stats:  brightness=116.4  motion=19.4  flash=1.5  duration=5.0s  224x224
+
+  NV_769.mp4
+    Reason: high motion (33.4)
+    Stats:  brightness=138.1  motion=33.4  flash=2.6  duration=5.0s  224x224
+
+  NV_77.mp4
+    Reason: high motion (27.5)
+    Stats:  brightness=115.7  motion=27.5  flash=3.0  duration=5.0s  224x224
+
+  NV_770.mp4
+    Reason: high motion (20.4)
+    Stats:  brightness=119.9  motion=20.4  flash=1.5  duration=5.0s  224x224
+
+  NV_771.mp4
+    Reason: high motion (18.2)
+    Stats:  brightness=120.3  motion=18.2  flash=1.1  duration=5.0s  224x224
+
+  NV_772.mp4
+    Reason: high motion (30.0)
+    Stats:  brightness=112.4  motion=30.0  flash=1.6  duration=5.0s  224x224
+
+  NV_774.mp4
+    Reason: high motion (28.3)
+    Stats:  brightness=110.4  motion=28.3  flash=1.7  duration=5.0s  224x224
+
+  NV_775.mp4
+    Reason: high motion (31.4)
+    Stats:  brightness=121.4  motion=31.4  flash=3.0  duration=5.0s  224x224
+
+  NV_779.mp4
+    Reason: high motion (25.6)
+    Stats:  brightness=117.2  motion=25.6  flash=2.6  duration=5.0s  224x224
+
+  NV_780.mp4
+    Reason: high motion (36.4)
+    Stats:  brightness=137.5  motion=36.4  flash=3.8  duration=5.0s  224x224
+
+  NV_781.mp4
+    Reason: high motion (27.6)
+    Stats:  brightness=118.0  motion=27.6  flash=1.6  duration=5.0s  224x224
+
+  NV_782.mp4
+    Reason: high motion (29.2)
+    Stats:  brightness=107.9  motion=29.2  flash=2.0  duration=5.0s  224x224
+
+  NV_784.mp4
+    Reason: high motion (22.1)
+    Stats:  brightness=119.4  motion=22.1  flash=0.9  duration=5.0s  224x224
+
+  NV_786.mp4
+    Reason: high motion (29.2)
+    Stats:  brightness=116.6  motion=29.2  flash=1.3  duration=5.0s  224x224
+
+  NV_787.mp4
+    Reason: high motion (21.4)
+    Stats:  brightness=112.3  motion=21.4  flash=0.8  duration=5.0s  224x224
+
+  NV_788.mp4
+    Reason: high motion (29.7)
+    Stats:  brightness=81.2  motion=29.7  flash=1.4  duration=5.0s  224x224
+
+  NV_789.mp4
+    Reason: high motion (35.3)
+    Stats:  brightness=138.1  motion=35.3  flash=4.8  duration=5.0s  224x224
+
+  NV_790.mp4
+    Reason: high motion (23.0)
+    Stats:  brightness=119.5  motion=23.0  flash=3.2  duration=5.0s  224x224
+
+  NV_791.mp4
+    Reason: high motion (26.9)
+    Stats:  brightness=146.6  motion=26.9  flash=1.4  duration=5.0s  224x224
+
+  NV_792.mp4
+    Reason: high motion (33.7)
+    Stats:  brightness=116.8  motion=33.7  flash=1.3  duration=5.0s  224x224
+
+  NV_796.mp4
+    Reason: high motion (21.9)
+    Stats:  brightness=115.0  motion=21.9  flash=1.2  duration=5.0s  224x224
+
+  NV_797.mp4
+    Reason: high motion (41.6)
+    Stats:  brightness=112.9  motion=41.6  flash=2.5  duration=5.0s  224x224
+
+  NV_798.mp4
+    Reason: high motion (21.3)
+    Stats:  brightness=136.6  motion=21.3  flash=2.0  duration=5.0s  224x224
+
+  NV_799.mp4
+    Reason: high motion (28.3)
+    Stats:  brightness=115.0  motion=28.3  flash=2.0  duration=5.0s  224x224
+
+  NV_80.mp4
+    Reason: high motion (22.4)
+    Stats:  brightness=102.6  motion=22.4  flash=7.2  duration=5.0s  224x224
+
+  NV_800.mp4
+    Reason: high motion (33.3)
+    Stats:  brightness=130.8  motion=33.3  flash=2.8  duration=5.0s  224x224
+
+  NV_801.mp4
+    Reason: high motion (27.7)
+    Stats:  brightness=110.8  motion=27.7  flash=1.5  duration=5.0s  224x224
+
+  NV_802.mp4
+    Reason: high motion (22.8)
+    Stats:  brightness=132.1  motion=22.8  flash=1.3  duration=5.0s  224x224
+
+  NV_804.mp4
+    Reason: high motion (24.5)
+    Stats:  brightness=116.1  motion=24.5  flash=1.7  duration=5.0s  224x224
+
+  NV_805.mp4
+    Reason: high motion (19.4)
+    Stats:  brightness=118.0  motion=19.4  flash=0.4  duration=5.0s  224x224
+
+  NV_806.mp4
+    Reason: high motion (24.8)
+    Stats:  brightness=116.7  motion=24.8  flash=3.8  duration=5.0s  224x224
+
+  NV_807.mp4
+    Reason: high motion (30.6)
+    Stats:  brightness=129.7  motion=30.6  flash=1.0  duration=5.0s  224x224
+
+  NV_81.mp4
+    Reason: high motion (28.9)
+    Stats:  brightness=75.6  motion=28.9  flash=6.4  duration=3.8s  640x360
+
+  NV_811.mp4
+    Reason: high motion (46.7)
+    Stats:  brightness=112.6  motion=46.7  flash=2.5  duration=5.0s  224x224
+
+  NV_812.mp4
+    Reason: high motion (25.3)
+    Stats:  brightness=120.1  motion=25.3  flash=2.4  duration=5.0s  224x224
+
+  NV_813.mp4
+    Reason: high motion (24.4)
+    Stats:  brightness=120.2  motion=24.4  flash=1.0  duration=5.0s  224x224
+
+  NV_814.mp4
+    Reason: high motion (21.7)
+    Stats:  brightness=119.8  motion=21.7  flash=0.7  duration=5.0s  224x224
+
+  NV_815.mp4
+    Reason: high motion (34.4)
+    Stats:  brightness=103.0  motion=34.4  flash=2.3  duration=5.0s  224x224
+
+  NV_816.mp4
+    Reason: high motion (37.7)
+    Stats:  brightness=108.1  motion=37.7  flash=1.3  duration=5.0s  224x224
+
+  NV_817.mp4
+    Reason: high motion (34.5)
+    Stats:  brightness=104.0  motion=34.5  flash=1.0  duration=5.0s  224x224
+
+  NV_819.mp4
+    Reason: high motion (29.0)
+    Stats:  brightness=93.5  motion=29.0  flash=1.4  duration=5.0s  224x224
+
+  NV_82.mp4
+    Reason: high motion (26.8)
+    Stats:  brightness=93.3  motion=26.8  flash=14.0  duration=4.1s  640x360
+
+  NV_820.mp4
+    Reason: high motion (19.4)
+    Stats:  brightness=95.6  motion=19.4  flash=1.0  duration=5.0s  224x224
+
+  NV_822.mp4
+    Reason: high motion (24.5)
+    Stats:  brightness=102.5  motion=24.5  flash=1.5  duration=5.0s  224x224
+
+  NV_825.mp4
+    Reason: dark (brightness=58.5)
+    Stats:  brightness=58.5  motion=15.9  flash=0.6  duration=5.5s  854x480
+
+  NV_826.mp4
+    Reason: high motion (33.6)
+    Stats:  brightness=75.1  motion=33.6  flash=2.9  duration=5.5s  854x480
+
+  NV_827.mp4
+    Reason: high motion (32.2)
+    Stats:  brightness=84.9  motion=32.2  flash=2.8  duration=5.4s  854x480
+
+  NV_829.mp4
+    Reason: high motion (22.0)
+    Stats:  brightness=117.1  motion=22.0  flash=0.8  duration=4.5s  854x480
+
+  NV_83.mp4
+    Reason: high motion (22.4)
+    Stats:  brightness=107.4  motion=22.4  flash=5.1  duration=3.8s  640x360
+
+  NV_831.mp4
+    Reason: high motion (23.2)
+    Stats:  brightness=118.4  motion=23.2  flash=1.1  duration=5.4s  854x480
+
+  NV_835.mp4
+    Reason: high motion (19.9)
+    Stats:  brightness=101.7  motion=19.9  flash=5.5  duration=5.6s  854x480
+
+  NV_836.mp4
+    Reason: high motion (22.1)
+    Stats:  brightness=102.7  motion=22.1  flash=8.2  duration=6.2s  854x480
+
+  NV_837.mp4
+    Reason: high motion (23.4)
+    Stats:  brightness=77.4  motion=23.4  flash=2.5  duration=5.1s  854x480
+
+  NV_839.mp4
+    Reason: high motion (21.4)
+    Stats:  brightness=81.9  motion=21.4  flash=2.9  duration=6.5s  854x480
+
+  NV_84.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=89.1  motion=18.8  flash=4.1  duration=4.0s  640x360
+
+  NV_842.mp4
+    Reason: high motion (21.0)
+    Stats:  brightness=128.5  motion=21.0  flash=1.1  duration=5.5s  854x480
+
+  NV_844.mp4
+    Reason: high motion (42.6)
+    Stats:  brightness=137.0  motion=42.6  flash=6.5  duration=5.5s  1280x720
+
+  NV_846.mp4
+    Reason: high motion (29.9)
+    Stats:  brightness=111.7  motion=29.9  flash=1.0  duration=4.2s  1280x720
+
+  NV_85.mp4
+    Reason: high motion (24.3)
+    Stats:  brightness=93.8  motion=24.3  flash=4.0  duration=3.8s  640x360
+
+  NV_854.mp4
+    Reason: high motion (49.9)
+    Stats:  brightness=121.2  motion=49.9  flash=8.2  duration=4.5s  1280x720
+
+  NV_856.mp4
+    Reason: high motion (18.1)
+    Stats:  brightness=123.8  motion=18.1  flash=8.5  duration=4.6s  1280x720
+
+  NV_860.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=88.0  motion=18.8  flash=7.1  duration=5.2s  1280x720
+
+  NV_863.avi
+    Reason: high motion (23.9)
+    Stats:  brightness=99.6  motion=23.9  flash=5.3  duration=5.0s  224x224
+
+  NV_878.avi
+    Reason: high motion (28.3)
+    Stats:  brightness=126.8  motion=28.3  flash=3.6  duration=5.0s  224x224
+
+  NV_887.avi
+    Reason: high motion (20.4)
+    Stats:  brightness=89.6  motion=20.4  flash=0.9  duration=5.0s  224x224
+
+  NV_889.avi
+    Reason: high motion (28.6)
+    Stats:  brightness=102.3  motion=28.6  flash=1.9  duration=5.0s  224x224
+
+  NV_898.avi
+    Reason: high motion (18.0)
+    Stats:  brightness=126.1  motion=18.0  flash=1.2  duration=5.0s  224x224
+
+  NV_906.avi
+    Reason: high motion (19.7)
+    Stats:  brightness=111.6  motion=19.7  flash=2.4  duration=5.0s  224x224
+
+  NV_908.avi
+    Reason: high motion (20.8)
+    Stats:  brightness=103.6  motion=20.8  flash=2.6  duration=5.0s  224x224
+
+  NV_92.mp4
+    Reason: high motion (25.9)
+    Stats:  brightness=92.3  motion=25.9  flash=8.0  duration=5.3s  640x360
+
+  NV_927.mp4
+    Reason: high motion (27.1)
+    Stats:  brightness=101.6  motion=27.1  flash=2.1  duration=5.0s  224x224
+
+  NV_928.mp4
+    Reason: high motion (29.0)
+    Stats:  brightness=95.7  motion=29.0  flash=2.9  duration=5.0s  224x224
+
+  NV_929.mp4
+    Reason: high motion (28.4)
+    Stats:  brightness=108.5  motion=28.4  flash=2.0  duration=5.0s  224x224
+
+  NV_934.mp4
+    Reason: high motion (27.2)
+    Stats:  brightness=147.1  motion=27.2  flash=2.3  duration=5.0s  224x224
+
+  NV_942.mp4
+    Reason: high motion (18.8)
+    Stats:  brightness=111.4  motion=18.8  flash=0.9  duration=5.0s  224x224
+
+  NV_945.mp4
+    Reason: high motion (21.1)
+    Stats:  brightness=125.2  motion=21.1  flash=1.2  duration=5.0s  224x224
+
+  NV_946.mp4
+    Reason: high motion (21.3)
+    Stats:  brightness=131.3  motion=21.3  flash=1.1  duration=5.0s  224x224
+
+  NV_948.mp4
+    Reason: high motion (19.9)
+    Stats:  brightness=116.2  motion=19.9  flash=0.7  duration=5.0s  224x224
+
+  NV_953.mp4
+    Reason: high motion (24.7)
+    Stats:  brightness=121.6  motion=24.7  flash=2.3  duration=5.0s  224x224
+
+  NV_954.mp4
+    Reason: high motion (22.1)
+    Stats:  brightness=149.2  motion=22.1  flash=1.8  duration=5.0s  224x224
+
+  NV_955.mp4
+    Reason: high motion (18.5)
+    Stats:  brightness=130.6  motion=18.5  flash=0.9  duration=5.0s  224x224
+
+  NV_959.mp4
+    Reason: high motion (20.7)
+    Stats:  brightness=147.9  motion=20.7  flash=1.9  duration=5.0s  224x224
+
+  NV_961.mp4
+    Reason: high motion (18.5)
+    Stats:  brightness=124.9  motion=18.5  flash=0.7  duration=5.0s  224x224
+
+  NV_962.mp4
+    Reason: high motion (21.1)
+    Stats:  brightness=121.6  motion=21.1  flash=1.0  duration=5.0s  224x224
+
+  NV_964.mp4
+    Reason: high motion (25.9)
+    Stats:  brightness=134.3  motion=25.9  flash=1.2  duration=5.0s  224x224
+
+  NV_967.mp4
+    Reason: high motion (23.3)
+    Stats:  brightness=156.3  motion=23.3  flash=1.2  duration=5.0s  224x224
+
+  NV_968.mp4
+    Reason: high motion (18.7)
+    Stats:  brightness=143.5  motion=18.7  flash=1.2  duration=5.0s  224x224
+
+  NV_969.mp4
+    Reason: high motion (29.4)
+    Stats:  brightness=124.8  motion=29.4  flash=2.6  duration=5.0s  224x224
+
+  NV_970.mp4
+    Reason: high motion (24.0)
+    Stats:  brightness=80.6  motion=24.0  flash=1.6  duration=5.0s  224x224
+
+  NV_972.mp4
+    Reason: high motion (29.6)
+    Stats:  brightness=80.8  motion=29.6  flash=3.9  duration=5.0s  224x224
+
+  NV_973.mp4
+    Reason: high motion (20.1)
+    Stats:  brightness=84.0  motion=20.1  flash=2.3  duration=5.0s  224x224
+
+  NV_974.mp4
+    Reason: high motion (39.7)
+    Stats:  brightness=107.4  motion=39.7  flash=1.7  duration=5.0s  224x224
+
+  NV_976.mp4
+    Reason: high motion (28.9)
+    Stats:  brightness=128.8  motion=28.9  flash=1.4  duration=5.0s  224x224
+
+
+FAILED TO READ:

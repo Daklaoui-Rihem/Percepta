@@ -23,10 +23,11 @@ const SEVERITY_CFG = {
 };
 
 // ── Extraction method badge ────────────────────────────────────
-const METHOD_CFG = {
-    llm_anthropic: { label: 'AI · Claude', bg: '#f5f3ff', color: '#7c3aed' },
-    llm_openai:    { label: 'AI · GPT',    bg: '#f0fdf4', color: '#16a34a' },
-    rule_based:    { label: 'Rule-based',  bg: '#f8fafc', color: '#64748b' },
+const METHOD_CFG: Record<string, { label: string; bg: string; color: string }> = {
+    llm_anthropic:  { label: 'AI · Claude',    bg: '#f5f3ff', color: '#7c3aed' },
+    llm_openai:     { label: 'AI · GPT',       bg: '#f0fdf4', color: '#16a34a' },
+    rule_based:     { label: 'Rule-based',    bg: '#f8fafc', color: '#64748b' },
+    'spacy+hf_local': { label: 'NLP · spaCy+AI', bg: '#eff6ff', color: '#1d4ed8' },
 };
 
 export default function ExtractedEntitiesCard({ entities }: Props) {

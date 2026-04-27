@@ -92,7 +92,7 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
         `chars=${result.text.length}`
     );
 
-    const summary = buildSummary(result.text, result.language, result.duration, result.confidence, result.summary);
+    // Summary removed as per user request
 
     // ── Step 2: Entity Extraction ──────────────────────────────
     let extractedEntities = null;
@@ -143,7 +143,6 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
             transcription: result.text,
             translatedText,
             translationLang,
-            summary,
             extractedEntities,          // ← Pass entities to PDF generator
             userName: userName || 'User',
             userEmail: userEmail || '',
@@ -159,7 +158,8 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
 
     return {
         transcription: result.text,
-        summary,
+        language: result.language || 'auto',
+        duration: result.duration || 0,
         pdfPath,
         translatedText,
         translationLang,
@@ -198,7 +198,7 @@ function runWhisper(filePath, language) {
             clearTimeout(timer);
             let parsed;
             try {
-                parsed = JSON.parse(stdout.trim());
+                parsed = extractJSON(stdout);
             } catch (_) {
                 return reject(new Error(
                     `Whisper returned non-JSON output (exit ${code}).\n` +
@@ -264,7 +264,7 @@ function runVoxtral(filePath, language) {
             clearTimeout(timer);
             let parsed;
             try {
-                parsed = JSON.parse(stdout.trim());
+                parsed = extractJSON(stdout);
             } catch (_) {
                 return reject(new Error(
                     `Voxtral a retourné un résultat non-JSON (exit ${code}).\n` +
@@ -336,7 +336,8 @@ async function runEntityExtraction(text, language) {
 
             let parsed;
             try {
-                parsed = JSON.parse(stdout.trim());
+                parsed = extractJSON(stdout);
+                console.log(`🔍 [AudioProcessor] Entity extraction raw stdout length: ${stdout.length}`);
             } catch (_) {
                 return reject(new Error(
                     `Entity extraction returned non-JSON (exit ${code}).\n` +
@@ -397,7 +398,7 @@ async function runTranslation(text, sourceLang, targetLang) {
 
             let parsed;
             try {
-                parsed = JSON.parse(stdout.trim());
+                parsed = extractJSON(stdout);
             } catch (_) {
                 return reject(new Error(
                     `Translate script returned non-JSON (exit ${code}).\n` +
@@ -420,24 +421,24 @@ async function runTranslation(text, sourceLang, targetLang) {
     });
 }
 
-// ── Summary builder ────────────────────────────────────────────
-function buildSummary(text, lang, duration, confidence, intelligentSummary) {
-    const mins = Math.floor(duration / 60);
-    const secs = Math.round(duration % 60);
-    const words = text.split(/\s+/).filter(Boolean).length;
-    const LANG_NAMES = { fr: 'French', en: 'English', ar: 'Arabic' };
-    const langLabel = LANG_NAMES[lang] || lang;
-
-    const header = `Duration: ${mins}m ${secs}s  |  Language: ${langLabel}  |  ~${words} words  |  Confidence: ${confidence || 0}%`;
-
-    if (intelligentSummary && intelligentSummary !== text) {
-        return `${header}\n\nKey Highlights:\n${intelligentSummary}`;
+// ── JSON extractor ─────────────────────────────────────────────
+// Python scripts may print warnings/tqdm progress before the JSON.
+// This finds the last top-level JSON object in stdout.
+function extractJSON(raw) {
+    const str = raw.trim();
+    // Find the last '{' that starts a top-level JSON object
+    let lastStart = -1;
+    for (let i = str.length - 1; i >= 0; i--) {
+        if (str[i] === '{') {
+            try {
+                const candidate = str.substring(i);
+                const parsed = JSON.parse(candidate);
+                return parsed;
+            } catch (_) { /* keep searching */ }
+        }
     }
-
-    const sentences = text.match(/[^.!?؟]+[.!?؟]+/g) || [];
-    const preview = sentences.slice(0, 2).join(' ').trim();
-
-    return `${header}\n\n${preview ? `Preview:\n${preview}` : ''}`;
+    // Fallback: try parsing the whole thing
+    return JSON.parse(str);
 }
 
 module.exports = { processAudio };

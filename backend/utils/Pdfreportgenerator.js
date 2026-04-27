@@ -62,8 +62,7 @@ async function generateTranscriptionPDF(opts) {
         transcription,
         translatedText,
         translationLang,
-        summary,
-        extractedEntities,   // ← NEW
+        extractedEntities,   // ← entity data
         userName = 'Unknown',
         userEmail = '',
         createdAt = new Date(),
@@ -79,16 +78,11 @@ async function generateTranscriptionPDF(opts) {
 
     const pdfPath = path.join(outputDir, `report_${safeName}_${analysisId}.pdf`);
 
-    // ── Parse summary metadata ─────────────────────────────────
-    const durationMatch = summary?.match(/Duration:\s*([^\|]+)/i);
-    const languageMatch = summary?.match(/Language:\s*(\w+)/i);
-    const wordsMatch    = summary?.match(/~([\d,]+)\s*words/i);
-    const previewMatch  = summary?.match(/(?:Preview|Key Highlights):\n([\s\S]+)/i);
-
-    const duration  = durationMatch?.[1]?.trim() || '—';
-    const language  = languageMatch?.[1]?.trim() || '—';
-    const wordCount = wordsMatch?.[1]?.trim() || '—';
-    const preview   = previewMatch?.[1]?.trim() || '';
+    // Derive metadata from transcription directly (no more summary string)
+    const wordCount = transcription ? String(transcription.split(/\s+/).filter(Boolean).length.toLocaleString()) : '—';
+    const language  = '—'; // Available via extractedEntities if needed
+    const duration  = '—'; // Not tracked after summary removal
+    const preview   = '';   // No preview section
 
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({
@@ -182,18 +176,7 @@ async function generateTranscriptionPDF(opts) {
             cursorY += 20;
         }
 
-        // ── SECTION: Summary ───────────────────────────────────
-        doc.rect(contentX, cursorY, 4, 18).fill(LIGHT_BLUE);
-        doc.font(fontFor('latin')).fontSize(13).fillColor(DARK_BLUE)
-            .text('Summary', contentX + 12, cursorY + 2);
-        cursorY += 28;
-
-        if (preview) {
-            doc.rect(contentX, cursorY, contentW, 1).fill('#e0eaf4');
-            cursorY += 10;
-            renderMixedText(doc, preview, contentX, cursorY, contentW, 11, GRAY_700, fontFor, false);
-            cursorY = doc.y + 18;
-        }
+        // ── SECTION: Full Transcription (summary section removed) ───────
 
         // Stats row
         const statItems = [

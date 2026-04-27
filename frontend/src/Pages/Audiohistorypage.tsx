@@ -278,22 +278,6 @@ function AnalysisRow({
                     padding: '16px 20px',
                     background: '#fafcff',
                 }}>
-                    {/* Summary */}
-                    {record.summary && (
-                        <div style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                {t('summary')}
-                            </div>
-                            <div style={{
-                                background: '#f0fdf4', border: '1px solid #bbf7d0',
-                                borderRadius: 8, padding: '12px 14px',
-                                fontSize: 13, color: '#166534', lineHeight: 1.6,
-                                whiteSpace: 'pre-line',
-                            }}>
-                                {record.summary}
-                            </div>
-                        </div>
-                    )}
 
                     {/* Transcription toggle */}
                     {record.transcription && (

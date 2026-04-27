@@ -174,7 +174,7 @@ export interface ExtractedEntities {
     time_mentioned: string | null;
     additional_details: string | null;
     confidence: number | null;
-    extraction_method: 'llm_anthropic' | 'llm_openai' | 'rule_based' | null;
+    extraction_method: 'llm_anthropic' | 'llm_openai' | 'rule_based' | 'spacy+hf_local' | null;
 }
 
 // ── Video analysis types ───────────────────────────────────────
@@ -236,7 +236,6 @@ export interface AnalysisRecord {
     transcription?: string;
     translatedText?: string;
     translationLang?: string;
-    summary?: string;
     errorMessage?: string;
     hasPdf?: boolean;
     pdfGeneratedAt?: string | null;
@@ -288,9 +287,10 @@ export const analysisApi = {
             status: 'pending' | 'processing' | 'done' | 'error';
             errorMessage: string | null;
             transcription: string | null;
+            language: string | null;
+            duration: number | null;
             translatedText: string | null;
             translationLang: string | null;
-            summary: string | null;
             extractedEntities: ExtractedEntities | null;   // ← NEW
             hasPdf: boolean;
             pdfGeneratedAt: string | null;

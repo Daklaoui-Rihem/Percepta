@@ -43,7 +43,8 @@ async function processInBackground(analysisId, type, filePath, userId, translate
         await Analysis.findByIdAndUpdate(analysisId, {
             status: 'done',
             transcription: result.transcription,
-            summary: result.summary,
+            language: result.language,
+            duration: result.duration,
             translatedText: result.translatedText || '',
             translationLang: result.translationLang || '',
             extractedEntities: result.extractedEntities || null,
@@ -230,7 +231,7 @@ exports.getAnalysisById = async (req, res) => {
 exports.getAnalysisStatus = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id)
-            .select('status errorMessage transcription translatedText translationLang summary pdfPath pdfGeneratedAt extractedEntities');
+            .select('status errorMessage transcription language duration translatedText translationLang pdfPath pdfGeneratedAt extractedEntities');
 
         if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
 
@@ -241,9 +242,10 @@ exports.getAnalysisStatus = async (req, res) => {
             status: analysis.status,
             errorMessage: analysis.errorMessage || null,
             transcription: analysis.status === 'done' ? analysis.transcription : null,
+            language: analysis.status === 'done' ? analysis.language : null,
+            duration: analysis.status === 'done' ? analysis.duration : null,
             translatedText: analysis.status === 'done' ? (analysis.translatedText || null) : null,
             translationLang: analysis.status === 'done' ? (analysis.translationLang || null) : null,
-            summary: analysis.status === 'done' ? analysis.summary : null,
             // ── NEW: extracted entities ──────────────────────────
             extractedEntities: analysis.status === 'done' ? (analysis.extractedEntities || null) : null,
             hasPdf: analysis.status === 'done' ? hasPdf : false,
@@ -340,7 +342,6 @@ exports.generateReport = async (req, res) => {
             transcription: analysis.transcription,
             translatedText: analysis.translatedText,
             translationLang: analysis.translationLang,
-            summary: analysis.summary,
             extractedEntities: analysis.extractedEntities || null,   // ← NEW
             userName,
             userEmail,

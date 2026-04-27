@@ -19,7 +19,7 @@ const extractedEntitiesSchema = new mongoose.Schema({
     confidence: { type: Number, default: null },
     extraction_method: {
         type: String,
-        enum: ['llm_anthropic', 'llm_openai', 'rule_based'],
+        enum: ['llm_anthropic', 'llm_openai', 'rule_based', 'spacy+hf_local'],
         default: null,
     },
 }, { _id: false });
@@ -61,7 +61,8 @@ const analysisSchema = new mongoose.Schema({
 
     // Results
     transcription: { type: String, default: '' },
-    summary: { type: String, default: '' },
+    language: { type: String, default: 'auto' },
+    duration: { type: Number, default: 0 },
 
     // ── Translation ──────────────────────────────────────────────
     translationLang: { type: String, default: '' },
