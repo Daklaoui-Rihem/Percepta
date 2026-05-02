@@ -239,7 +239,8 @@ export interface AnalysisRecord {
     errorMessage?: string;
     hasPdf?: boolean;
     pdfGeneratedAt?: string | null;
-    extractedEntities?: ExtractedEntities | null;   // ← NEW
+    extractedEntities?: ExtractedEntities | null;
+    userId?: { _id: string; name: string; email?: string };
 }
 
 export const analysisApi = {
@@ -346,6 +347,37 @@ export const analysisApi = {
         return `${BASE_URL}/analyses/${analysisId}/keyframe/${filename}?token=${token}`;
     },
 };
+
+// ── Dashboard ──────────────────────────────────────────────────
+export interface DashboardStats {
+    totalTenants: number;
+    totalUsers: number;
+    activeAnalysesCount: number;
+    totalAnalysesCount: number;
+    errorRate: number;
+    reportsCount: number;
+    recentActivities: AnalysisRecord[];
+    activeTenants: Array<{
+        name: string;
+        plan: string;
+        users: number;
+        resource: number;
+    }>;
+}
+
+export const dashboardApi = {
+    getStats: () => request<DashboardStats>('GET', '/dashboard/stats'),
+    getHistory: (filters?: { dateFrom?: string; dateTo?: string; type?: string; status?: string }) => {
+        const params = new URLSearchParams();
+        if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+        if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+        if (filters?.type) params.append('type', filters.type);
+        if (filters?.status) params.append('status', filters.status);
+        const qs = params.toString() ? `?${params.toString()}` : '';
+        return request<AnalysisRecord[]>('GET', `/dashboard/history${qs}`);
+    }
+};
+
 
 // ── Auth helpers ───────────────────────────────────────────────
 export function saveSession(token: string, user: LoginResponse['user']) {

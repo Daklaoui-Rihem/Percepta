@@ -1,47 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Eye, Download, Trash2 } from 'lucide-react';
 import StatusBadge from '../Atoms/StatusBadge';
 import SizeBadge from '../Atoms/SizeBadge';
 import TypeBadge from '../Atoms/TypeBadge';
 import ReportFilters from '../Molecules/ReportFilters';
 import { useTranslation } from '../../context/TranslationContext';
+import type { AnalysisRecord } from '../../services/api';
+import { analysisApi } from '../../services/api';
 
-type Report = {
-  id: string; user: string; type: string;
-  filename: string; date: string; size: string; status: string;
+interface ReportsTableProps {
+  initialReports: AnalysisRecord[];
 }
 
-const allReports: Report[] = [
-  { id: 'RPT-2026-001456', user: 'Jean Dupont',    type: 'Audio Transcription', filename: 'Client_Meeting_Q4_2025.pdf',  date: '2026-02-22 14:32', size: '0.8 MB', status: 'Completed' },
-  { id: 'RPT-2026-001455', user: 'Marie Claire',   type: 'Video Analysis',      filename: 'Product_Demo_Analysis.pdf',   date: '2026-02-22 13:15', size: '2.3 MB', status: 'Completed' },
-  { id: 'RPT-2026-001454', user: 'Pierre Martin',  type: 'PDF Report',          filename: 'Q4_Financial_Summary.pdf',    date: '2026-02-22 12:00', size: '1.1 MB', status: 'Processing' },
-  { id: 'RPT-2026-001453', user: 'Sophie Bernard', type: 'Live Transcription',  filename: 'Board_Meeting_Feb.pdf',       date: '2026-02-21 17:45', size: '0.5 MB', status: 'Completed' },
-  { id: 'RPT-2026-001452', user: 'Luc Moreau',     type: 'Video Analysis',      filename: 'large_file_analysis.pdf',     date: '2026-02-21 16:20', size: '3.1 MB', status: 'Failed' },
-  { id: 'RPT-2026-001451', user: 'Jean Dupont',    type: 'Audio Transcription', filename: 'Sales_Call_Recording.pdf',    date: '2026-02-21 14:10', size: '0.9 MB', status: 'Completed' },
-  { id: 'RPT-2026-001450', user: 'Marie Claire',   type: 'PDF Report',          filename: 'Marketing_Report_Feb.pdf',    date: '2026-02-20 11:30', size: '1.4 MB', status: 'Completed' },
-  { id: 'RPT-2026-001449', user: 'Pierre Martin',  type: 'Live Transcription',  filename: 'Team_Standup_Notes.pdf',      date: '2026-02-20 09:00', size: '0.3 MB', status: 'Completed' },
-  { id: 'RPT-2026-001448', user: 'Sophie Bernard', type: 'Audio Transcription', filename: 'Client_Onboarding.pdf',       date: '2026-02-19 16:00', size: '0.7 MB', status: 'Completed' },
-  { id: 'RPT-2026-001447', user: 'Luc Moreau',     type: 'Video Analysis',      filename: 'Product_Launch_Video.pdf',    date: '2026-02-19 14:00', size: '2.8 MB', status: 'Completed' },
-  { id: 'RPT-2026-001446', user: 'Jean Dupont',    type: 'PDF Report',          filename: 'Annual_Summary_2025.pdf',     date: '2026-02-18 10:00', size: '1.9 MB', status: 'Completed' },
-  { id: 'RPT-2026-001445', user: 'Marie Claire',   type: 'Audio Transcription', filename: 'Investor_Call_Q1.pdf',        date: '2026-02-17 09:30', size: '0.6 MB', status: 'Completed' },
-];
-
-export default function ReportsTable() {
+export default function ReportsTable({ initialReports }: ReportsTableProps) {
   const { t } = useTranslation();
   const [search, setSearch]   = useState('');
   const [user, setUser]       = useState('');
   const [type, setType]       = useState('');
   const [status, setStatus]   = useState('');
-  const [reports, setReports] = useState<Report[]>(allReports);
+  const [reports, setReports] = useState<AnalysisRecord[]>(initialReports);
 
-  const filtered = reports.filter(r =>
-    (search === '' || r.id.includes(search) || r.user.toLowerCase().includes(search.toLowerCase()) || r.filename.toLowerCase().includes(search.toLowerCase())) &&
-    (user   === '' || r.user   === user) &&
-    (type   === '' || r.type   === type) &&
-    (status === '' || r.status === status)
-  );
+  useEffect(() => {
+    setReports(initialReports);
+  }, [initialReports]);
 
-  const handleDelete = (id: string) => {
-    setReports(prev => prev.filter(r => r.id !== id));
+  const mapStatus = (s: string) => {
+    if (s === 'done') return 'Completed';
+    if (s === 'error') return 'Failed';
+    return 'Processing';
+  };
+
+  const mapType = (t: string) => {
+    if (t === 'audio') return 'Audio Transcription';
+    if (t === 'video') return 'Video Analysis';
+    if (t === 'groupActivity') return 'Video Analysis';
+    return 'PDF Report';
+  };
+
+  const formatSize = (bytes: number) => {
+    if (!bytes) return '0 MB';
+    const mb = bytes / (1024 * 1024);
+    return mb.toFixed(1) + ' MB';
+  };
+
+  const formatDate = (iso: string) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const filtered = reports.filter(r => {
+    const mappedUser = r.userId?.name || 'User';
+    const matchesSearch = (search === '' || 
+      r._id.includes(search) || 
+      mappedUser.toLowerCase().includes(search.toLowerCase()) || 
+      r.originalName.toLowerCase().includes(search.toLowerCase())
+    );
+    const matchesUser = (user === '' || mappedUser === user);
+    const matchesType = (type === '' || mapType(r.type) === type);
+    const matchesStatus = (status === '' || mapStatus(r.status) === status);
+    
+    return matchesSearch && matchesUser && matchesType && matchesStatus;
+  });
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('confirmDelete'))) return;
+    try {
+      await analysisApi.deleteAnalysis(id);
+      setReports(prev => prev.filter(r => r._id !== id));
+    } catch (err) {
+      console.error('Delete failed', err);
+    }
+  };
+
+  const handleDownload = async (id: string, name: string) => {
+    try {
+      await analysisApi.downloadReport(id, name);
+    } catch (err) {
+      alert(t('downloadFailed'));
+    }
   };
 
   const columns = [
@@ -72,24 +109,42 @@ export default function ReportsTable() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((r, i) => (
-              <tr key={i}
+            {filtered.map((r) => (
+              <tr key={r._id}
                 style={{ borderBottom: '1px solid #f0f4f8' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#f8fbff')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'white')}
               >
-                <td style={{ padding: '14px 16px', fontWeight: 700, color: '#1a3a6b', fontSize: 13 }}>{r.id}</td>
-                <td style={{ padding: '14px 16px', fontSize: 13, color: '#444' }}>{r.user}</td>
-                <td style={{ padding: '14px 16px' }}><TypeBadge type={r.type} /></td>
-                <td style={{ padding: '14px 16px', fontSize: 13, color: '#555' }}>{r.filename}</td>
-                <td style={{ padding: '14px 16px', fontSize: 13, color: '#555', whiteSpace: 'nowrap' }}>{r.date}</td>
-                <td style={{ padding: '14px 16px' }}><SizeBadge size={r.size} /></td>
-                <td style={{ padding: '14px 16px' }}><StatusBadge status={r.status} /></td>
+                <td style={{ padding: '14px 16px', fontWeight: 700, color: '#1a3a6b', fontSize: 13 }}>{r._id.substring(r._id.length - 8).toUpperCase()}</td>
+                <td style={{ padding: '14px 16px', fontSize: 13, color: '#444' }}>{r.userId?.name || 'User'}</td>
+                <td style={{ padding: '14px 16px' }}><TypeBadge type={mapType(r.type)} /></td>
+                <td style={{ padding: '14px 16px', fontSize: 13, color: '#555' }}>{r.originalName}</td>
+                <td style={{ padding: '14px 16px', fontSize: 13, color: '#555', whiteSpace: 'nowrap' }}>{formatDate(r.createdAt)}</td>
+                <td style={{ padding: '14px 16px' }}><SizeBadge size={formatSize(r.size)} /></td>
+                <td style={{ padding: '14px 16px' }}><StatusBadge status={mapStatus(r.status)} /></td>
                 <td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <span title="View" style={{ cursor: 'pointer', fontSize: 16, color: '#1a3a6b' }}>👁️</span>
-                    <span title="Download" style={{ cursor: 'pointer', fontSize: 16, color: '#1a3a6b' }}>⬇️</span>
-                    <span title="Delete" onClick={() => handleDelete(r.id)} style={{ cursor: 'pointer', fontSize: 16, color: '#dc2626' }}>🗑️</span>
+                    <span title="View" style={{ display: 'flex' }}>
+                      <Eye 
+                        size={18} 
+                        style={{ cursor: 'pointer', color: '#1a3a6b' }} 
+                        onClick={() => window.open(`/analysis/${r._id}`, '_blank')}
+                      />
+                    </span>
+                    <span title="Download" style={{ display: 'flex' }}>
+                      <Download 
+                        size={18} 
+                        style={{ cursor: 'pointer', color: '#1a3a6b' }} 
+                        onClick={() => handleDownload(r._id, r.originalName)}
+                      />
+                    </span>
+                    <span title="Delete" style={{ display: 'flex' }}>
+                      <Trash2 
+                        size={18} 
+                        style={{ cursor: 'pointer', color: '#dc2626' }} 
+                        onClick={() => handleDelete(r._id)}
+                      />
+                    </span>
                   </div>
                 </td>
               </tr>

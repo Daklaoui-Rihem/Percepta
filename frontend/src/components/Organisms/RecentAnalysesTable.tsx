@@ -18,11 +18,27 @@ export default function RecentAnalysesTable({ limit }: { limit?: number }) {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
+  const fetchAnalyses = () => {
     analysisApi.getMyAnalyses()
       .then(data => setAnalyses(data))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchAnalyses();
+
+    const handleJobUpdate = () => {
+      fetchAnalyses(); // Refetch data when a job completes or fails
+    };
+
+    window.addEventListener('percepta:job_completed', handleJobUpdate);
+    window.addEventListener('percepta:job_failed', handleJobUpdate);
+
+    return () => {
+      window.removeEventListener('percepta:job_completed', handleJobUpdate);
+      window.removeEventListener('percepta:job_failed', handleJobUpdate);
+    };
   }, []);
 
   let filtered = analyses.filter((a: AnalysisRecord) => {

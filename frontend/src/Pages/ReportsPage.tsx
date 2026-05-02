@@ -1,18 +1,51 @@
-import { useState } from 'react';
-import { BarChart3, FileText, RefreshCw, Trash2, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BarChart3, FileText, RefreshCw, Trash2, Download, Loader2 } from 'lucide-react';
 import DashboardTemplate from '../components/Templates/DashboardTemplate';
 import ReportsTable from '../components/Organisms/ReportsTable';
 import { useTranslation } from '../context/TranslationContext';
+import { dashboardApi } from '../services/api';
+import type { DashboardStats, AnalysisRecord } from '../services/api';
 
 export default function ReportsPage() {
   const { t } = useTranslation();
   const [activePage, setActivePage] = useState('Reports');
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [history, setHistory] = useState<AnalysisRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      dashboardApi.getStats(),
+      dashboardApi.getHistory()
+    ]).then(([statsData, historyData]) => {
+      setStats(statsData);
+      setHistory(historyData);
+      setLoading(false);
+    }).catch(err => {
+      console.error('Failed to fetch reports data', err);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardTemplate active={activePage} onNavigate={setActivePage}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+          <Loader2 size={48} color="#1a3a6b" className="spin-animation" />
+        </div>
+        <style>{`
+          .spin-animation { animation: spin 1s linear infinite; }
+          @keyframes spin { 100% { transform: rotate(360deg); } }
+        `}</style>
+      </DashboardTemplate>
+    );
+  }
 
   const reportStats = [
-    { icon: BarChart3,  value: '12', label: t('totalReports'), borderColor: '#60a5fa' },
-    { icon: FileText,   value: '10', label: t('completed'),    borderColor: '#22c55e' },
-    { icon: RefreshCw,  value: '1',  label: t('processing'),   borderColor: '#2563eb' },
-    { icon: Trash2,     value: '1',  label: t('failed'),       borderColor: '#dc2626' },
+    { icon: BarChart3,  value: stats?.totalAnalysesCount || 0, label: t('totalReports'), borderColor: '#60a5fa' },
+    { icon: FileText,   value: (stats?.totalAnalysesCount || 0) - (stats?.activeAnalysesCount || 0), label: t('completed'),    borderColor: '#22c55e' },
+    { icon: RefreshCw,  value: stats?.activeAnalysesCount || 0,  label: t('processing'),   borderColor: '#2563eb' },
+    { icon: Trash2,     value: Math.round(((stats?.errorRate || 0) / 100) * (stats?.totalAnalysesCount || 0)),  label: t('failed'),       borderColor: '#dc2626' },
   ];
 
   return (
@@ -48,7 +81,7 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      <ReportsTable />
+      <ReportsTable initialReports={history} />
     </DashboardTemplate>
   );
 }

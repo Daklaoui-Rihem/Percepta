@@ -1,30 +1,61 @@
-import { UserPlus, Building2, Clock } from 'lucide-react';
+import { FileAudio, FileVideo, Clock, AlertCircle } from 'lucide-react';
 import ActivityItem from '../Molecules/ActivityItem';
 import { useTranslation } from '../../context/TranslationContext';
+import type { AnalysisRecord } from '../../services/api';
 
-// activities moved inside component to use translations
+interface RecentActivityListProps {
+  activities: AnalysisRecord[];
+}
 
-export default function RecentActivityList() {
+export default function RecentActivityList({ activities }: RecentActivityListProps) {
   const { t } = useTranslation();
 
-  const activities = [
-    { icon: UserPlus,   title: t('newTenantOnboarded'),          tenant: 'Digital Ventures',      time: t('hoursAgo', { count: 2 }) },
-    { icon: Building2,  title: t('licenseUpgraded'),           tenant: 'Global Services Ltd.',  time: t('hoursAgo', { count: 5 }) },
-    { icon: UserPlus,   title: t('newTenantOnboarded'),          tenant: 'Innovate Solutions',    time: t('dayAgo')   },
-    { icon: Building2,  title: t('licenseActivated'),          tenant: 'TechStart Inc.',        time: t('daysAgo', { count: 2 })  },
-    { icon: UserPlus,   title: t('newTenantOnboarded'),          tenant: 'Acme Corporation',      time: t('daysAgo', { count: 3 })  },
-  ];
+  const getIcon = (type: string, status: string) => {
+    if (status === 'error') return AlertCircle;
+    return type === 'video' ? FileVideo : FileAudio;
+  };
+
+  const getTitle = (analysis: AnalysisRecord) => {
+    if (analysis.status === 'error') return t('analysisFailed');
+    if (analysis.status === 'done') return t('analysisCompleted');
+    return t('analysisStarted');
+  };
+
+  const getTimeAgo = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return t('justNow');
+    if (diffInHours < 24) return t('hoursAgo', { count: diffInHours });
+    return date.toLocaleDateString();
+  };
 
   return (
     <div style={{
       background: 'white', borderRadius: 16,
       padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     }}>
-      <h3 style={{ color: '#1a3a6b', marginBottom: 4, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <h3 style={{ color: '#1a3a6b', marginBottom: 20, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
         <Clock size={16} /> {t('recentActivity')}
       </h3>
 
-      {activities.map((a, i) => <ActivityItem key={i} {...a} />)}
+      {activities.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+          {t('noRecentActivities')}
+        </div>
+      ) : (
+        activities.map((a) => (
+          <ActivityItem 
+            key={a._id}
+            icon={getIcon(a.type, a.status)}
+            title={getTitle(a)}
+            tenant={a.originalName}
+            time={getTimeAgo(a.createdAt)}
+          />
+        ))
+      )}
     </div>
   );
 }

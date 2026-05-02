@@ -185,7 +185,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
             icon: <Clock size={20} color="#a16207" />,
         },
         processing: {
-            label: `${t('processing')} — ${t('whisperRunning')}`,
+            label: `${t('processing')} — ${t('Running')}`,
             bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe',
             icon: <SpinnerIcon />,
         },

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Plus, Play } from 'lucide-react';
 import ClientTemplate from '../components/Templates/ClientTemplate';
 import ClientStatsRow from '../components/Organisms/ClientStatsRow';
 import RecentAnalysesTable from '../components/Organisms/RecentAnalysesTable';
@@ -34,7 +35,7 @@ export default function ClientDashboardPage() {
               fontWeight: 600, cursor: 'pointer',
             }}
           >
-            ⊕ {t('newTranscription')}
+            <Plus size={18} /> {t('newTranscription')}
           </button>
 
           <button
@@ -47,7 +48,7 @@ export default function ClientDashboardPage() {
               fontWeight: 600, cursor: 'pointer',
             }}
           >
-            ▷ {t('analyzeVideo')}
+            <Play size={18} /> {t('analyzeVideo')}
           </button>
         </div>
 

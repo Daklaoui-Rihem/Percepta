@@ -225,7 +225,10 @@ const translations = {
   generatedPdfReport: { fr: "Rapport PDF généré pour '{{filename}}'", en: "Generated PDF report for '{{filename}}'", ar: "تم إنشاء تقرير PDF لـ '{{filename}}'" },
   startedVideoAnalysis: { fr: "Analyse vidéo démarrée", en: "Started video analysis", ar: "بدأ تحليل الفيديو" },
   completedTranscription: { fr: "Transcription terminée", en: "Completed transcription", ar: "اكتمل النص" },
+  completedVideoAnalysis: { fr: "Analyse vidéo terminée", en: "Video analysis completed", ar: "اكتمل تحليل الفيديو" },
+  completedGroupActivity: { fr: "Analyse de groupe terminée", en: "Group activity completed", ar: "اكتمل تحليل النشاط الجماعي" },
   failedToProcess: { fr: "Erreur : Échec du traitement de '{{filename}}'", en: "Error: Failed to process '{{filename}}'", ar: "خطأ: فشل في معالجة '{{filename}}'" },
+  processedFile: { fr: "Fichier '{{filename}}' traité", en: "Processed file '{{filename}}'", ar: "تمت معالجة الملف '{{filename}}'" },
 
   // ── Reports Page ──────────────────────────────────────────────
   reportsGlobalView: { fr: 'Rapports — Vue globale', en: 'Reports — Global View', ar: 'التقارير — عرض شامل' },
@@ -247,6 +250,11 @@ const translations = {
   vsLastWeek: { fr: 'vs semaine dernière', en: 'vs last week', ar: 'مقارنة بالأسبوع الماضي' },
   realTimeResourceUsage: { fr: 'Utilisation des ressources en temps réel', en: 'Real-Time Resource Usage', ar: 'استخدام الموارد في الوقت الفعلي' },
   recentActivities: { fr: 'Activités récentes', en: 'Recent Activities', ar: 'الأنشطة الأخيرة' },
+  noRecentActivities: { fr: 'Aucune activité récente', en: 'No recent activities', ar: 'لا توجد أنشطة أخيرة' },
+  analysisFailed: { fr: 'Analyse échouée', en: 'Analysis failed', ar: 'فشل التحليل' },
+  analysisCompleted: { fr: 'Analyse terminée', en: 'Analysis completed', ar: 'اكتمل التحليل' },
+  analysisStarted: { fr: 'Analyse démarrée', en: 'Analysis started', ar: 'بدأ التحليل' },
+  justNow: { fr: 'À l\'instant', en: 'Just now', ar: 'الآن' },
   viewAll: { fr: 'Voir tout', en: 'View All', ar: 'عرض الكل' },
   timestamp: { fr: 'Horodatage', en: 'Timestamp', ar: 'الطابع الزمني' },
 
@@ -331,7 +339,7 @@ const translations = {
 
   // ── Transcription Result Card ─────────────────────────────────
   waitingWorker: { fr: 'En attente du worker…', en: 'Waiting for worker…', ar: 'في انتظار المعالج…' },
-  whisperRunning: { fr: 'Whisper est en cours d’exécution…', en: 'Whisper is running…', ar: 'يتم تشغيل Whisper…' },
+  Running: { fr: 'Le modèle est en cours d’exécution…', en: 'The model is running…', ar: 'يتم تشغيل النموذج…' },
   summary: { fr: 'Résumé', en: 'Summary', ar: 'ملخص' },
   fullTranscription: { fr: 'Transcription Complète', en: 'Full Transcription', ar: 'النص الكامل' },
   collapse: { fr: 'Réduire', en: 'Collapse', ar: 'طي' },
@@ -359,6 +367,8 @@ const translations = {
   audioHistoryDesc: { fr: 'Toutes vos transcriptions et rapports audio', en: 'All your audio transcriptions and reports', ar: 'جميع نصوصك وتقاريرك الصوتية' },
   totalAnalyses: { fr: 'Total analyses', en: 'Total Analyses', ar: 'إجمالي التحليلات' },
   deleteAnalysis: { fr: "Supprimer l'analyse", en: 'Delete Analysis', ar: 'حذف التحليل' },
+  confirmDelete: { fr: 'Confirmer la suppression ?', en: 'Are you sure you want to delete?', ar: 'هل أنت متأكد من الحذف؟' },
+  downloadFailed: { fr: 'Échec du téléchargement du rapport. Il n\'est peut-être pas encore généré.', en: 'Failed to download report. It might not be generated yet.', ar: 'فشل تحميل التقرير. قد لا يكون قد تم إنشاؤه بعد.' },
   deleteSuccess: { fr: 'Analyse supprimée.', en: 'Analysis deleted.', ar: 'تم حذف التحليل.' },
   retryQueued: { fr: "Analyse remise en file d'attente.", en: 'Analysis re-queued.', ar: 'تمت إعادة إضافة التحليل إلى القائمة.' },
   noAudioHistoryYet: { fr: "Aucune analyse audio pour l'instant.", en: 'No audio analyses yet.', ar: 'لا توجد تحليلات صوتية بعد.' },

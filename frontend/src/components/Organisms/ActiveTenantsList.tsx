@@ -2,15 +2,18 @@ import TenantItem from '../Molecules/TenantItem';
 import SystemCapacityPanel from '../Molecules/SystemCapacityPanel';
 import { useTranslation } from '../../context/TranslationContext';
 
-const tenants = [
-  { name: 'Acme Corporation',      plan: 'Enterprise',   users: 145, resource: 87 },
-  { name: 'TechStart Inc.',        plan: 'Professional', users: 82,  resource: 64 },
-  { name: 'Global Services Ltd.',  plan: 'Enterprise',   users: 234, resource: 91 },
-  { name: 'Innovate Solutions',    plan: 'Professional', users: 45,  resource: 48 },
-  { name: 'Digital Ventures',      plan: 'Starter',      users: 28,  resource: 32 },
-];
+interface Tenant {
+  name: string;
+  plan: string;
+  users: number;
+  resource: number;
+}
 
-export default function ActiveTenantsList() {
+interface ActiveTenantsListProps {
+  tenants: Tenant[];
+}
+
+export default function ActiveTenantsList({ tenants }: ActiveTenantsListProps) {
   const { t } = useTranslation();
 
   return (
@@ -22,11 +25,17 @@ export default function ActiveTenantsList() {
         borderRadius: 16, padding: '24px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}>
-        <h3 style={{ color: '#1a3a6b', marginBottom: 4, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h3 style={{ color: '#1a3a6b', marginBottom: 20, fontSize: 16, fontWeight: 700 }}>
           {t('activeTenantsList')}
         </h3>
 
-        {tenants.map(t => <TenantItem key={t.name} {...t} />)}
+        {tenants.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+            Aucun locataire actif
+          </div>
+        ) : (
+          tenants.map(tenant => <TenantItem key={tenant.name} {...tenant} />)
+        )}
       </div>
 
       {/* RIGHT: system capacity */}
