@@ -17,6 +17,8 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
 const analysesRoutes = require('./routes/analyses');
+const notificationsRoutes = require('./routes/notifications');
+const dashboardRoutes = require('./routes/dashboard');
 
 const { seedSuperAdmin } = require('./controllers/authController');
 const startCleanupJob = require('./utils/cleanupJob');
@@ -44,6 +46,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/analyses', analysesRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ── Health check ───────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

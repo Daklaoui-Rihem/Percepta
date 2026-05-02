@@ -15,6 +15,7 @@ const User = require('../models/User');
 const { processAudio } = require('../processors/audioProcessor');
 const { processVideo } = require('../processors/videoProcessor');
 const { processGroupActivity } = require('../processors/groupActivityProcessor');
+const { sendNotificationEmail } = require('../utils/email');
 
 const CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '3');
 
@@ -117,6 +118,11 @@ const worker = new Worker(
             await job.updateProgress(100);
             console.log(`✅ [Worker] Job ${job.id} completed for analysisId=${analysisId}`);
 
+            // Send success email notification
+            if (userEmail) {
+                await sendNotificationEmail(userEmail, userName, analysis.originalName, 'success');
+            }
+
             return {
                 success: true,
                 analysisId,
@@ -125,12 +131,18 @@ const worker = new Worker(
             };
 
         } catch (processingError) {
-    await Analysis.findByIdAndUpdate(analysisId, {
-        status: 'error',
-        errorMessage: processingError.message || 'Processing failed',
-    });
-    throw processingError;
-}
+            await Analysis.findByIdAndUpdate(analysisId, {
+                status: 'error',
+                errorMessage: processingError.message || 'Processing failed',
+            });
+            
+            // Send error email notification
+            if (userEmail) {
+                await sendNotificationEmail(userEmail, userName, analysis.originalName, 'error', processingError.message);
+            }
+            
+            throw processingError;
+        }
     },
     {
         connection: redisConnection,

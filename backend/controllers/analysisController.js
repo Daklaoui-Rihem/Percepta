@@ -87,7 +87,7 @@ exports.uploadAudio = async (req, res) => {
 
         const analysis = await Analysis.create({
             userId: req.user.id,
-            tenantId: req.user.tenantId || null,
+            tenantId: req.user.tenantId || (req.user.role === 'Admin' ? req.user.id : null),
             originalName: req.file.originalname,
             filename: req.file.filename,
             mimetype: req.file.mimetype,
@@ -124,7 +124,7 @@ exports.uploadVideo = async (req, res) => {
 
         const analysis = await Analysis.create({
             userId: req.user.id,
-            tenantId: req.user.tenantId || null,
+            tenantId: req.user.tenantId || (req.user.role === 'Admin' ? req.user.id : null),
             originalName: req.file.originalname,
             filename: req.file.filename,
             mimetype: req.file.mimetype,
@@ -160,7 +160,7 @@ exports.uploadGroupActivity = async (req, res) => {
 
         const analysis = await Analysis.create({
             userId: req.user.id,
-            tenantId: req.user.tenantId || null,
+            tenantId: req.user.tenantId || (req.user.role === 'Admin' ? req.user.id : null),
             originalName: req.file.originalname,
             filename: req.file.filename,
             mimetype: req.file.mimetype,
@@ -417,7 +417,12 @@ exports.getAllAnalyses = async (req, res) => {
     try {
         let filter = {};
         if (req.user.role === 'Admin') {
-            filter = { tenantId: req.user.id };
+            filter = {
+                $or: [
+                    { tenantId: req.user.id },
+                    { userId: req.user.id }
+                ]
+            };
         }
 
         const analyses = await Analysis.find(filter)
@@ -438,7 +443,11 @@ exports.getUserAnalyses = async (req, res) => {
         let filter = { userId };
 
         if (req.user.role === 'Admin') {
-            filter.tenantId = req.user.id;
+            // Admins can see their own analyses (which might have tenantId null in old records)
+            // or their clients' analyses (which have tenantId = admin.id)
+            if (String(userId) !== String(req.user.id)) {
+                filter.tenantId = req.user.id;
+            }
         }
 
         const analyses = await Analysis.find(filter)
