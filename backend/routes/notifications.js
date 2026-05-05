@@ -19,10 +19,10 @@ router.get('/stream', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Prevents proxy buffering
     res.flushHeaders();
 
     const clientId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    // In a real app with auth middleware, you could save req.user.id to filter events
     const client = { id: clientId, res };
     clients.push(client);
 
@@ -31,9 +31,15 @@ router.get('/stream', (req, res) => {
     // Send initial ping to confirm connection
     res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'SSE stream established' })}\n\n`);
 
+    // Keep-alive ping every 30 seconds to prevent timeout
+    const keepAlive = setInterval(() => {
+        res.write(':ping\n\n'); // SSE comment (ignored by client)
+    }, 30000);
+
     // Clean up on client disconnect
     req.on('close', () => {
         console.log(`[Notifications] Client disconnected: ${clientId}`);
+        clearInterval(keepAlive);
         clients = clients.filter(c => c.id !== clientId);
     });
 });
@@ -43,8 +49,12 @@ router.get('/stream', (req, res) => {
  */
 function broadcast(data) {
     clients.forEach(client => {
-        // SSE format: data: {json}\n\n
-        client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+        try {
+            // SSE format: data: {json}\n\n
+            client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+        } catch (err) {
+            console.error(`[Notifications] Failed to send to client ${client.id}:`, err.message);
+        }
     });
 }
 

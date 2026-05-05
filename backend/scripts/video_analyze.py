@@ -1,450 +1,405 @@
 #!/usr/bin/env python3
 """
-video_analyze.py — Violence / Anomaly Detection + YOLO Person Counting
-=======================================================================
-Loads your fine-tuned binary R3D-18 model (Normal vs Violence/Anomaly).
-Falls back to Kinetics pretrained weights if no checkpoint is found.
+video_analyze.py  –  CCTV incident detection for Percepta
+Called by videoProcessor.js:
+    python video_analyze.py <video_file> <output_dir>
+
+WHY THIS APPROACH:
+  Fixed thresholds fail because normal videos vary wildly in activity level.
+  A birthday party, a crowded street, and an empty room all have different
+  "normal" motion. Using a fixed number means either missing real incidents
+  (too high) or flooding normal videos with false positives (too low).
+
+  The correct method is SPIKE DETECTION: compare the current frame's motion
+  to the rolling median of the past 30 seconds in that same video.
+  An incident is when motion suddenly jumps 4x above what's been normal SO FAR.
+
+  This means:
+  - Busy street with constant traffic → high baseline → only flags sudden jumps
+  - Quiet empty room → low baseline → even small sudden movement gets flagged
+  - Works correctly for both without any manual tuning per video
+
+DETECTION LAYERS:
+  Layer 1 — MOG2 + spike ratio
+    Background subtraction. Flags when foreground coverage suddenly jumps
+    4x above the rolling 30-second median. Pre-warmed for 5s before flagging.
+
+  Layer 2 — Optical flow + spike ratio
+    Dense optical flow. Flags when average pixel velocity suddenly spikes.
+    Catches fast violence, running, sudden falls.
+
+  Layer 3 — Brightness spike
+    Flags sudden brightness jumps (explosions, arc flash, fire flash).
+    Compared against rolling 5-second mean.
+
+  Layer 4 — YOLO (optional, needs ultralytics)
+    Object detection for known dangerous objects: knives, bats, fire.
+    Falls back silently if not installed.
+
+FALSE POSITIVE PREVENTION:
+  - 5-second MOG2 warmup: no flagging during background model learning
+  - Spike ratio (not absolute value): adapts to each video's activity level
+  - Absolute minimum floor: ignores tiny noise blips
+  - Requires 2 consecutive triggered frames (eliminates single-frame glitches)
+  - 6-second dedup window per incident type
+
+FRAME SAVING:
+  - Every incident frame saved (no cap)
+  - 1 periodic context frame per 10 seconds (no hard cap)
+
+pip install opencv-python-headless           (required)
+pip install ultralytics                      (optional, adds weapon detection)
 """
 
-import sys
-import json
-import os
-import cv2
-import numpy as np
-from pathlib import Path
+import sys, json, os, cv2, numpy as np
 
-# Binary classes produced by train_anomaly.py
-CATEGORIES_BINARY = ["Normal", "Violence"]
+INCIDENT_CLASSES = {
+    "knife": "assault", "scissors": "assault", "baseball bat": "assault",
+    "fire":  "fire",
+}
+PERSON_CLASS = "person"
 
 SEVERITY_MAP = {
-    "Normal":   "low",
-    "Violence": "high",
-    "Anomaly":  "high",
+    "assault": "critical", "fire": "high",
+    "explosion": "critical", "motion_anomaly": "high",
+    "crowd": "medium", "fall": "high",
 }
 
-# ── Config ──────────────────────────────────────────────────────
-CLIP_LEN             = 16
-CLIP_STEP            = 8
-FRAME_SIZE           = 112
+WARMUP_SECONDS   = 5      # pre-warm MOG2 — no flagging during this period
+SPIKE_RATIO      = 4.0    # current must be this many times the rolling median
+FLOW_SPIKE_RATIO = 4.0    # same for optical flow
+FG_FLOOR         = 0.020  # absolute minimum fg coverage to flag (2.0% of frame)
+FLOW_FLOOR       = 2.0    # absolute minimum flow magnitude to flag
+BRIGHTNESS_JUMP  = 1.40   # brightness must jump 40% above rolling 5s mean
+BRIGHTNESS_FLOOR = 145    # absolute minimum brightness to flag
+ROLLING_WINDOW_S = 30     # seconds for rolling median
+CONSEC_REQUIRED  = 2      # consecutive triggered frames before flagging incident
+DEDUP_SEC        = 6      # suppress same-type incidents within this window
+PERIODIC_S       = 10     # save one context keyframe every N seconds
 
-CONFIDENCE_TH        = 0.80    # Minimum confidence to flag as violence
-NORMAL_TH            = 0.35    # If normal score >= this AND tops, skip
-ANOMALY_MARGIN       = 0.40    # Violence score must beat normal by this margin
+# Scene cut / camera switch detection
+# If whole-frame mean absolute diff exceeds this many std-devs above its own rolling mean,
+# it's a cut. MOG2 is reset and flagging suppressed for WARMUP_SECONDS.
+SCENE_CUT_STDDEV = 4.0    # how many std-devs above rolling mean = cut
+SCENE_CUT_FLOOR  = 20.0   # absolute minimum diff to call a cut (ignore tiny lighting shifts)
 
-MIN_INCIDENT_GAP_SEC = 4.0
-MAX_KEYFRAMES        = 20
-YOLO_PERSON_CONF     = 0.35
-YOLO_SAMPLE_INTERVAL = 30
-
-# Paths where the training script saves the checkpoint
-MODEL_SEARCH_PATHS = [
-    "./models/anomaly_classifier.pth",
-    "./backend/models/anomaly_classifier.pth",
-    "../models/anomaly_classifier.pth",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "anomaly_classifier.pth"),
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "models", "anomaly_classifier.pth"),
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend", "models", "anomaly_classifier.pth"),
-]
+# Minimum rolling median before flagging motion anomalies.
+# Prevents flagging the first person who enters a previously empty scene
+# (the median would be near-zero, making any movement look like a huge spike).
+MIN_MEDIAN_TO_FLAG = 0.004  # at least 0.4% average fg before we trust spike ratios
 
 
 def main():
     if len(sys.argv) < 3:
         _fail("Usage: video_analyze.py <video_file> <output_dir>")
 
-    video_path = sys.argv[1]
-    output_dir = sys.argv[2]
-
+    video_path, output_dir = sys.argv[1], sys.argv[2]
     if not os.path.isfile(video_path):
-        _fail(f"Video file not found: {video_path}")
-
+        _fail(f"File not found: {video_path}")
     os.makedirs(output_dir, exist_ok=True)
-
-    model, device, categories, mode = load_model()
-    print(f"[CrimeDetector] Mode: {mode} | Classes: {categories}", file=sys.stderr)
-
-    yolo_model = load_yolo_model()
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        _fail(f"Cannot open video: {video_path}")
-
+        _fail(f"Cannot open: {video_path}")
     fps          = cap.get(cv2.CAP_PROP_FPS) or 25.0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration     = total_frames / fps if fps > 0 else 0
+    duration     = total_frames / fps
     width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height       = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
 
-    people_counts = []
-    if yolo_model is not None:
-        print(f"[YOLO] Counting people across video ({total_frames} frames)...", file=sys.stderr)
-        people_counts = count_people_in_video(video_path, yolo_model, total_frames, YOLO_SAMPLE_INTERVAL)
-        avg_people = round(sum(people_counts) / max(len(people_counts), 1), 1)
-        max_people = max(people_counts) if people_counts else 0
-        print(f"[YOLO] Avg people: {avg_people}, Max: {max_people}, Samples: {len(people_counts)}", file=sys.stderr)
-    else:
-        avg_people = 0
-        max_people = 0
+    try:
+        from ultralytics import YOLO
+        yolo = YOLO("yolov8n.pt")
+        model_label = "MOG2-spike + optical-flow-spike + brightness + yolov8n"
+    except Exception:
+        yolo = None
+        model_label = "MOG2-spike + optical-flow-spike + brightness (no YOLO)"
 
-    all_frames = read_all_frames(video_path, FRAME_SIZE)
-    n_frames   = len(all_frames)
-
-    clip_results = []
-    i = 0
-    while i + CLIP_LEN <= n_frames:
-        clip   = all_frames[i: i + CLIP_LEN]
-        scores = classify_clip(clip, model, device, categories)
-        clip_results.append((i, scores))
-        i += CLIP_STEP
-
-    if n_frames > 0 and (len(clip_results) == 0 or clip_results[-1][0] + CLIP_LEN < n_frames):
-        tail = all_frames[-CLIP_LEN:] if n_frames >= CLIP_LEN else all_frames
-        while len(tail) < CLIP_LEN:
-            tail.append(tail[-1])
-        start_f = max(0, n_frames - CLIP_LEN)
-        scores  = classify_clip(tail, model, device, categories)
-        clip_results.append((start_f, scores))
-
-    incidents  = []
-    keyframes  = []
-    last_incident_ts = -9999
-
-    kf_interval_frames = max(1, int(fps * 10))
-    saved_kf_indices   = set()
-    fi = 0
-    kf_count = 0
-    while fi < n_frames and kf_count < MAX_KEYFRAMES:
-        saved_kf_indices.add(fi)
-        fi += kf_interval_frames
-        kf_count += 1
-
-    for (start_f, scores) in clip_results:
-        mid_f  = min(start_f + CLIP_LEN // 2, n_frames - 1)
-        ts     = mid_f / fps
-
-        normal_score   = scores.get("Normal",   scores.get("normal",   0.0))
-        # Support both "Violence" and "Anomaly" key names
-        violence_score = scores.get("Violence", scores.get("Anomaly",  0.0))
-        top_cat        = max(scores, key=scores.get)
-        top_score      = scores[top_cat]
-
-        # Skip if classified as Normal with high confidence
-        if top_cat == "Normal" or normal_score >= NORMAL_TH:
-            continue
-
-        # Skip if violence confidence is too low
-        if violence_score < CONFIDENCE_TH:
-            continue
-
-        # Skip if margin over normal is too small
-        if violence_score - normal_score < ANOMALY_MARGIN:
-            print(f"[Filter] Skipping Violence ({violence_score:.2f}) — margin too small vs Normal ({normal_score:.2f})", file=sys.stderr)
-            continue
-
-        # Enforce minimum gap between incidents
-        if ts - last_incident_ts < MIN_INCIDENT_GAP_SEC:
-            continue
-
-        last_incident_ts = ts
-        cat      = "Violence"
-        score    = violence_score
-        severity = SEVERITY_MAP.get(cat, "high")
-
-        kf_filename = f"frame_{mid_f:06d}.jpg"
-        kf_abs_path = os.path.join(output_dir, kf_filename)
-
-        if mid_f not in saved_kf_indices:
-            saved_kf_indices.add(mid_f)
-
-        raw = read_frame_at(video_path, mid_f)
-        if raw is not None:
-            cv2.imwrite(kf_abs_path, raw)
-
-        frame_people_count = 0
-        if yolo_model is not None and raw is not None:
-            frame_people_count = detect_people_in_frame(yolo_model, raw)
-
-        keyframes.append({
-            "frame_index":   mid_f,
-            "timestamp":     round(ts, 2),
-            "timestamp_str": seconds_to_hms(ts),
-            "filename":      kf_filename,
-            "path":          kf_abs_path,
-            "is_incident":   True,
-            "people_count":  frame_people_count,
-            "detections":    [],
-            "category":      cat,
-            "confidence":    round(score, 3),
-        })
-
-        incidents.append({
-            "type":          cat,
-            "severity":      severity,
-            "timestamp":     round(ts, 2),
-            "timestamp_str": seconds_to_hms(ts),
-            "frame_index":   mid_f,
-            "frame_file":    kf_filename,
-            "path":          kf_abs_path,
-            "confidence":    round(score, 3),
-            "details":       f"{cat} detected with {round(score * 100, 1)}% confidence",
-            "detections":    [],
-            "people_count":  frame_people_count,
-        })
-
-    incident_frame_indices = {kf["frame_index"] for kf in keyframes}
-
-    for fi in sorted(saved_kf_indices):
-        if fi in incident_frame_indices:
-            continue
-        kf_filename = f"frame_{fi:06d}.jpg"
-        kf_abs_path = os.path.join(output_dir, kf_filename)
-        raw = read_frame_at(video_path, fi)
-        if raw is not None:
-            cv2.imwrite(kf_abs_path, raw)
-
-        frame_people_count = 0
-        if yolo_model is not None and raw is not None:
-            frame_people_count = detect_people_in_frame(yolo_model, raw)
-
-        keyframes.append({
-            "frame_index":   fi,
-            "timestamp":     round(fi / fps, 2),
-            "timestamp_str": seconds_to_hms(fi / fps),
-            "filename":      kf_filename,
-            "path":          kf_abs_path,
-            "is_incident":   False,
-            "people_count":  frame_people_count,
-            "detections":    [],
-        })
-
-    keyframes.sort(key=lambda x: x["timestamp"])
-    incidents.sort(key=lambda x: x["timestamp"])
-
-    violence_detected = len(incidents) > 0
-    danger_level      = compute_danger_level(incidents)
-    summary           = build_summary(incidents, keyframes, duration, violence_detected, danger_level, avg_people)
-
-    result = {
-        "incidents":         incidents,
-        "keyframes":         keyframes,
-        "summary":           summary,
-        "incident_count":    len(incidents),
-        "keyframe_count":    len(keyframes),
-        "duration":          round(duration, 2),
-        "fps":               round(fps, 2),
-        "total_frames":      total_frames,
-        "resolution":        f"{width}x{height}",
-        "avg_people":        avg_people,
-        "max_people":        max_people,
-        "violence_detected": violence_detected,
-        "danger_level":      danger_level,
-        "detection_model":   f"R3D-18 Fine-tuned Binary ({mode})",
-        "mode":              mode,
-    }
-
+    result = _analyze(video_path, output_dir, fps, duration, yolo)
+    result.update({
+        "duration": round(duration, 2), "fps": round(fps, 2),
+        "total_frames": total_frames, "resolution": f"{width}x{height}",
+        "detection_model": model_label,
+    })
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0)
 
 
-# ── YOLO ─────────────────────────────────────────────────────────
+def _analyze(video_path, output_dir, fps, duration, yolo):
+    kernel        = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    warmup_frames = int(fps * WARMUP_SECONDS)
+    rolling_n     = int(fps * ROLLING_WINDOW_S)
 
-def load_yolo_model():
-    try:
-        from ultralytics import YOLO
-        script_dir  = os.path.dirname(os.path.abspath(__file__))
-        backend_dir = os.path.join(script_dir, "..")
-        for p in [
-            os.path.join(backend_dir, "yolov8n.pt"),
-            os.path.join(script_dir, "yolov8n.pt"),
-            "yolov8n.pt",
-        ]:
-            if os.path.isfile(p):
-                yolo = YOLO(p)
-                print(f"[YOLO] Loaded model from: {p}", file=sys.stderr)
-                return yolo
-        yolo = YOLO("yolov8n.pt")
-        print("[YOLO] Auto-downloaded yolov8n.pt", file=sys.stderr)
-        return yolo
-    except ImportError:
-        print("[YOLO] WARNING: ultralytics not installed.", file=sys.stderr)
-        return None
-    except Exception as e:
-        print(f"[YOLO] WARNING: {e}", file=sys.stderr)
-        return None
+    # MOG2 with high history — needs to see enough background before it's reliable
+    mog2 = cv2.createBackgroundSubtractorMOG2(
+        history=500, varThreshold=60, detectShadows=True
+    )
 
+    cap = cv2.VideoCapture(video_path)
 
-def detect_people_in_frame(yolo_model, frame_bgr):
-    try:
-        results = yolo_model(frame_bgr, verbose=False, conf=YOLO_PERSON_CONF)
-        return sum(1 for r in results for box in r.boxes if int(box.cls[0]) == 0)
-    except Exception:
-        return 0
-
-
-def count_people_in_video(video_path, yolo_model, total_frames, sample_interval):
-    counts    = []
-    cap       = cv2.VideoCapture(video_path)
-    frame_idx = 0
-    while frame_idx < total_frames:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+    # ── Pre-warmup: feed first 5 seconds with fast learning, don't flag ────
+    for _ in range(warmup_frames):
         ret, frame = cap.read()
         if not ret:
             break
-        counts.append(detect_people_in_frame(yolo_model, frame))
-        frame_idx += sample_interval
-    cap.release()
-    return counts
+        mog2.apply(frame, learningRate=0.05)
 
+    incidents         = []
+    keyframes         = []
+    person_counts     = []
+    fg_rolling        = []        # rolling window of fg ratios
+    flow_rolling      = []        # rolling window of flow magnitudes
+    brightness_hist   = []        # full history for brightness spike
+    frame_diff_hist   = []        # rolling window of whole-frame diffs for cut detection
 
-# ── Danger level ──────────────────────────────────────────────────
+    prev_gray         = None
+    prev_small        = None      # downsampled previous frame for cut detection
+    consec_mog2       = 0         # consecutive frames with MOG2 spike
+    consec_flow       = 0         # consecutive frames with flow spike
+    frame_idx         = warmup_frames
+    last_periodic_ts  = -PERIODIC_S
+    cut_suppress_until = 0.0      # suppress flagging until this timestamp after a cut
 
-def compute_danger_level(incidents):
-    if not incidents:
-        return "safe"
-    severities = [i["severity"] for i in incidents]
-    if "critical" in severities:
-        return "critical"
-    elif "high" in severities:
-        return "critical" if severities.count("high") >= 3 else "high"
-    elif "medium" in severities:
-        return "high" if severities.count("medium") >= 3 else "medium"
-    return "low"
-
-
-# ── Model loading ─────────────────────────────────────────────────
-
-def load_model():
-    import torch
-    import torch.nn as nn
-    from torchvision.models.video import r3d_18, R3D_18_Weights
-
-    device     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    categories = CATEGORIES_BINARY   # ["Normal", "Violence"]
-    num_classes = len(categories)
-
-    # Build model architecture (matches train_anomaly.py)
-    model = r3d_18(weights=R3D_18_Weights.DEFAULT)
-    in_features = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Dropout(p=0.5),
-        nn.Linear(in_features, 256),
-        nn.ReLU(),
-        nn.Dropout(p=0.3),
-        nn.Linear(256, num_classes),
-    )
-
-    # Try to load fine-tuned checkpoint
-    ckpt_path = None
-    for p in MODEL_SEARCH_PATHS:
-        if os.path.isfile(p):
-            ckpt_path = p
-            break
-
-    if ckpt_path:
-        try:
-            state = torch.load(ckpt_path, map_location=device)
-            model.load_state_dict(state)
-            mode = f"Fine-tuned Binary (from {ckpt_path})"
-            print(f"[CrimeDetector] ✅ Loaded fine-tuned weights: {ckpt_path}", file=sys.stderr)
-        except Exception as e:
-            mode = "Kinetics Pretrained (checkpoint load failed)"
-            print(f"[CrimeDetector] WARNING: Could not load checkpoint ({e}). "
-                  f"Using pretrained weights.", file=sys.stderr)
-    else:
-        mode = "Kinetics Pretrained (no fine-tuned checkpoint found)"
-        print("[CrimeDetector] WARNING: No fine-tuned checkpoint found. "
-              "Run train_anomaly.py first for best results.", file=sys.stderr)
-        print(f"[CrimeDetector] Searched: {MODEL_SEARCH_PATHS}", file=sys.stderr)
-
-    model = model.to(device)
-    model.eval()
-    return model, device, categories, mode
-
-
-# ── Inference ────────────────────────────────────────────────────
-
-def classify_clip(frames_bgr, model, device, categories):
-    import torch
-    import torch.nn.functional as F
-
-    tensor = preprocess_clip(frames_bgr).to(device)
-    with torch.no_grad():
-        logits = model(tensor)
-    probs = F.softmax(logits, dim=1)[0].cpu().numpy()
-    return {cat: float(probs[i]) for i, cat in enumerate(categories)}
-
-
-def preprocess_clip(frames_bgr):
-    import torch
-    clips = []
-    for frame in frames_bgr:
-        frame_rgb     = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_resized = cv2.resize(frame_rgb, (FRAME_SIZE, FRAME_SIZE))
-        clips.append(frame_resized)
-    arr  = np.stack(clips, axis=0).astype(np.float32) / 255.0
-    mean = np.array([0.43216, 0.394666, 0.37645], dtype=np.float32)
-    std  = np.array([0.22803, 0.22145,  0.216989], dtype=np.float32)
-    arr  = (arr - mean) / std
-    return torch.from_numpy(arr).permute(3, 0, 1, 2).unsqueeze(0)
-
-
-# ── Frame I/O ─────────────────────────────────────────────────────
-
-def read_all_frames(video_path, target_size):
-    cap    = cv2.VideoCapture(video_path)
-    frames = []
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-        frames.append(cv2.resize(frame, (target_size, target_size)))
+
+        ts   = frame_idx / fps
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # ── Scene cut detection (camera switch / hard edit) ─────────────
+        # Downsample for speed. If whole-frame diff is huge, it's a cut not motion.
+        small = cv2.resize(gray, (80, 60)).astype(np.float32)
+        is_cut = False
+        if prev_small is not None:
+            frame_diff = float(np.mean(np.abs(small - prev_small)))
+            frame_diff_hist.append(frame_diff)
+            if len(frame_diff_hist) > int(fps * 10):
+                frame_diff_hist.pop(0)
+            if len(frame_diff_hist) >= 10:
+                fd_mean = float(np.mean(frame_diff_hist[:-1]))
+                fd_std  = float(np.std(frame_diff_hist[:-1]))
+                if (frame_diff > fd_mean + SCENE_CUT_STDDEV * fd_std and
+                        frame_diff > SCENE_CUT_FLOOR):
+                    is_cut = True
+                    # Reset MOG2 so it learns the new background
+                    mog2 = cv2.createBackgroundSubtractorMOG2(
+                        history=500, varThreshold=60, detectShadows=True
+                    )
+                    fg_rolling.clear()
+                    flow_rolling.clear()
+                    consec_mog2 = 0
+                    consec_flow = 0
+                    cut_suppress_until = ts + WARMUP_SECONDS
+        prev_small = small
+
+        # ── Layer 1: MOG2 spike detection ───────────────────────────────
+        fg_mask  = mog2.apply(frame)
+        fg_bin   = cv2.threshold(fg_mask, 200, 255, cv2.THRESH_BINARY)[1]
+        fg_clean = cv2.morphologyEx(fg_bin, cv2.MORPH_OPEN,  kernel)
+        fg_clean = cv2.morphologyEx(fg_clean, cv2.MORPH_CLOSE, kernel)
+        fg_ratio = float(np.sum(fg_clean > 0)) / fg_clean.size
+
+        contours, _ = cv2.findContours(fg_clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        large_blobs = [c for c in contours if cv2.contourArea(c) > 500]
+
+        # Motion anomaly: adaptive spike ratio + minimum median guard + cut suppression
+        fg_rolling.append(fg_ratio)
+        if len(fg_rolling) > rolling_n:
+            fg_rolling.pop(0)
+        fg_median   = float(np.median(fg_rolling)) if fg_rolling else fg_ratio
+        fg_spike    = fg_ratio / max(fg_median, 0.001)
+        in_suppress = ts < cut_suppress_until
+        mog2_raw    = (fg_spike >= SPIKE_RATIO
+                       and fg_ratio >= FG_FLOOR
+                       and fg_median >= MIN_MEDIAN_TO_FLAG
+                       and not in_suppress)
+
+        if mog2_raw:
+            consec_mog2 += 1
+        else:
+            consec_mog2 = 0
+        mog2_incident = "motion_anomaly" if consec_mog2 >= CONSEC_REQUIRED else None
+
+        # ── Layer 2: Optical flow spike detection ───────────────────────
+        flow_magnitude = 0.0
+        flow_incident  = None
+
+        if prev_gray is not None:
+            flow      = cv2.calcOpticalFlowFarneback(
+                prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
+            )
+            mag, _    = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+            flow_magnitude = float(np.mean(mag))
+
+            flow_rolling.append(flow_magnitude)
+            if len(flow_rolling) > rolling_n:
+                flow_rolling.pop(0)
+            flow_median  = float(np.median(flow_rolling)) if flow_rolling else flow_magnitude
+            flow_spike_r = flow_magnitude / max(flow_median, 0.1)
+            flow_raw     = (flow_spike_r >= FLOW_SPIKE_RATIO
+                            and flow_magnitude >= FLOW_FLOOR
+                            and not in_suppress)
+
+            if flow_raw:
+                consec_flow += 1
+            else:
+                consec_flow = 0
+            if consec_flow >= CONSEC_REQUIRED:
+                flow_incident = "motion_anomaly"
+
+        prev_gray = gray
+
+        # ── Layer 3: Brightness spike ────────────────────────────────────
+        brightness          = float(np.mean(gray))
+        brightness_incident = None
+        brightness_hist.append(brightness)
+
+        if len(brightness_hist) > int(fps * 2):   # wait 2s before flagging
+            window       = brightness_hist[-max(1, int(fps * 5)):]
+            recent_mean  = float(np.mean(window[:-1])) if len(window) > 1 else brightness
+            if brightness > recent_mean * BRIGHTNESS_JUMP and brightness > BRIGHTNESS_FLOOR:
+                brightness_incident = "explosion"
+
+        # ── Layer 4: YOLO ────────────────────────────────────────────────
+        yolo_detections = []
+        yolo_incident   = None
+        person_count    = 0
+
+        if yolo is not None:
+            for r in yolo(frame, verbose=False, conf=0.35):
+                for box in r.boxes:
+                    cls  = yolo.names[int(box.cls[0])]
+                    conf = float(box.conf[0])
+                    x1, y1, x2, y2 = [int(v) for v in box.xyxy[0]]
+                    if cls == PERSON_CLASS:
+                        person_count += 1
+                    inc = INCIDENT_CLASSES.get(cls)
+                    if inc:
+                        yolo_incident = inc
+                    yolo_detections.append({
+                        "class": cls, "confidence": round(conf, 3),
+                        "bbox": [x1, y1, x2, y2],
+                    })
+        person_counts.append(person_count)
+
+        # ── Combine layers (priority order) ─────────────────────────────
+        incident_type = (
+            brightness_incident
+            or yolo_incident
+            or mog2_incident
+            or flow_incident
+        )
+        is_incident = incident_type is not None
+
+        # ── Save keyframe ────────────────────────────────────────────────
+        save_periodic = (ts - last_periodic_ts) >= PERIODIC_S
+
+        if is_incident or save_periodic:
+            fname      = f"frame_{frame_idx:06d}.jpg"
+            fpath      = os.path.join(output_dir, fname)
+            annotated  = frame.copy()
+
+            for c in large_blobs:
+                bx, by, bw, bh = cv2.boundingRect(c)
+                cv2.rectangle(annotated, (bx, by), (bx+bw, by+bh), (0, 140, 255), 1)
+
+            for det in yolo_detections:
+                x1, y1, x2, y2 = det["bbox"]
+                color = (0, 0, 220) if INCIDENT_CLASSES.get(det["class"]) else (0, 200, 60)
+                cv2.rectangle(annotated, (x1,y1), (x2,y2), color, 2)
+                cv2.putText(annotated, f"{det['class']} {det['confidence']:.2f}",
+                            (x1, max(y1-6, 14)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+
+            oy = 22
+            if brightness_incident:
+                cv2.putText(annotated, f"FLASH/EXPLOSION  b={brightness:.0f}",
+                            (6,oy), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,255), 2); oy += 24
+            if mog2_incident:
+                cv2.putText(annotated, f"MOG2 SPIKE  {fg_spike:.1f}x  fg={fg_ratio:.2%}",
+                            (6,oy), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,80,0), 2); oy += 24
+            if flow_incident:
+                cv2.putText(annotated, f"FLOW SPIKE  mag={flow_magnitude:.2f}",
+                            (6,oy), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,0,200), 2)
+
+            cv2.imwrite(fpath, annotated)
+
+            if not is_incident:
+                last_periodic_ts = ts
+
+            keyframes.append({
+                "frame_index": frame_idx, "timestamp": round(ts, 2),
+                "timestamp_str": _hms(ts), "path": fpath, "filename": fname,
+                "detections": yolo_detections, "is_incident": is_incident,
+                "people_count": person_count,
+                "fg_ratio": round(fg_ratio, 4), "fg_spike": round(fg_spike, 2),
+                "flow_mag": round(flow_magnitude, 3),
+            })
+
+        # ── Register incident (dedup) ────────────────────────────────────
+        if is_incident:
+            same   = [i for i in incidents if i["type"] == incident_type]
+            last_t = same[-1]["timestamp"] if same else -999
+            if ts - last_t > DEDUP_SEC:
+                details = []
+                if brightness_incident: details.append(f"brightness {brightness:.0f}")
+                if mog2_incident:       details.append(f"fg spike {fg_spike:.1f}x ({fg_ratio:.1%})")
+                if flow_incident:       details.append(f"flow {flow_magnitude:.2f}")
+                incidents.append({
+                    "type": incident_type, "severity": SEVERITY_MAP.get(incident_type, "medium"),
+                    "timestamp": round(ts, 2), "timestamp_str": _hms(ts),
+                    "frame_index": frame_idx, "frame_file": f"frame_{frame_idx:06d}.jpg",
+                    "detections": yolo_detections, "details": ", ".join(details),
+                })
+
+        frame_idx += 1
+
     cap.release()
-    return frames
+
+    # ── Crowd detection ──────────────────────────────────────────────────
+    avg_people = 0.0
+    if person_counts:
+        avg_people = sum(person_counts) / len(person_counts)
+        max_people = max(person_counts)
+        if max_people >= 8 and not any(i["type"] == "crowd" for i in incidents):
+            incidents.insert(0, {
+                "type": "crowd", "severity": "medium",
+                "timestamp": 0.0, "timestamp_str": "00:00:00",
+                "frame_index": 0, "frame_file": "", "detections": [],
+                "details": f"max {max_people} people, avg {avg_people:.1f}",
+            })
+
+    return {
+        "incidents": incidents, "keyframes": keyframes,
+        "summary": _summary(incidents, keyframes, duration),
+        "incident_count": len(incidents), "keyframe_count": len(keyframes),
+        "avg_people": round(avg_people, 1),
+    }
 
 
-def read_frame_at(video_path, frame_index):
-    cap = cv2.VideoCapture(video_path)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
-    ret, frame = cap.read()
-    cap.release()
-    return frame if ret else None
-
-
-# ── Helpers ───────────────────────────────────────────────────────
-
-def build_summary(incidents, keyframes, duration, violence_detected, danger_level, avg_people):
-    parts = []
-    if violence_detected:
-        parts.append(f"VIOLENCE DETECTED — Danger Level: {danger_level.upper()}")
-        parts.append(f"{len(incidents)} incident(s) detected in {seconds_to_hms(duration)} video")
-        critical = [i for i in incidents if i["severity"] == "critical"]
-        high     = [i for i in incidents if i["severity"] == "high"]
-        if critical: parts.append(f"{len(critical)} critical")
-        if high:     parts.append(f"{len(high)} high severity")
-    else:
-        parts.append("NO VIOLENCE DETECTED — Video is safe")
-        parts.append(f"Video duration: {seconds_to_hms(duration)}")
-    if avg_people > 0:
-        parts.append(f"Average {avg_people} people detected")
+def _summary(incidents, keyframes, duration):
+    if not incidents:
+        return f"No incidents detected in {_hms(duration)} video. {len(keyframes)} keyframes extracted."
+    types    = list({i["type"] for i in incidents})
+    critical = sum(1 for i in incidents if i["severity"] == "critical")
+    parts    = [f"{len(incidents)} incident(s) detected"]
+    if critical: parts.append(f"{critical} critical")
+    parts.append(f"types: {', '.join(types)}")
     parts.append(f"{len(keyframes)} keyframes saved")
     return ". ".join(parts) + "."
 
 
-def seconds_to_hms(s):
-    h   = int(s // 3600)
-    m   = int((s % 3600) // 60)
-    sec = int(s % 60)
-    return f"{h:02d}:{m:02d}:{sec:02d}"
+def _hms(s):
+    s = int(s)
+    return f"{s//3600:02d}:{(s%3600)//60:02d}:{s%60:02d}"
 
 
 def _fail(msg):
-    print(json.dumps({"error": msg}, ensure_ascii=False))
+    print(json.dumps({"error": msg}))
     sys.exit(1)
 
 
 if __name__ == "__main__":
     main()
-
-
-
-

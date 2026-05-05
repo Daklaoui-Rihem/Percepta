@@ -44,7 +44,7 @@ async function addAnalysisJob(analysisId, type, filePath) {
         `${type}-analysis`,    // Job name (appears in Bull Board UI)
         { analysisId, type, filePath },
         {
-            priority: type === 'audio' ? 1 : 2, // Audio jobs get slightly higher priority
+            priority: type === 'video' ? 1 : 2, // Video jobs now get higher priority to jump the line
         }
     );
 
@@ -62,7 +62,7 @@ async function addAnalysisJobWithOptions(analysisId, type, filePath, extras = {}
             ...extras,    // ← spreads translateTo etc. into job data
         },
         {
-            priority: type === 'audio' ? 1 : 2,
+            priority: type === 'video' ? 1 : 2,
         }
     );
 
