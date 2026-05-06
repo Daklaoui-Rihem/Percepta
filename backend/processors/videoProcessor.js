@@ -37,7 +37,9 @@ async function processVideo({ analysisId, filePath, job, userId, userName, userE
 
     let videoResult;
     try {
-        videoResult = JSON.parse(raw);
+        const lines = raw.trim().split('\n');
+        const lastLine = lines[lines.length - 1].trim();
+        videoResult = JSON.parse(lastLine);
     } catch (_) {
         throw new Error(`video_analyze.py returned non-JSON: ${raw.substring(0, 300)}`);
     }

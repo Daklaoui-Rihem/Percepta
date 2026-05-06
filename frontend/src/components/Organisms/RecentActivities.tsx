@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Clock } from 'lucide-react';
+import {  Clock, AlertOctagon, AlertTriangle, Activity, ShieldCheck  } from 'lucide-react';
+import type { ExtractedEntities } from '../../services/api';
 import ActivityTypeBadge from '../Molecules/ActivityTypeBadge';
 import { useTranslation } from '../../context/TranslationContext';
 import type { AnalysisRecord } from '../../services/api';
@@ -73,8 +74,44 @@ export default function RecentActivities({ activities }: RecentActivitiesProps) 
                   {getActionLabel(a)}
                 </td>
                 <td style={{ padding: '16px' }}>
-                  <ActivityTypeBadge type={getBadgeType(a) as any} />
-                </td>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <ActivityTypeBadge type={getBadgeType(a) as any} />
+        {a.type === 'audio' && a.status === 'done' && (a as any).extractedEntities?.severity && (() => {
+            const sev = (a as any).extractedEntities.severity as string;
+            const iconMap: Record<string, React.ReactNode> = {
+              critical: <AlertTriangle size={12} />,
+              meduim : <Activity size={12} />,
+              low:      <ShieldCheck size={12} />,
+            };
+            const cfg: Record<string, { bg: string; color: string; border: string }> = {
+              critical: { bg: '#fff1f2', color: '#dc2626', border: '#fecaca' },
+               high:     { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' },
+               medium:   { bg: '#fefce8', color: '#ca8a04', border: '#fde68a' },
+               low:      { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
+            };
+            const s = cfg[sev];
+            if (!s) return null;
+            return (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: s.bg, color: s.color,
+              border: `1px solid ${s.border}`,
+              padding: '3px 8px', borderRadius: 20,
+              fontSize: 11, fontWeight: 700,
+    }}>
+        {iconMap[sev]} {sev.toUpperCase()}
+    </span>
+);
+
+          
+
+
+
+              
+
+        })()}
+    </div>
+</td>
               </tr>
             ))
           )}

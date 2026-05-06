@@ -17,9 +17,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
     FileAudio, Download, Trash2, RefreshCw, Search,
-    ChevronDown, ChevronUp, FileText, Clock, CheckCircle,
+    ChevronDown, ChevronUp, Clock, CheckCircle,
     XCircle, Loader2, AlertTriangle, Eye, EyeOff,
-    Filter, RotateCcw, Calendar, HardDrive, Hash
+    Filter, RotateCcw, Calendar, HardDrive, Hash,
+    AlertOctagon, Activity, ShieldCheck
 } from 'lucide-react';
 import ClientTemplate from '../components/Templates/ClientTemplate';
 import { analysisApi, type AnalysisRecord } from '../services/api';
@@ -195,17 +196,29 @@ function AnalysisRow({
                         </span>
 
                         {/* PDF badge */}
-                        {record.hasPdf && (
-                            <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 4,
-                                background: '#f0fdf4', color: '#16a34a',
-                                border: '1px solid #bbf7d0',
-                                padding: '3px 8px', borderRadius: 20,
-                                fontSize: 11, fontWeight: 600,
-                            }}>
-                                <FileText size={11} /> PDF
-                            </span>
-                        )}
+                        {/* Severity badge (replaces PDF badge) */}
+{/* Severity badge */}
+{record.extractedEntities?.severity && (() => {
+    const sev = record.extractedEntities!.severity!;
+    const cfg: Record<string, { bg: string; color: string; border: string; icon: React.ReactNode }> = {
+        critical: { bg: '#fff1f2', color: '#dc2626', border: '#fecaca', icon: <AlertOctagon size={12} /> },
+        high:     { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa', icon: <AlertTriangle size={12} /> },
+        medium:   { bg: '#fefce8', color: '#ca8a04', border: '#fde68a', icon: <Activity size={12} /> },
+        low:      { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', icon: <ShieldCheck size={12} /> },
+    };
+    const s = cfg[sev];
+    return s ? (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            background: s.bg, color: s.color,
+            border: `1px solid ${s.border}`,
+            padding: '3px 10px', borderRadius: 20,
+            fontSize: 11, fontWeight: 700,
+        }}>
+            {s.icon} {sev.toUpperCase()}
+        </span>
+    ) : null;
+})()}
                     </div>
 
                     <div style={{ display: 'flex', gap: 16, color: '#94a3b8', fontSize: 12, alignItems: 'center' }}>
@@ -339,6 +352,7 @@ export default function AudioHistoryPage() {
     const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [filterSeverity, setFilterSeverity] = useState('all');
 
     const [deleteTarget, setDeleteTarget] = useState<{ id: string | string[]; name: string; count?: number } | null>(null);
     const [deleting, setDeleting] = useState(false);
@@ -422,10 +436,12 @@ export default function AudioHistoryPage() {
 
     // ── Filter & Selection ───────────────────────────────────────
     const filtered = records.filter(r => {
-        const matchSearch = !search || r.originalName.toLowerCase().includes(search.toLowerCase());
-        const matchStatus = filterStatus === 'all' || r.status === filterStatus;
-        return matchSearch && matchStatus;
-    });
+    const matchSearch = !search || r.originalName.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === 'all' || r.status === filterStatus;
+    const matchSeverity = filterSeverity === 'all' || 
+        (r as AnalysisRecordExt).extractedEntities?.severity === filterSeverity;
+    return matchSearch && matchStatus && matchSeverity;
+});
 
     const allFilteredSelected = filtered.length > 0 && filtered.every(r => selected.has(r._id));
     const someSelected = selected.size > 0;
@@ -580,25 +596,61 @@ export default function AudioHistoryPage() {
                 </div>
 
                 {/* Status filter */}
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <Filter size={14} color="#94a3b8" style={{ position: 'absolute', left: 12 }} />
-                    <select
-                        value={filterStatus}
-                        onChange={e => setFilterStatus(e.target.value)}
-                        style={{
-                            padding: '10px 12px 10px 32px',
-                            border: '1.5px solid #e2e8f0', borderRadius: 8,
-                            fontSize: 13, outline: 'none', background: 'white',
-                            cursor: 'pointer', color: '#1e293b',
-                        }}
-                    >
-                        <option value="all">{t('allStatus')}</option>
-                        <option value="done">{t('completed')}</option>
-                        <option value="processing">{t('processing')}</option>
-                        <option value="pending">{t('pending')}</option>
-                        <option value="error">{t('failed')}</option>
-                    </select>
-                </div>
+                {/* Status filter */}
+<div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+    <Filter size={14} color="#94a3b8" style={{ position: 'absolute', left: 12 }} />
+    <select
+        value={filterStatus}
+        onChange={e => setFilterStatus(e.target.value)}
+        style={{
+            padding: '10px 12px 10px 32px',
+            border: '1.5px solid #e2e8f0', borderRadius: 8,
+            fontSize: 13, outline: 'none', background: 'white',
+            cursor: 'pointer', color: '#1e293b',
+        }}
+    >
+        <option value="all">{t('allStatus')}</option>
+        <option value="done">{t('completed')}</option>
+        <option value="processing">{t('processing')}</option>
+        <option value="pending">{t('pending')}</option>
+        <option value="error">{t('failed')}</option>
+    </select>
+</div>
+
+{/* Severity filter */}
+<div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+    <select
+        value={filterSeverity}
+        onChange={e => setFilterSeverity(e.target.value)}
+        style={{
+            padding: '10px 14px',
+            border: `1.5px solid ${
+                filterSeverity === 'critical' ? '#fecaca' :
+                filterSeverity === 'high' ? '#fed7aa' :
+                filterSeverity === 'medium' ? '#fde68a' :
+                filterSeverity === 'low' ? '#bbf7d0' : '#e2e8f0'
+            }`,
+            borderRadius: 8,
+            fontSize: 13, outline: 'none',
+            background: filterSeverity === 'critical' ? '#fff1f2' :
+                        filterSeverity === 'high' ? '#fff7ed' :
+                        filterSeverity === 'medium' ? '#fefce8' :
+                        filterSeverity === 'low' ? '#f0fdf4' : 'white',
+            cursor: 'pointer',
+            color: filterSeverity === 'critical' ? '#dc2626' :
+                   filterSeverity === 'high' ? '#c2410c' :
+                   filterSeverity === 'medium' ? '#ca8a04' :
+                   filterSeverity === 'low' ? '#16a34a' : '#1e293b',
+            fontWeight: filterSeverity !== 'all' ? 700 : 400,
+        }}
+    >
+        <option value="all">🔍 All Severities</option>
+        <option value="critical">🔴 Critical</option>
+        <option value="high">🟠 High</option>
+        <option value="medium">🟡 Medium</option>
+        <option value="low">🟢 Low</option>
+    </select>
+</div>
 
                 <span style={{ color: '#94a3b8', fontSize: 13, whiteSpace: 'nowrap' }}>
                     {t('showing')} <strong style={{ color: '#1a3a6b' }}>{filtered.length}</strong> {t('of')} {total}

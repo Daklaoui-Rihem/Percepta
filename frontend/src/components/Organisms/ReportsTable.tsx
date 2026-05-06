@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, Download, Trash2 } from 'lucide-react';
+import { Eye, Download, Trash2, Filter, AlertOctagon, AlertTriangle, Activity, ShieldCheck, ShieldAlert } from 'lucide-react';
 import StatusBadge from '../Atoms/StatusBadge';
 import SizeBadge from '../Atoms/SizeBadge';
 import TypeBadge from '../Atoms/TypeBadge';
@@ -7,18 +7,19 @@ import ReportFilters from '../Molecules/ReportFilters';
 import { useTranslation } from '../../context/TranslationContext';
 import type { AnalysisRecord } from '../../services/api';
 import { analysisApi } from '../../services/api';
+import { t } from 'i18next';
 
 interface ReportsTableProps {
   initialReports: AnalysisRecord[];
 }
 
 export default function ReportsTable({ initialReports }: ReportsTableProps) {
-  const { t } = useTranslation();
-  const [search, setSearch]   = useState('');
-  const [user, setUser]       = useState('');
-  const [type, setType]       = useState('');
-  const [status, setStatus]   = useState('');
-  const [reports, setReports] = useState<AnalysisRecord[]>(initialReports);
+const [search, setSearch]     = useState('');
+const [user, setUser]         = useState('');
+const [type, setType]         = useState('');
+const [status, setStatus]     = useState('');
+const [severity, setSeverity] = useState('');
+const [reports, setReports]   = useState<AnalysisRecord[]>(initialReports);
 
   useEffect(() => {
     setReports(initialReports);
@@ -59,9 +60,12 @@ export default function ReportsTable({ initialReports }: ReportsTableProps) {
     const matchesUser = (user === '' || mappedUser === user);
     const matchesType = (type === '' || mapType(r.type) === type);
     const matchesStatus = (status === '' || mapStatus(r.status) === status);
+    const matchesSeverity = (severity === '' || 
+        (r.type === 'audio' && r.extractedEntities?.severity === severity)
+    );
     
-    return matchesSearch && matchesUser && matchesType && matchesStatus;
-  });
+    return matchesSearch && matchesUser && matchesType && matchesStatus && matchesSeverity;
+});
 
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('confirmDelete'))) return;
@@ -84,18 +88,86 @@ export default function ReportsTable({ initialReports }: ReportsTableProps) {
   const columns = [
     'ID ↕', t('user') + ' ↕', t('type') + ' ↕',
     t('filename') + ' ↕', t('date') + ' ↕',
-    t('size') + ' ↕', t('status') + ' ↕', t('actions'),
-  ];
+    t('size') + ' ↕', t('status') + ' ↕', 'Severity', t('actions'),
+];
 
   return (
     <>
       <ReportFilters
-        search={search} onSearch={setSearch}
-        user={user}     onUser={setUser}
-        type={type}     onType={setType}
-        status={status} onStatus={setStatus}
-        total={filtered.length}
-      />
+    search={search} onSearch={setSearch}
+    user={user}     onUser={setUser}
+    type={type}     onType={setType}
+    status={status} onStatus={setStatus}
+    total={filtered.length}
+/>
+
+{/* Severity Filter Bar */}
+<div style={{
+    background: 'white', borderRadius: 12,
+    padding: '14px 20px', marginBottom: 16,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    display: 'flex', alignItems: 'center', gap: 12,
+}}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+        <ShieldAlert size={15} /> Incident Severity:
+    </div>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <select
+            value={severity}
+            onChange={e => setSeverity(e.target.value)}
+            style={{
+                padding: '9px 36px 9px 14px',
+                border: `1.5px solid ${
+                    severity === 'critical' ? '#fecaca' :
+                    severity === 'high'     ? '#fed7aa' :
+                    severity === 'medium'   ? '#fde68a' :
+                    severity === 'low'      ? '#bbf7d0' : '#e2e8f0'
+                }`,
+                borderRadius: 8,
+                fontSize: 13,
+                outline: 'none',
+                appearance: 'none' as any,
+                WebkitAppearance: 'none' as any,
+                background: severity === 'critical' ? '#fff1f2' :
+                            severity === 'high'     ? '#fff7ed' :
+                            severity === 'medium'   ? '#fefce8' :
+                            severity === 'low'      ? '#f0fdf4' : 'white',
+                color: severity === 'critical' ? '#dc2626' :
+                       severity === 'high'     ? '#c2410c' :
+                       severity === 'medium'   ? '#ca8a04' :
+                       severity === 'low'      ? '#16a34a' : '#1e293b',
+                fontWeight: severity !== '' ? 700 : 400,
+                cursor: 'pointer',
+                minWidth: 200,
+            }}
+        >
+            <option value="">All Severities</option>
+            <option value="critical">Critical — {reports.filter(r => r.type === 'audio' && r.extractedEntities?.severity === 'critical').length} audio(s)</option>
+            <option value="high">High — {reports.filter(r => r.type === 'audio' && r.extractedEntities?.severity === 'high').length} audio(s)</option>
+            <option value="medium">Medium — {reports.filter(r => r.type === 'audio' && r.extractedEntities?.severity === 'medium').length} audio(s)</option>
+            <option value="low">Low — {reports.filter(r => r.type === 'audio' && r.extractedEntities?.severity === 'low').length} audio(s)</option>
+        </select>
+        <Filter size={14} color={
+            severity === 'critical' ? '#dc2626' :
+            severity === 'high'     ? '#c2410c' :
+            severity === 'medium'   ? '#ca8a04' :
+            severity === 'low'      ? '#16a34a' : '#94a3b8'
+        } style={{ position: 'absolute', right: 12, pointerEvents: 'none' }} />
+    </div>
+    {severity !== '' && (
+        <button
+            onClick={() => setSeverity('')}
+            style={{
+                background: '#f1f5f9', border: '1px solid #e2e8f0',
+                color: '#64748b', borderRadius: 6,
+                padding: '6px 12px', fontSize: 12,
+                cursor: 'pointer', fontWeight: 500,
+            }}
+        >
+            Clear
+        </button>
+    )}
+</div>
 
       <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -122,7 +194,30 @@ export default function ReportsTable({ initialReports }: ReportsTableProps) {
                 <td style={{ padding: '14px 16px', fontSize: 13, color: '#555', whiteSpace: 'nowrap' }}>{formatDate(r.createdAt)}</td>
                 <td style={{ padding: '14px 16px' }}><SizeBadge size={formatSize(r.size)} /></td>
                 <td style={{ padding: '14px 16px' }}><StatusBadge status={mapStatus(r.status)} /></td>
-                <td style={{ padding: '14px 16px' }}>
+<td style={{ padding: '14px 16px' }}>
+    {r.type === 'audio' && r.extractedEntities?.severity ? (() => {
+    const sev = r.extractedEntities!.severity!;
+    const cfg: Record<string, { bg: string; color: string; border: string; icon: React.ReactNode }> = {
+        critical: { bg: '#fff1f2', color: '#dc2626', border: '#fecaca', icon: <AlertOctagon size={13} /> },
+        high:     { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa', icon: <AlertTriangle size={13} /> },
+        medium:   { bg: '#fefce8', color: '#ca8a04', border: '#fde68a', icon: <Activity size={13} /> },
+        low:      { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', icon: <ShieldCheck size={13} /> },
+    };
+    const s = cfg[sev];
+    return s ? (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: s.bg, color: s.color,
+            border: `1px solid ${s.border}`,
+            padding: '4px 10px', borderRadius: 20,
+            fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
+        }}>
+            {s.icon} {sev.toUpperCase()}
+        </span>
+    ) : <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>;
+})() : <span style={{ color: '#94a3b8', fontSize: 12 }}>—</span>}
+</td>
+<td style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <span title="View" style={{ display: 'flex' }}>
                       <Eye 
