@@ -131,6 +131,17 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
         console.log(`ℹ️  [AudioProcessor] Source and target language are the same (${result.language}), skipping translation.`);
     }
 
+    // ── Step 3.5: Translate Extracted Entities ───────────────
+    if (translateTo && translateTo !== result.language && extractedEntities) {
+        console.log(`🌐 [AudioProcessor] Translating extracted entities to: ${translateTo}`);
+        try {
+            extractedEntities = await translateEntities(extractedEntities, result.language, translateTo);
+            console.log(`✅ [AudioProcessor] Entities translated.`);
+        } catch (translErr) {
+            console.error(`⚠️  [AudioProcessor] Entities translation failed:`, translErr.message);
+        }
+    }
+
     await job.updateProgress(85);
 
     // ── Step 4: PDF Report ─────────────────────────────────────
@@ -143,7 +154,9 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
             transcription: result.text,
             translatedText,
             translationLang,
-            extractedEntities,          // ← Pass entities to PDF generator
+            language: result.language,  // ← Pass original language
+            duration: result.duration,  // ← Pass duration
+            extractedEntities,          // ← Pass (potentially translated) entities
             userName: userName || 'User',
             userEmail: userEmail || '',
             createdAt: new Date(),
@@ -419,6 +432,89 @@ async function runTranslation(text, sourceLang, targetLang) {
             reject(new Error(`Failed to spawn translation script: ${err.message}`));
         });
     });
+}
+
+/**
+ * Helper to translate all strings within the extractedEntities object.
+ * Bundles strings to minimize API calls.
+ */
+async function translateEntities(entities, sourceLang, targetLang) {
+    if (!entities) return null;
+
+    const translatable = [];
+    
+    // 1. Collect translatable fields
+    if (entities.incident_type) translatable.push({ key: 'incident_type', val: entities.incident_type });
+    if (entities.severity)      translatable.push({ key: 'severity',      val: entities.severity });
+    if (entities.location)      translatable.push({ key: 'location',      val: entities.location });
+    if (entities.summary)       translatable.push({ key: 'summary',       val: entities.summary });
+    if (entities.hidden_distress) {
+        if (Array.isArray(entities.hidden_distress)) {
+            entities.hidden_distress.forEach((d, i) => translatable.push({ key: `distress_${i}`, val: d }));
+        } else {
+            translatable.push({ key: 'hidden_distress', val: entities.hidden_distress });
+        }
+    }
+
+    const suggestions = entities.smart_suggestions;
+    if (suggestions) {
+        if (suggestions.priority_actions) {
+            suggestions.priority_actions.forEach((a, i) => translatable.push({ key: `action_${i}`, val: a }));
+        }
+        if (suggestions.resources_to_dispatch) {
+            suggestions.resources_to_dispatch.forEach((r, i) => translatable.push({ key: `resource_${i}`, val: r }));
+        }
+        if (suggestions.dispatcher_notes) {
+            suggestions.dispatcher_notes.forEach((n, i) => translatable.push({ key: `note_${i}`, val: n }));
+        }
+        if (suggestions.checklist) {
+            suggestions.checklist.forEach((c, i) => translatable.push({ key: `checklist_${i}`, val: c }));
+        }
+    }
+
+    if (translatable.length === 0) return entities;
+
+    // 2. Join with delimiter
+    const delimiter = " ||| ";
+    const combined = translatable.map(t => t.val).join(delimiter);
+
+    // 3. Translate
+    const translatedRaw = await runTranslation(combined, sourceLang, targetLang);
+    const translatedParts = translatedRaw.split(delimiter).map(s => s.trim());
+
+    // 4. Map back
+    let idx = 0;
+    const newEntities = JSON.parse(JSON.stringify(entities)); // deep clone
+
+    if (newEntities.incident_type) newEntities.incident_type = translatedParts[idx++];
+    if (newEntities.severity)      newEntities.severity      = translatedParts[idx++];
+    if (newEntities.location)      newEntities.location      = translatedParts[idx++];
+    if (newEntities.summary)       newEntities.summary       = translatedParts[idx++];
+    if (newEntities.hidden_distress) {
+        if (Array.isArray(newEntities.hidden_distress)) {
+            newEntities.hidden_distress = newEntities.hidden_distress.map(() => translatedParts[idx++]);
+        } else {
+            newEntities.hidden_distress = translatedParts[idx++];
+        }
+    }
+
+    const newSug = newEntities.smart_suggestions;
+    if (newSug) {
+        if (newSug.priority_actions) {
+            newSug.priority_actions = newSug.priority_actions.map(() => translatedParts[idx++]);
+        }
+        if (newSug.resources_to_dispatch) {
+            newSug.resources_to_dispatch = newSug.resources_to_dispatch.map(() => translatedParts[idx++]);
+        }
+        if (newSug.dispatcher_notes) {
+            newSug.dispatcher_notes = newSug.dispatcher_notes.map(() => translatedParts[idx++]);
+        }
+        if (newSug.checklist) {
+            newSug.checklist = newSug.checklist.map(() => translatedParts[idx++]);
+        }
+    }
+
+    return newEntities;
 }
 
 // ── JSON extractor ─────────────────────────────────────────────

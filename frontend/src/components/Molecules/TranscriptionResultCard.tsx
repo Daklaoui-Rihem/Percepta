@@ -1,11 +1,11 @@
 /**
- * TranscriptionResultCard.tsx — Updated with Extracted Entities display
+ * TranscriptionResultCard.tsx — Updated with Smart Suggestions panel
  *
  * When analysis is done, shows:
- *   1. ExtractedEntitiesCard (incident type, severity, location, phones, etc.)
- *   2. Metrics (language, confidence, word count, translation)
- *   3. Summary
- *   4. Full transcription (with tabs if translation exists)
+ *   1. ExtractedEntitiesCard  (incident type, severity, location, phones…)
+ *   2. SmartSuggestionsCard   (priority actions, resources, dispatcher notes, checklist)
+ *   3. Metrics column + Full transcription / translation tabs
+ *   4. PDF download
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -18,6 +18,7 @@ import { analysisApi } from '../../services/api';
 import type { ExtractedEntities } from '../../services/api';
 import { useTranslation } from '../../context/TranslationContext';
 import ExtractedEntitiesCard from './ExtractedEntitiesCard';
+import SmartSuggestionsCard from './SmartSuggestionsCard';
 
 // ── Types ──────────────────────────────────────────────────────
 type StatusData = {
@@ -41,15 +42,11 @@ type Props = {
 };
 
 const LANG_NAMES: Record<string, string> = {
-    fr: 'French',
-    en: 'English',
-    ar: 'Arabic',
+    fr: 'French', en: 'English', ar: 'Arabic',
 };
 
 const LANG_DIR: Record<string, 'rtl' | 'ltr'> = {
-    ar: 'rtl',
-    fr: 'ltr',
-    en: 'ltr',
+    ar: 'rtl', fr: 'ltr', en: 'ltr',
 };
 
 const POLL_INTERVAL = 3000;
@@ -67,10 +64,10 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
     const [activeTab, setActiveTab] = useState<'original' | 'translation'>('original');
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const detectedLang = data?.language ? LANG_NAMES[data.language.toLowerCase()] || data.language : 'Auto';
-    const langLabel = detectedLang;
+    const detectedLang = data?.language
+        ? LANG_NAMES[data.language.toLowerCase()] || data.language
+        : 'Auto';
 
-    // Generate fake timestamp segments for display
     const generateFakeSegments = (text: string, durationSec: number) => {
         if (!text) return [];
         const words = text.split(/\s+/).filter(Boolean);
@@ -89,9 +86,8 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         return segments;
     };
 
-    let durationStr = "0:00";
+    let durationStr = '0:00';
     let durationSec = data?.duration || 120;
-    
     if (data?.duration) {
         const m = Math.floor(data.duration / 60);
         const s = Math.round(data.duration % 60);
@@ -99,8 +95,9 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
     }
 
     const wordCount = data?.transcription?.split(/\s+/).filter(Boolean).length.toLocaleString() || '0';
-    const confidence = '—'; // Could fetch from data if added later
-
+    const confidence = data?.extractedEntities?.confidence
+        ? `${Math.round(data.extractedEntities.confidence * 100)}%`
+        : '—';
     const segments = generateFakeSegments(data?.transcription || '', durationSec);
 
     const handleDownloadTxt = (text: string, suffix = '') => {
@@ -137,16 +134,14 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
     // ── PDF ────────────────────────────────────────────────────
     const handleDownloadPDF = async () => {
-        setPdfLoading(true);
-        setPdfError('');
+        setPdfLoading(true); setPdfError('');
         try { await analysisApi.downloadReport(analysisId, originalName); }
         catch (err: unknown) { setPdfError(err instanceof Error ? err.message : 'Download failed'); }
         finally { setPdfLoading(false); }
     };
 
     const handleGeneratePDF = async () => {
-        setPdfLoading(true);
-        setPdfError('');
+        setPdfLoading(true); setPdfError('');
         try { await analysisApi.generateReport(analysisId); await poll(); }
         catch (err: unknown) { setPdfError(err instanceof Error ? err.message : 'Generation failed'); }
         finally { setPdfLoading(false); }
@@ -207,8 +202,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         background: 'white', color: '#1a3a6b',
         border: '1px solid #e2e8f0', borderRadius: 8,
         padding: '8px 14px', fontSize: 13, fontWeight: 600,
-        display: 'flex', alignItems: 'center', gap: 6,
-        cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
     };
 
     // ── DONE STATE ─────────────────────────────────────────────
@@ -217,10 +211,15 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
             <div style={{ direction: isRTL ? 'rtl' : 'ltr', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-                {/* Top Header */}
-                <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                {/* Header */}
+                <div style={{
+                    background: 'white', border: '1px solid #e2e8f0', borderRadius: 12,
+                    padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                }}>
                     <div>
-                        <h3 style={{ margin: '0 0 10px 0', color: '#1a3a6b', fontSize: 20, fontWeight: 700 }}>{originalName}</h3>
+                        <h3 style={{ margin: '0 0 10px', color: '#1a3a6b', fontSize: 20, fontWeight: 700 }}>
+                            {originalName}
+                        </h3>
                         <div style={{ color: '#64748b', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <Clock size={14} />
                             {new Date().toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
@@ -238,21 +237,50 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                     </div>
                 </div>
 
-                {/* ── Extracted Entities Card (NEW) ─────────────── */}
+                {/* ── Extracted Entities ── */}
                 {data?.extractedEntities && (
                     <ExtractedEntitiesCard entities={data.extractedEntities} />
                 )}
 
-                {/* 2-Column Layout: Metrics + Transcription */}
+                {/* ── Smart Suggestions (NEW) ── */}
+                {data?.extractedEntities?.smart_suggestions && (
+                    <div style={{
+                        background: 'white',
+                        border: '1.5px solid #fde68a',
+                        borderRadius: 14,
+                        overflow: 'hidden',
+                    }}>
+                        {/* Card header bar */}
+                        <div style={{
+                            padding: '14px 20px',
+                            background: '#fffbeb',
+                            borderBottom: '1px solid #fde68a',
+                            display: 'flex', alignItems: 'center', gap: 10,
+                        }}>
+                            <span style={{ fontSize: 18 }}>⚡</span>
+                            <div>
+                                <div style={{ fontWeight: 700, color: '#1a3a6b', fontSize: 15 }}>
+                                    Smart Emergency Suggestions
+                                </div>
+                                <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                                    Auto-generated locally · rule-based · 100% free · no API
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ padding: '16px 20px' }}>
+                            <SmartSuggestionsCard suggestions={data.extractedEntities.smart_suggestions} />
+                        </div>
+                    </div>
+                )}
+
+                {/* 2-column: metrics + transcription */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 320px) 1fr', gap: 24, alignItems: 'start' }}>
 
-                    {/* Left Column: Metrics */}
+                    {/* Left: Metrics */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <MetricCard icon={<Globe size={20} color="#1d4ed8" />} title="Detected Language" value={langLabel} />
+                        <MetricCard icon={<Globe size={20} color="#1d4ed8" />} title="Detected Language" value={detectedLang} />
                         <MetricCard icon={<Target size={20} color="#1d4ed8" />} title="Average Confidence" value={confidence} />
                         <MetricCard icon={<Hash size={20} color="#1d4ed8" />} title="Word Count" value={wordCount} />
-
-                        {/* Translation info */}
                         {hasTranslation && (
                             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
                                 <div style={{ background: '#dbeafe', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -264,14 +292,10 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                 </div>
                             </div>
                         )}
-
-
                     </div>
 
-                    {/* Right Column: Transcription */}
+                    {/* Right: Transcription */}
                     <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-
-                        {/* Tab bar */}
                         {hasTranslation && (
                             <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', padding: '0 24px' }}>
                                 <TabButton active={activeTab === 'original'} onClick={() => setActiveTab('original')}>
@@ -321,7 +345,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                         <div style={{ padding: '24px' }}>
                             {activeTab === 'original' ? (
                                 <>
-                                    <h4 style={{ color: '#1a3a6b', margin: '0 0 24px 0', fontSize: 16, fontWeight: 700 }}>
+                                    <h4 style={{ color: '#1a3a6b', margin: '0 0 24px', fontSize: 16, fontWeight: 700 }}>
                                         {t('fullTranscription') || 'Full Transcription'}
                                     </h4>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -370,12 +394,19 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                     </div>
                 </div>
 
-                {/* PDF download button */}
+                {/* PDF download CTA */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 4, marginBottom: 8 }}>
                     <button
                         onClick={data?.hasPdf ? handleDownloadPDF : handleGeneratePDF}
                         disabled={pdfLoading}
-                        style={{ background: '#0047ff', color: 'white', border: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, display: 'flex', gap: 8, alignItems: 'center', cursor: pdfLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(0,71,255,0.2)', opacity: pdfLoading ? 0.8 : 1 }}
+                        style={{
+                            background: '#0047ff', color: 'white', border: 'none',
+                            padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600,
+                            display: 'flex', gap: 8, alignItems: 'center',
+                            cursor: pdfLoading ? 'not-allowed' : 'pointer',
+                            boxShadow: '0 4px 12px rgba(0,71,255,0.2)',
+                            opacity: pdfLoading ? 0.8 : 1,
+                        }}
                     >
                         {pdfLoading ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Download size={18} />}
                         {data?.hasPdf ? 'Download PDF Report' : 'Generate PDF Report'}
@@ -392,7 +423,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         );
     }
 
-    // ── NON-DONE STATES ────────────────────────────────────────
+    // ── PENDING / PROCESSING / ERROR ───────────────────────────
     return (
         <div style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>

@@ -1,53 +1,31 @@
 // frontend/src/services/api.ts
-// Central API service — all backend calls go through here
-
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// ── Helpers ────────────────────────────────────────────────────
 function getToken(): string | null {
     return localStorage.getItem('token');
 }
 
-async function request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
-    auth = true
-): Promise<T> {
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
+async function request<T>(method: string, path: string, body?: unknown, auth = true): Promise<T> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (auth) {
         const token = getToken();
         if (token) headers['Authorization'] = `Bearer ${token}`;
     }
-
     const res = await fetch(`${BASE_URL}${path}`, {
-        method,
-        headers,
+        method, headers,
         body: body ? JSON.stringify(body) : undefined,
     });
-
     const data = await res.json();
-
-    if (!res.ok) {
-        throw new Error(data.message || 'Request failed');
-    }
-
+    if (!res.ok) throw new Error(data.message || 'Request failed');
     return data as T;
 }
 
-// ── Auth ───────────────────────────────────────────────────────
 export interface LoginResponse {
     token: string;
     user: {
-        id: string;
-        name: string;
-        email: string;
+        id: string; name: string; email: string;
         role: 'Client' | 'Admin' | 'SuperAdmin';
-        tenantId: string | null;
-        photoUrl: string;
-        hasFirstLogin: boolean;
+        tenantId: string | null; photoUrl: string; hasFirstLogin: boolean;
     };
 }
 
@@ -56,54 +34,30 @@ export const authApi = {
         request<LoginResponse>('POST', '/auth/login', { email, password }, false),
 };
 
-// ── User / Profile ─────────────────────────────────────────────
 export interface UserProfile {
-    _id: string;
-    name: string;
-    email: string;
+    _id: string; name: string; email: string;
     role: 'Client' | 'Admin' | 'SuperAdmin';
-    tenantId: string | null;
-    department: string;
-    phone: string;
-    adminLevel: string;
-    photoUrl: string;
-    isActive: boolean;
-    userType: 'Entreprise' | 'Single person';
-    createdAt: string;
+    tenantId: string | null; department: string; phone: string;
+    adminLevel: string; photoUrl: string; isActive: boolean;
+    userType: 'Entreprise' | 'Single person'; createdAt: string;
 }
 
 export interface CreateUserPayload {
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-    department?: string;
-    phone?: string;
-    adminLevel?: string;
-    userType?: string;
+    name: string; email: string; password: string; role: string;
+    department?: string; phone?: string; adminLevel?: string; userType?: string;
 }
 
 export interface UpdateUserPayload {
-    name?: string;
-    email?: string;
-    department?: string;
-    phone?: string;
-    adminLevel?: string;
-    isActive?: boolean;
-    photoUrl?: string;
-    userType?: string;
+    name?: string; email?: string; department?: string; phone?: string;
+    adminLevel?: string; isActive?: boolean; photoUrl?: string; userType?: string;
 }
 
 export const userApi = {
-    getMyProfile: () =>
-        request<UserProfile>('GET', '/users/me'),
-
+    getMyProfile: () => request<UserProfile>('GET', '/users/me'),
     updateMyProfile: (data: UpdateUserPayload) =>
         request<{ message: string; user: UserProfile }>('PUT', '/users/me', data),
-
     changeMyPassword: (currentPassword: string, newPassword: string) =>
         request<{ message: string }>('PUT', '/users/me/password', { currentPassword, newPassword }),
-
     uploadAvatar: (file: File) => {
         const formData = new FormData();
         formData.append('avatar', file);
@@ -117,51 +71,42 @@ export const userApi = {
             return data as { message: string; photoUrl: string };
         });
     },
-
-    getAllUsers: () =>
-        request<UserProfile[]>('GET', '/users'),
-
+    getAllUsers: () => request<UserProfile[]>('GET', '/users'),
     createUser: (data: CreateUserPayload) =>
         request<{ message: string; user: UserProfile }>('POST', '/users/create', data),
-
     updateUser: (id: string, data: UpdateUserPayload) =>
         request<{ message: string; user: UserProfile }>('PUT', `/users/${id}`, data),
-
-    deleteUser: (id: string) =>
-        request<{ message: string }>('DELETE', `/users/${id}`),
-
+    deleteUser: (id: string) => request<{ message: string }>('DELETE', `/users/${id}`),
     bulkDeleteUsers: (userIds: string[]) =>
         request<{ message: string }>('POST', '/users/bulk-delete', { userIds }),
-
     bulkUpdateUsers: (userIds: string[], updates: unknown) =>
         request<{ message: string }>('POST', '/users/bulk-update', { userIds, updates }),
-
     checkEmail: (email: string) =>
         request<{ exists: boolean }>('GET', `/users/check-email?email=${encodeURIComponent(email)}`),
 };
 
-// ── Settings ───────────────────────────────────────────────────
 export interface SmtpSettings {
-    smtpHost: string;
-    smtpPort: number;
-    smtpUser: string;
-    smtpPass: string;
-    smtpFrom: string;
-    smtpSecure: string;
+    smtpHost: string; smtpPort: number; smtpUser: string;
+    smtpPass: string; smtpFrom: string; smtpSecure: string;
 }
 
 export const settingsApi = {
-    getSmtp: () =>
-        request<SmtpSettings>('GET', '/settings/smtp'),
-
-    saveSmtp: (data: SmtpSettings) =>
-        request<{ message: string }>('PUT', '/settings/smtp', data),
-
+    getSmtp: () => request<SmtpSettings>('GET', '/settings/smtp'),
+    saveSmtp: (data: SmtpSettings) => request<{ message: string }>('PUT', '/settings/smtp', data),
     testSmtp: (testEmail: string) =>
         request<{ message: string }>('POST', '/settings/smtp/test', { testEmail }),
 };
 
-// ── Extracted Entities Type (NEW) ──────────────────────────────
+// ── Smart Suggestions (NEW) ────────────────────────────────────
+export interface SmartSuggestions {
+    priority_actions: string[];
+    dispatcher_notes: string[];
+    resources_to_dispatch: string[];
+    estimated_response_level: 'standard' | 'elevated' | 'critical';
+    follow_up_checklist: string[];
+}
+
+// ── Extracted Entities ─────────────────────────────────────────
 export interface ExtractedEntities {
     location: string | null;
     phones: string[];
@@ -175,71 +120,59 @@ export interface ExtractedEntities {
     additional_details: string | null;
     confidence: number | null;
     extraction_method: 'llm_anthropic' | 'llm_openai' | 'rule_based' | 'spacy+hf_local' | null;
+    sentiment?: string | null;
+    dominant_emotion?: string | null;
+    emotion_scores?: Record<string, number> | null;
+    emotional_markers?: string[];
+    narrative_coherence?: string | null;
+    caller_speaking_freely?: boolean | null;
+    anomalies?: string[];
+    worst_case_scenario?: string | null;
+    worst_case_likelihood?: string | null;
+    hidden_distress?: {
+        detected: boolean;
+        confidence: number;
+        signals: string[];
+        covert_message: string | null;
+        recommended_action: string;
+    } | null;
+    smart_suggestions?: SmartSuggestions | null;
 }
 
-// ── Video analysis types ───────────────────────────────────────
 export interface VideoDetection {
-    class: string;
-    confidence: number;
-    bbox: [number, number, number, number];
+    class: string; confidence: number; bbox: [number, number, number, number];
 }
 
 export interface VideoKeyframe {
-    frame_index: number;
-    timestamp: number;
-    timestamp_str: string;
-    filename: string;
-    is_incident: boolean;
-    people_count: number;
-    detections: VideoDetection[];
-    category?: string;
-    confidence?: number;
+    frame_index: number; timestamp: number; timestamp_str: string;
+    filename: string; is_incident: boolean; people_count: number;
+    detections: VideoDetection[]; category?: string; confidence?: number;
 }
 
 export interface VideoIncident {
-    type: string;
-    severity: 'critical' | 'high' | 'medium' | 'low';
-    timestamp: number;
-    timestamp_str: string;
-    frame_index?: number;
-    frame_file?: string;
-    details?: string;
-    confidence?: number;
-    people_count?: number;
+    type: string; severity: 'critical' | 'high' | 'medium' | 'low';
+    timestamp: number; timestamp_str: string; frame_index?: number;
+    frame_file?: string; details?: string; confidence?: number; people_count?: number;
 }
 
 export interface VideoAnalysisResult {
-    incidents: VideoIncident[];
-    keyframes: VideoKeyframe[];
-    summary: string;
-    incident_count: number;
-    keyframe_count: number;
-    duration: number;
-    fps: number;
-    total_frames: number;
-    resolution: string;
-    avg_people: number;
-    max_people: number;
-    violence_detected: boolean;
-    danger_level: 'safe' | 'low' | 'medium' | 'high' | 'critical';
-    detection_model: string;
+    incidents: VideoIncident[]; keyframes: VideoKeyframe[];
+    summary: string; incident_count: number; keyframe_count: number;
+    duration: number; fps: number; total_frames: number; resolution: string;
+    avg_people: number; max_people: number; violence_detected: boolean;
+    danger_level: 'safe' | 'low' | 'medium' | 'high' | 'critical'; detection_model: string;
 }
 
-// ── Analyses ───────────────────────────────────────────────────
 export interface AnalysisRecord {
-    _id: string;
-    originalName: string;
-    size: number;
+    _id: string; originalName: string; size: number;
     type: 'audio' | 'video' | 'groupActivity';
     status: 'pending' | 'processing' | 'done' | 'error';
-    createdAt: string;
-    transcription?: string;
-    translatedText?: string;
-    translationLang?: string;
-    errorMessage?: string;
-    hasPdf?: boolean;
-    pdfGeneratedAt?: string | null;
+    createdAt: string; transcription?: string;
+    translatedText?: string; translationLang?: string;
+    errorMessage?: string; hasPdf?: boolean; pdfGeneratedAt?: string | null;
     extractedEntities?: ExtractedEntities | null;
+    language?: string | null;
+    duration?: number | null;
     userId?: { _id: string; name: string; email?: string };
 }
 
@@ -258,7 +191,6 @@ export const analysisApi = {
             return data;
         });
     },
-
     uploadVideo: (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -272,16 +204,9 @@ export const analysisApi = {
             return data;
         });
     },
-
-    getMyAnalyses: () =>
-        request<AnalysisRecord[]>('GET', '/analyses'),
-
-    getAnalysisById: (id: string) =>
-        request<AnalysisRecord>('GET', `/analyses/${id}`),
-
-    deleteAnalysis: (id: string) =>
-        request<{ message: string }>('DELETE', `/analyses/${id}`),
-
+    getMyAnalyses: () => request<AnalysisRecord[]>('GET', '/analyses'),
+    getAnalysisById: (id: string) => request<AnalysisRecord>('GET', `/analyses/${id}`),
+    deleteAnalysis: (id: string) => request<{ message: string }>('DELETE', `/analyses/${id}`),
     getAnalysisStatus: (id: string) =>
         request<{
             id: string;
@@ -292,34 +217,26 @@ export const analysisApi = {
             duration: number | null;
             translatedText: string | null;
             translationLang: string | null;
-            extractedEntities: ExtractedEntities | null;   // ← NEW
+            extractedEntities: ExtractedEntities | null;
             hasPdf: boolean;
             pdfGeneratedAt: string | null;
         }>('GET', `/analyses/${id}/status`),
-
     retryAnalysis: (id: string) =>
         request<{ message: string; queue: { jobId: string } }>('POST', `/analyses/${id}/retry`),
-
     downloadReport: async (id: string, originalName?: string): Promise<void> => {
         const token = getToken();
         const res = await fetch(`${BASE_URL}/analyses/${id}/report`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
             throw new Error(data.message || 'Download failed');
         }
-
         const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
         const safeName = (originalName || 'report')
-            .replace(/\.[^/.]+$/, '')
-            .replace(/[^a-zA-Z0-9_-]/g, '_')
-            .substring(0, 40);
-
+            .replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40);
         a.href = url;
         a.download = `Percepta_Report_${safeName}.pdf`;
         document.body.appendChild(a);
@@ -327,42 +244,26 @@ export const analysisApi = {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     },
-
     generateReport: (id: string) =>
         request<{ message: string; hasPdf: boolean }>('POST', `/analyses/${id}/report/generate`),
-
-    getAllAnalyses: () =>
-        request<AnalysisRecord[]>('GET', '/analyses/admin/all'),
-
+    getAllAnalyses: () => request<AnalysisRecord[]>('GET', '/analyses/admin/all'),
     getUserAnalyses: (userId: string) =>
         request<AnalysisRecord[]>('GET', `/analyses/user/${userId}`),
-
     getVideoResult: (id: string) =>
         request<{ status: string; videoAnalysisData: VideoAnalysisResult | null; videoFramesDir?: string }>(
             'GET', `/analyses/${id}/video-result`
         ),
-
     getKeyframeUrl: (analysisId: string, filename: string): string => {
         const token = getToken();
         return `${BASE_URL}/analyses/${analysisId}/keyframe/${filename}?token=${token}`;
     },
 };
 
-// ── Dashboard ──────────────────────────────────────────────────
 export interface DashboardStats {
-    totalTenants: number;
-    totalUsers: number;
-    activeAnalysesCount: number;
-    totalAnalysesCount: number;
-    errorRate: number;
-    reportsCount: number;
+    totalTenants: number; totalUsers: number; activeAnalysesCount: number;
+    totalAnalysesCount: number; errorRate: number; reportsCount: number;
     recentActivities: AnalysisRecord[];
-    activeTenants: Array<{
-        name: string;
-        plan: string;
-        users: number;
-        resource: number;
-    }>;
+    activeTenants: Array<{ name: string; plan: string; users: number; resource: number }>;
 }
 
 export const dashboardApi = {
@@ -370,16 +271,14 @@ export const dashboardApi = {
     getHistory: (filters?: { dateFrom?: string; dateTo?: string; type?: string; status?: string }) => {
         const params = new URLSearchParams();
         if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-        if (filters?.dateTo) params.append('dateTo', filters.dateTo);
-        if (filters?.type) params.append('type', filters.type);
-        if (filters?.status) params.append('status', filters.status);
+        if (filters?.dateTo)   params.append('dateTo',   filters.dateTo);
+        if (filters?.type)     params.append('type',     filters.type);
+        if (filters?.status)   params.append('status',   filters.status);
         const qs = params.toString() ? `?${params.toString()}` : '';
         return request<AnalysisRecord[]>('GET', `/dashboard/history${qs}`);
-    }
+    },
 };
 
-
-// ── Auth helpers ───────────────────────────────────────────────
 export function saveSession(token: string, user: LoginResponse['user']) {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));

@@ -75,6 +75,10 @@ def main():
         )
 
     result['extraction_method'] = 'spacy+hf_local'
+
+    # ── Step 4: Smart Suggestions ──────────────────────────────
+    result['smart_suggestions'] = generate_suggestions(result, language)
+
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0)
 
@@ -94,11 +98,9 @@ def run_spacy_ner(text, language):
         try:
             nlp = spacy.load(model_name)
         except OSError:
-            # Try multilingual fallback
             try:
                 nlp = spacy.load('xx_ent_wiki_sm')
             except OSError:
-                # spaCy not installed or no models — return empty, heuristics will fill in
                 return out
 
         doc = nlp(text[:3000])
@@ -117,9 +119,8 @@ def run_spacy_ner(text, language):
             out['victim_names'] = persons[1:4]
 
     except ImportError:
-        pass  # spaCy not installed — heuristics will handle it
+        pass
 
-    # Phone numbers via regex (spaCy doesn't do phones well)
     phone_patterns = [
         r'\+?[\d][\d\s\-\(\)]{8,14}[\d]',
         r'\b0[1-9](?:[\s\.\-]?\d{2}){4}\b',
@@ -141,21 +142,17 @@ def run_spacy_ner(text, language):
 # ══════════════════════════════════════════════════════════════
 def run_hf_analysis(text):
     out = {'sentiment': 'neutral', 'dominant_emotion': 'neutral', 'emotion_scores': {}}
-
-    # Truncate — models have 512 token limit
     snippet = text[:512]
 
-    # ── Emotion classification ─────────────────────────────────
     try:
         from transformers import pipeline
         emotion_pipe = pipeline(
             "text-classification",
             model=EMOTION_MODEL,
-            top_k=None,       # return all labels
+            top_k=None,
             truncation=True,
         )
         scores = emotion_pipe(snippet)
-        # scores is list of list of dicts: [[{label, score}, ...]]
         if scores and scores[0]:
             sorted_scores = sorted(scores[0], key=lambda x: x['score'], reverse=True)
             out['dominant_emotion'] = sorted_scores[0]['label'].lower()
@@ -164,10 +161,8 @@ def run_hf_analysis(text):
                 for item in sorted_scores
             }
     except Exception as e:
-        # Model not downloaded yet or transformers not installed
         out['emotion_scores'] = {'error': str(e)[:80]}
 
-    # ── Sentiment classification (multilingual) ────────────────
     try:
         from transformers import pipeline
         sentiment_pipe = pipeline(
@@ -185,7 +180,7 @@ def run_hf_analysis(text):
 
 
 # ══════════════════════════════════════════════════════════════
-# STEP 3 — Deep heuristic analysis (free, no models needed)
+# STEP 3 — Deep heuristic analysis
 # ══════════════════════════════════════════════════════════════
 def run_deep_heuristics(text, language):
     text_lower = text.lower()
@@ -215,7 +210,6 @@ def run_deep_heuristics(text, language):
         'caller_speaking_freely': True,
     }
 
-    # ── Incident type ──────────────────────────────────────────
     incidents = {
         'fr': {
             'accident de voiture' : ['accident', 'collision', 'voiture', 'renversé'],
@@ -252,7 +246,6 @@ def run_deep_heuristics(text, language):
             best_score, best = sc, inc
     result['incident_type'] = best
 
-    # ── People count ───────────────────────────────────────────
     word_nums = {'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,
                  'one':1,'two':2,'three':3,'four':4,'five':5}
     cpat = r'(\d+|un|une|deux|trois|quatre|cinq|one|two|three|four|five)\s*(?:personne|blessé|victime|mort|person|victim|injured|dead|شخص|ضحية)'
@@ -261,7 +254,6 @@ def run_deep_heuristics(text, language):
         n = m.group(1)
         result['people_count'] = word_nums.get(n, int(n) if n.isdigit() else None)
 
-    # ── Time / date ────────────────────────────────────────────
     tm = re.search(r'\b\d{1,2}[h:]\d{2}\b|\b\d{1,2}\s*(?:heures?|h|am|pm)\b', text_lower)
     if tm:
         result['time_mentioned'] = tm.group(0)
@@ -273,7 +265,6 @@ def run_deep_heuristics(text, language):
     if dm:
         result['date_mentioned'] = dm.group(0)
 
-    # ── Severity ───────────────────────────────────────────────
     crit_kws = ['mort','dead','dying','ne respire','not breathing','inconscient','unconscious','sang','blood','arme','weapon','قتل','ميت']
     high_kws = ['blessé grave','seriously injured','fracture','beaucoup de sang','heart attack','crise cardiaque','نوبة']
     if any(w in text_lower for w in crit_kws):
@@ -283,14 +274,9 @@ def run_deep_heuristics(text, language):
     elif result['people_count'] and result['people_count'] > 3:
         result['severity'] = 'high'
 
-    # ══════════════════════════════════════════════════════════
-    # DISTRESS DETECTION ENGINE
-    # 7 independent signals, each adds to distress_score
-    # ══════════════════════════════════════════════════════════
     signals, anomalies, emo_markers = [], [], []
     score = 0.0
 
-    # Signal 1 — Yes/No ratio (coded call)
     yn_pats = {
         'fr': r'\b(oui|non|peut-être|d\'accord)\b',
         'en': r'\b(yes|no|yeah|nope|okay|sure)\b',
@@ -302,17 +288,14 @@ def run_deep_heuristics(text, language):
         signals.append("high yes/no response ratio — caller may not be speaking freely")
         score += 0.35
 
-    # Signal 2 — Missing location for location-dependent emergency
     loc_emer = ['accident','fire','incendie','assault','agression','حادث','حريق']
     needs_loc = any(kw in text_lower for kw in loc_emer)
-    # Check heuristic location presence (spaCy result merged later)
     heuristic_loc = bool(re.search(r'\b(?:rue|avenue|street|road|allée)\s+\w+|\b\d+\s+\w+\s+(?:street|avenue)', text_lower))
     if needs_loc and not heuristic_loc:
         signals.append("location-dependent emergency but no address detected")
         anomalies.append("address absent for location-dependent emergency type")
         score += 0.25
 
-    # Signal 3 — Unusual calm + severe content co-occurrence
     calm_kws = {
         'fr': ['s\'il vous plaît','merci','pardon','excusez','désolé'],
         'en': ['please','thank you','sorry','excuse me','no worries'],
@@ -325,7 +308,6 @@ def run_deep_heuristics(text, language):
         emo_markers.append("inappropriate_calm")
         score += 0.30
 
-    # Signal 4 — Direct contradiction pairs
     contra_pairs = {
         'fr': [('tout va bien','aide'),('pas de problème','urgent'),("c'est normal",'vite'),('va bien','danger')],
         'en': [('everything is fine','help'),('no problem','urgent'),("it's okay",'hurry'),('fine','please come'),('just ordering','emergency')],
@@ -338,7 +320,6 @@ def run_deep_heuristics(text, language):
             score += 0.45
             break
 
-    # Signal 5 — Coded / indirect request patterns
     coded_pats = {
         'fr': [r'je voudrais commander',r'est-ce que vous pouvez venir',r'quelqu\'un ici avec moi',r'je ne peux pas (?:parler|bouger)',r'si vous comprenez'],
         'en': [r"i'd like to order",r'can you send someone',r"i can't (:really)?talk",r"there's someone (:here|with me)",r'if you understand',r'you know what i mean'],
@@ -350,7 +331,6 @@ def run_deep_heuristics(text, language):
             score += 0.50
             break
 
-    # Signal 6 — Sentence fragmentation
     avg_len = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
     if avg_len < 4 and len(sentences) >= 4:
         signals.append("very short fragmented sentences — possible fear or inability to speak")
@@ -360,7 +340,6 @@ def run_deep_heuristics(text, language):
     elif avg_len < 6 and len(sentences) >= 4:
         result['narrative_coherence'] = 'inconsistent'
 
-    # Signal 7 — Fear / urgency lexicon density
     fear_kws = {
         'fr': ['peur','terrifié','paniqué','tremble','effrayé','aide-moi','pitié','au secours'],
         'en': ['scared','terrified','panicking','trembling','frightened','help me','please hurry','afraid'],
@@ -382,7 +361,6 @@ def run_deep_heuristics(text, language):
     if urgency_count >= 1:
         emo_markers.append("urgency")
 
-    # ── Assemble hidden_distress ───────────────────────────────
     detected = score >= 0.35
     if detected:
         result['caller_speaking_freely'] = False
@@ -412,7 +390,6 @@ def run_deep_heuristics(text, language):
         result['worst_case_scenario']  = wc.get(language, wc['en'])
         result['worst_case_likelihood']= 'high' if score >= 0.6 else 'medium'
 
-        # Upgrade severity when distress is strong
         if score >= 0.5 and result['severity'] in ('low', 'medium'):
             result['severity'] = 'high'
     else:
@@ -424,6 +401,168 @@ def run_deep_heuristics(text, language):
     result['confidence']      = 0.70 if result['incident_type'] else 0.45
 
     return result
+
+
+# ══════════════════════════════════════════════════════════════
+# STEP 4 — Smart Suggestion Engine (free, rule-based)
+# ══════════════════════════════════════════════════════════════
+def generate_suggestions(result: dict, language: str) -> dict:
+    """
+    Generate actionable emergency response suggestions based on extracted entities.
+    100% local, zero API calls, zero cost.
+    """
+    severity        = result.get('severity', 'medium')
+    incident_type   = (result.get('incident_type') or '').lower()
+    people_count    = result.get('people_count')
+    location        = result.get('location')
+    phones          = result.get('phones', [])
+    caller_name     = result.get('caller_name')
+    victim_names    = result.get('victim_names', [])
+    hidden_distress = result.get('hidden_distress', {})
+    distress_detected   = hidden_distress.get('detected', False)
+    dominant_emotion    = result.get('dominant_emotion', 'neutral')
+
+    # ── Response level ─────────────────────────────────────────
+    level_map = {'low': 'standard', 'medium': 'elevated', 'high': 'elevated', 'critical': 'critical'}
+    response_level = level_map.get(severity, 'standard')
+    if distress_detected and response_level != 'critical':
+        response_level = 'elevated'
+
+    # ── Resources to dispatch ──────────────────────────────────
+    INCIDENT_RESOURCES = {
+        # French incidents
+        'incendie':             ['Pompiers (18)', 'SAMU si blessés (15)', 'Police (17)'],
+        'accident de voiture':  ['SAMU (15)', 'Pompiers (18)', 'Police (17)', 'Dépanneuse'],
+        'agression':            ['Police (17)', 'SAMU si blessés (15)'],
+        'malaise médical':      ['SAMU (15)', 'Pompiers (18)'],
+        'violence domestique':  ['Police (17)', 'SAMU si blessés (15)', 'Travailleurs sociaux'],
+        'vol / cambriolage':    ['Police (17)'],
+        'personne disparue':    ['Police (17)', 'Gendarmerie'],
+        # English incidents
+        'fire':                 ['Fire Brigade (999)', 'Ambulance if injured', 'Police'],
+        'car accident':         ['Ambulance (999)', 'Fire Brigade', 'Police', 'Traffic control'],
+        'assault':              ['Police (999)', 'Ambulance if injured'],
+        'medical emergency':    ['Ambulance (999)', 'Fire Brigade if trapped'],
+        'domestic violence':    ['Police (999)', 'Ambulance if injured', 'Social services'],
+        'robbery':              ['Police (999)'],
+        'missing person':       ['Police (999)'],
+        # Arabic incidents
+        'حادث سيارة':           ['الإسعاف (1021)', 'الإطفاء', 'الشرطة (1717)'],
+        'حريق':                 ['الإطفاء (1020)', 'الإسعاف (1021)', 'الشرطة (1717)'],
+        'اعتداء':               ['الشرطة (1717)', 'الإسعاف إذا كان هناك إصابات'],
+        'طوارئ طبية':           ['الإسعاف (1021)', 'الإطفاء'],
+        'عنف أسري':             ['الشرطة (1717)', 'الإسعاف', 'الخدمات الاجتماعية'],
+        'سرقة':                 ['الشرطة (1717)'],
+    }
+    resources = []
+    for key, res_list in INCIDENT_RESOURCES.items():
+        if key in incident_type:
+            resources = list(res_list)
+            break
+    if not resources:
+        resources = ['Emergency services (112)', 'Police if needed', 'Medical services if injured']
+
+    if people_count and people_count > 5:
+        resources.append('Mass casualty / CUMP support')
+    if people_count and people_count > 10:
+        resources.append('Civil security coordination')
+
+    # ── Priority actions ───────────────────────────────────────
+    priority_actions = []
+
+    if distress_detected:
+        conf = round(hidden_distress.get('confidence', 0) * 100)
+        msg  = hidden_distress.get('covert_message', 'Caller may not be speaking freely')
+        priority_actions.append(f"⚠️  COVERT DISTRESS DETECTED ({conf}% confidence) — {msg}")
+        priority_actions.append("Send silent dispatch immediately without confirming over phone")
+        priority_actions.append("Use yes/no questions only: 'Is someone with you right now?'")
+        priority_actions.append("Do NOT mention police or emergency dispatch explicitly on call")
+
+    if severity == 'critical':
+        priority_actions.append("CRITICAL — Dispatch all relevant units immediately without delay")
+    elif severity == 'high':
+        priority_actions.append("HIGH priority — Begin dispatch while gathering additional information")
+
+    if location:
+        priority_actions.append(f"Confirm exact location: '{location}' — verify street/building/floor")
+    elif incident_type:
+        priority_actions.append("⚠️  Location NOT detected — ask caller for precise address immediately")
+
+    if victim_names:
+        priority_actions.append(f"Note victim name(s): {', '.join(victim_names)}")
+    if people_count:
+        if people_count > 1:
+            priority_actions.append(f"Multiple people involved ({people_count}) — scale resources accordingly")
+        else:
+            priority_actions.append("Single victim reported — confirm whether others are present")
+
+    MEDICAL_KEYWORDS = [
+        'mort','dead','inconscient','unconscious','ne respire','not breathing',
+        'bleeding','sang','crise','seizure','infarctus','heart attack','cardiac'
+    ]
+    text_blob = (str(result.get('additional_details') or '') + incident_type).lower()
+    if any(kw in text_blob for kw in MEDICAL_KEYWORDS):
+        priority_actions.append("Medical emergency indicators — ensure ambulance is dispatched NOW")
+        priority_actions.append("Ask caller: 'Is the person conscious? Are they breathing?'")
+        if language == 'fr':
+            priority_actions.append("Guider le témoin : 'Desserrez les vêtements, parlez-lui, ne le bougez pas'")
+        elif language == 'ar':
+            priority_actions.append("توجيه المشاهد: 'أرخِ الملابس، تكلم معه، لا تحركه'")
+        else:
+            priority_actions.append("Guide bystander: 'Loosen clothing, talk to them, do not move them'")
+
+    if dominant_emotion in ('fear', 'anger') or severity in ('high', 'critical'):
+        priority_actions.append("Keep caller calm — speak slowly, clearly, and reassuringly")
+        priority_actions.append("Confirm units are on the way — avoid revealing exact ETA if caller may be watched")
+
+    if phones:
+        priority_actions.append(f"Callback number(s) logged: {', '.join(phones[:3])}")
+    else:
+        priority_actions.append("No phone number detected in transcript — trace call if possible")
+
+    # ── Dispatcher notes ───────────────────────────────────────
+    dispatcher_notes = []
+    dispatcher_notes.append(f"Incident type: {result.get('incident_type') or 'Unknown — use context'}")
+    dispatcher_notes.append(f"Severity assessed: {severity.upper()}")
+    dispatcher_notes.append(f"Response level: {response_level.upper()}")
+    if caller_name:
+        dispatcher_notes.append(f"Caller identified as: {caller_name}")
+    if result.get('time_mentioned'):
+        dispatcher_notes.append(f"Time mentioned by caller: {result['time_mentioned']}")
+    if result.get('date_mentioned'):
+        dispatcher_notes.append(f"Date mentioned by caller: {result['date_mentioned']}")
+    conf_pct = round((result.get('confidence') or 0) * 100)
+    dispatcher_notes.append(f"Entity extraction confidence: {conf_pct}%")
+    if result.get('narrative_coherence') not in ('coherent', None):
+        dispatcher_notes.append(
+            f"⚠️  Narrative coherence: {result.get('narrative_coherence')} — cross-check caller statements"
+        )
+    for a in (result.get('anomalies') or [])[:3]:
+        dispatcher_notes.append(f"Anomaly flagged: {a}")
+
+    # ── Follow-up checklist ────────────────────────────────────
+    follow_up = [
+        "Log full call transcript in incident management system",
+        "Confirm units arrived on scene and update status",
+        "Update incident record: resolved / ongoing / escalated",
+    ]
+    if distress_detected:
+        follow_up.append("Flag call for supervisor review — potential covert emergency pattern")
+    if severity == 'critical':
+        follow_up.append("Brief responding units on caller's exact statements before arrival")
+        follow_up.append("Coordinate with hospital or trauma center if casualties are reported")
+    if victim_names:
+        follow_up.append(f"Notify next of kin if required: {', '.join(victim_names)}")
+    follow_up.append("Archive audio recording linked to this incident report")
+    follow_up.append("Offer dispatcher debrief if call involved traumatic or distressing content")
+
+    return {
+        'priority_actions':         priority_actions,
+        'dispatcher_notes':         dispatcher_notes,
+        'resources_to_dispatch':    resources,
+        'estimated_response_level': response_level,
+        'follow_up_checklist':      follow_up,
+    }
 
 
 # ── Language detection ─────────────────────────────────────────

@@ -22,10 +22,31 @@ const extractedEntitiesSchema = new mongoose.Schema({
         enum: ['llm_anthropic', 'llm_openai', 'rule_based', 'spacy+hf_local'],
         default: null,
     },
+    // ── Emotion / distress ────────────────────────────────────
+    sentiment: { type: String, default: null },
+    dominant_emotion: { type: String, default: null },
+    emotion_scores: { type: mongoose.Schema.Types.Mixed, default: null },
+    emotional_markers: { type: [String], default: [] },
+    narrative_coherence: { type: String, default: null },
+    caller_speaking_freely: { type: Boolean, default: null },
+    anomalies: { type: [String], default: [] },
+    worst_case_scenario: { type: String, default: null },
+    worst_case_likelihood: { type: String, default: null },
+    hidden_distress: { type: mongoose.Schema.Types.Mixed, default: null },
+    // ── Smart Suggestions (NEW) ───────────────────────────────
+    smart_suggestions: {
+        type: new mongoose.Schema({
+            priority_actions:          { type: [String], default: [] },
+            dispatcher_notes:          { type: [String], default: [] },
+            resources_to_dispatch:     { type: [String], default: [] },
+            estimated_response_level:  { type: String, default: 'standard' },
+            follow_up_checklist:       { type: [String], default: [] },
+        }, { _id: false }),
+        default: null,
+    },
 }, { _id: false });
 
 const analysisSchema = new mongoose.Schema({
-    // Who uploaded it
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -36,8 +57,6 @@ const analysisSchema = new mongoose.Schema({
         ref: 'User',
         default: null,
     },
-
-    // File info
     originalName: { type: String, required: true },
     filename: { type: String, required: true },
     mimetype: { type: String, required: true },
@@ -47,51 +66,36 @@ const analysisSchema = new mongoose.Schema({
         enum: ['audio', 'video', 'groupActivity'],
         required: true,
     },
-
-    // Status management
     status: {
         type: String,
         enum: ['pending', 'processing', 'done', 'error'],
         default: 'pending',
     },
     errorMessage: { type: String, default: '' },
-
-    // Storage path
     filePath: { type: String, required: true },
-
-    // Results
     transcription: { type: String, default: '' },
     language: { type: String, default: 'auto' },
     duration: { type: Number, default: 0 },
-
-    // ── Translation ──────────────────────────────────────────────
     translationLang: { type: String, default: '' },
     translatedText: { type: String, default: '' },
-
-    // ── Video analysis data ──────────────────────────────────────
     videoAnalysisData: {
         type: mongoose.Schema.Types.Mixed,
         default: null,
     },
     videoFramesDir: { type: String, default: '' },
-
-    // ── Key Entity Extraction (NEW) ──────────────────────────────
     extractedEntities: {
         type: extractedEntitiesSchema,
         default: null,
     },
-
-    // PDF report
     pdfPath: { type: String, default: '' },
     pdfGeneratedAt: { type: Date, default: null },
-
 }, { timestamps: true });
 
-// ── Indexes for common queries ─────────────────────────────────
 analysisSchema.index({ userId: 1, createdAt: -1 });
 analysisSchema.index({ tenantId: 1, createdAt: -1 });
 analysisSchema.index({ status: 1 });
 analysisSchema.index({ 'extractedEntities.severity': 1 });
 analysisSchema.index({ 'extractedEntities.incident_type': 1 });
+analysisSchema.index({ 'extractedEntities.smart_suggestions.estimated_response_level': 1 });
 
 module.exports = mongoose.model('Analysis', analysisSchema);

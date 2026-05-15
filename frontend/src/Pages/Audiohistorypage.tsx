@@ -20,7 +20,7 @@ import {
     ChevronDown, ChevronUp, Clock, CheckCircle,
     XCircle, Loader2, AlertTriangle, Eye, EyeOff,
     Filter, RotateCcw, Calendar, HardDrive, Hash,
-    AlertOctagon, Activity, ShieldCheck
+    AlertOctagon, Activity, ShieldCheck, Globe
 } from 'lucide-react';
 import ClientTemplate from '../components/Templates/ClientTemplate';
 import { analysisApi, type AnalysisRecord } from '../services/api';
@@ -228,6 +228,16 @@ function AnalysisRow({
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <HardDrive size={13} /> {sizeMB} MB
                         </span>
+                        {record.duration != null && record.duration > 0 && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Clock size={13} /> {Math.floor(record.duration / 60)}:{(Math.round(record.duration % 60)).toString().padStart(2, '0')}
+                            </span>
+                        )}
+                        {record.language && record.status === 'done' && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Globe size={13} /> {record.language.toUpperCase()}
+                            </span>
+                        )}
                         {record.status === 'done' && record.transcription && (
                             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <Hash size={13} /> ~{record.transcription.split(/\s+/).filter(Boolean).length.toLocaleString()} {t('wordsLabel')}

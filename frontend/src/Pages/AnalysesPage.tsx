@@ -56,28 +56,28 @@ export default function AnalysesPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Filter size={18} color="#64748b" />
-          <span style={{ fontWeight: 500, color: '#334155' }}>Filtres:</span>
+          <span style={{ fontWeight: 500, color: '#334155' }}>{t('filters')}:</span>
         </div>
         
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} 
           style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}>
-          <option value="">Tous les types</option>
-          <option value="audio">Audio</option>
-          <option value="video">Vidéo</option>
+          <option value="">{t('allTypes')}</option>
+          <option value="audio">{t('audio')}</option>
+          <option value="video">{t('video')}</option>
         </select>
 
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}>
-          <option value="">Tous les statuts</option>
-          <option value="pending">En attente</option>
-          <option value="processing">En cours</option>
-          <option value="done">Terminé</option>
-          <option value="error">Erreur</option>
+          <option value="">{t('allStatus')}</option>
+          <option value="pending">{t('pending')}</option>
+          <option value="processing">{t('processing')}</option>
+          <option value="done">{t('done')}</option>
+          <option value="error">{t('error')}</option>
         </select>
 
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
           style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} />
-        <span style={{ alignSelf: 'center', color: '#64748b' }}>à</span>
+        <span style={{ alignSelf: 'center', color: '#64748b' }}>{t('to')}</span>
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
           style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} />
       </div>
@@ -90,17 +90,17 @@ export default function AnalysesPage() {
            </div>
         ) : analyses.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8' }}>
-            Aucune analyse trouvée avec ces filtres.
+            {t('noAnalysesFound')}
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Fichier</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Type</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Statut</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Date</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Utilisateur</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>{t('filename')}</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>{t('type')}</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>{t('status')}</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>{t('date')}</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>{t('user')}</th>
               </tr>
             </thead>
             <tbody>
@@ -127,7 +127,7 @@ export default function AnalysesPage() {
                   </td>
                   <td style={{ padding: '16px', color: '#475569' }}>
                     {/* @ts-ignore */}
-                    {analysis.userId?.name || 'Inconnu'}
+                    {analysis.userId?.name || t('unknown')}
                   </td>
                 </tr>
               ))}

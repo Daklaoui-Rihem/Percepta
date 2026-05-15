@@ -76,8 +76,9 @@ const translations = {
   reportsGenerated: { fr: 'Rapports Générés', en: 'Reports Generated', ar: 'التقارير المولّدة' },
   activeProjects: { fr: 'Projets Actifs', en: 'Active Projects', ar: 'المشاريع النشطة' },
   recentAnalyses: { fr: 'Analyses Récentes', en: 'Recent Analyses', ar: 'التحليلات الأخيرة' },
-  name: { fr: 'Nom', en: 'Name', ar: 'الاسم' },
   type: { fr: 'Type', en: 'Type', ar: 'النوع' },
+  audio: { fr: 'Audio', en: 'Audio', ar: 'صوت' },
+  video: { fr: 'Vidéo', en: 'Video', ar: 'فيديو' },
   date: { fr: 'Date', en: 'Date', ar: 'التاريخ' },
   status: { fr: 'Statut', en: 'Status', ar: 'الحالة' },
   completed: { fr: 'Complété', en: 'Completed', ar: 'مكتمل' },
@@ -108,7 +109,9 @@ const translations = {
   allLicenses: { fr: 'Toutes les licences', en: 'All Licenses', ar: 'جميع الرخص' },
   allStatus: { fr: 'Tous les statuts', en: 'All Status', ar: 'جميع الحالات' },
   allTenants: { fr: 'Tous les locataires', en: 'All Tenants', ar: 'جميع المستأجرين' },
+  filters: { fr: 'Filtres', en: 'Filters', ar: 'التصنيفات' },
   of: { fr: 'sur', en: 'of', ar: 'من' },
+  to: { fr: 'à', en: 'to', ar: 'إلى' },
   tenants: { fr: 'locataires', en: 'tenants', ar: 'مستأجرين' },
   tenantsSelected: { fr: '{{count}} locataires sélectionnés', en: '{{count}} tenants selected', ar: '{{count}} مستأجرين محددين' },
   tenantName: { fr: 'Nom du locataire', en: 'Tenant Name', ar: 'اسم المستأجر' },
@@ -213,6 +216,7 @@ const translations = {
   error: { fr: 'Erreur', en: 'Error', ar: 'خطأ' },
   failed: { fr: 'Échoué', en: 'Failed', ar: 'فشل' },
   user: { fr: 'Utilisateur', en: 'User', ar: 'المستخدم' },
+  unknown: { fr: 'Inconnu', en: 'Unknown', ar: 'غير معروف' },
   filename: { fr: 'Fichier', en: 'Filename', ar: 'اسم الملف' },
   size: { fr: 'Taille', en: 'Size', ar: 'الحجم' },
   upload: { fr: 'Upload', en: 'upload', ar: 'رفع' },
@@ -243,6 +247,9 @@ const translations = {
 
   // ── Analyses page ─────────────────────────────────────────────
   analyses: { fr: 'Analyses', en: 'Analyses', ar: 'التحليلات' },
+  analysesHistory: { fr: 'Historique des Analyses', en: 'Analyses History', ar: 'سجل التحليلات' },
+  failedToLoadAnalyses: { fr: 'Échec du chargement des analyses', en: 'Failed to load analyses', ar: 'فشل تحميل التحليلات' },
+  noAnalysesFound: { fr: 'Aucune analyse trouvée avec ces filtres.', en: 'No analyses found with these filters.', ar: 'لم يتم العثور على تحليلات بهذه الفلاتر.' },
   analysesComing: { fr: 'Contenu des analyses bientôt disponible...', en: 'Analyses content coming soon...', ar: 'محتوى التحليلات قادم قريباً...' },
 
   // ── Charts ───────────────────────────────────────────────────
@@ -395,6 +402,26 @@ const translations = {
   videoProcessingAnalysis: { fr: "Analyse vidéo en cours...", en: "Video analysis in progress...", ar: "تحليل الفيديو قيد التقدم..." },
   youCanClosePage: { fr: "Vous pouvez fermer cette page. Le résultat sera disponible dans votre historique.", en: "You can close this page. The result will be available in your history.", ar: "يمكنك إغلاق هذه الصفحة. ستكون النتيجة متاحة في السجل." },
   videoAnalysisDoneAlert: { fr: "Analyse vidéo terminée !", en: "Video analysis completed!", ar: "اكتمل تحليل الفيديو!" },
+  
+  // ── New Transcription Labels ──
+  extractedInfo: { fr: 'Informations Clés Extraites', en: 'Key Information Extracted', ar: 'المعلومات الرئيسية المستخرجة' },
+  incidentTypeLabel: { fr: 'Type d\'incident', en: 'Incident Type', ar: 'نوع الحادث' },
+  locationLabel: { fr: 'Localisation', en: 'Location', ar: 'الموقع' },
+  peopleInvolvedLabel: { fr: 'Personnes impliquées', en: 'People Involved', ar: 'الأشخاص المعنيون' },
+  phoneNumbersLabel: { fr: 'Numéros de téléphone', en: 'Phone Numbers', ar: 'أرقام الهاتف' },
+  callerLabel: { fr: 'Appelant', en: 'Caller', ar: 'المتصل' },
+  victimsLabel: { fr: 'Victimes', en: 'Victims', ar: 'الضحايا' },
+  timeLabel: { fr: 'Heure', en: 'Time', ar: 'الوقت' },
+  dateLabel: { fr: 'Date', en: 'Date', ar: 'التاريخ' },
+  additionalDetailsLabel: { fr: 'Détails supplémentaires', en: 'Additional Details', ar: 'تفاصيل إضافية' },
+  smartSuggestionsLabel: { fr: 'Suggestions d\'urgence intelligentes', en: 'Smart Emergency Suggestions', ar: 'اقتراحات الطوارئ الذكية' },
+  priorityActionsLabel: { fr: 'Actions prioritaires', en: 'Priority Actions', ar: 'الإجراءات الأولية' },
+  resourcesToDispatchLabel: { fr: 'Ressources à déployer', en: 'Resources to Dispatch', ar: 'الموارد المراد إرسالها' },
+  dispatcherNotesLabel: { fr: 'Notes du répartiteur', en: 'Dispatcher Notes', ar: 'ملاحظات الموزع' },
+  followUpChecklistLabel: { fr: 'Liste de suivi', en: 'Follow-up Checklist', ar: 'قائمة المتابعة' },
+  confidenceLevel: { fr: 'confiance', en: 'confidence', ar: 'ثقة' },
+  severityLevel: { fr: 'NIVEAU DE SÉVÉRITÉ', en: 'SEVERITY LEVEL', ar: 'مستوى الخطورة' },
+  responseLevel: { fr: 'NIVEAU DE RÉPONSE', en: 'RESPONSE LEVEL', ar: 'مستوى الاستجابة' },
 
 } as const;
 

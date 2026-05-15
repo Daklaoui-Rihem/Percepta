@@ -10,7 +10,7 @@ interface Notification {
 }
 
 interface NotificationContextType {
-  addNotification: (message: string, type: NotificationType) => void;
+  showNotification: (type: NotificationType, message: string) => void;
   removeNotification: (id: string) => void;
 }
 
@@ -27,7 +27,7 @@ export const useNotification = () => {
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = (message: string, type: NotificationType) => {
+  const showNotification = (type: NotificationType, message: string) => {
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
     setNotifications(prev => [...prev, { id, message, type }]);
 
@@ -50,11 +50,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'JOB_COMPLETED') {
-          addNotification(data.message || 'Le traitement est terminé avec succès !', 'success');
+          showNotification('success', data.message || 'Le traitement est terminé avec succès !');
           // Dispatch a custom event so other components (like tables) can refresh
           window.dispatchEvent(new CustomEvent('percepta:job_completed', { detail: data }));
         } else if (data.type === 'JOB_FAILED') {
-          addNotification(data.message || 'Une erreur est survenue lors du traitement.', 'error');
+          showNotification('error', data.message || 'Une erreur est survenue lors du traitement.');
           window.dispatchEvent(new CustomEvent('percepta:job_failed', { detail: data }));
         }
       } catch (err) {
@@ -73,7 +73,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ addNotification, removeNotification }}>
+    <NotificationContext.Provider value={{ showNotification, removeNotification }}>
       {children}
       {/* Toast Container */}
       <div style={{

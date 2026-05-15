@@ -8,6 +8,7 @@
  * Used inside TranscriptionResultCard when status === 'done'.
  */
 
+import { useTranslation } from '../../context/TranslationContext';
 import type { ExtractedEntities } from '../../services/api';
 
 type Props = {
@@ -31,6 +32,7 @@ const METHOD_CFG: Record<string, { label: string; bg: string; color: string }> =
 };
 
 export default function ExtractedEntitiesCard({ entities }: Props) {
+    const { t } = useTranslation();
     const severityCfg = entities.severity ? SEVERITY_CFG[entities.severity] : null;
     const methodCfg = entities.extraction_method ? METHOD_CFG[entities.extraction_method] : null;
 
@@ -38,31 +40,31 @@ export default function ExtractedEntitiesCard({ entities }: Props) {
     const rows: { icon: string; label: string; value: string; highlight?: boolean }[] = [];
 
     if (entities.incident_type) {
-        rows.push({ icon: '🚨', label: 'Incident Type', value: entities.incident_type, highlight: true });
+        rows.push({ icon: '🚨', label: t('incidentTypeLabel') || 'Incident Type', value: entities.incident_type, highlight: true });
     }
     if (entities.location) {
-        rows.push({ icon: '📍', label: 'Location', value: entities.location });
+        rows.push({ icon: '📍', label: t('locationLabel') || 'Location', value: entities.location });
     }
     if (entities.people_count !== null && entities.people_count !== undefined) {
-        rows.push({ icon: '👥', label: 'People Involved', value: String(entities.people_count) });
+        rows.push({ icon: '👥', label: t('peopleInvolvedLabel') || 'People Involved', value: String(entities.people_count) });
     }
     if (entities.phones && entities.phones.length > 0) {
-        rows.push({ icon: '📞', label: 'Phone Numbers', value: entities.phones.join('  ·  ') });
+        rows.push({ icon: '📞', label: t('phoneNumbersLabel') || 'Phone Numbers', value: entities.phones.join('  ·  ') });
     }
     if (entities.caller_name) {
-        rows.push({ icon: '🧑', label: 'Caller', value: entities.caller_name });
+        rows.push({ icon: '🧑', label: t('callerLabel') || 'Caller', value: entities.caller_name });
     }
     if (entities.victim_names && entities.victim_names.length > 0) {
-        rows.push({ icon: '🏥', label: 'Victims', value: entities.victim_names.join(', ') });
+        rows.push({ icon: '🏥', label: t('victimsLabel') || 'Victims', value: entities.victim_names.join(', ') });
     }
     if (entities.time_mentioned) {
-        rows.push({ icon: '🕐', label: 'Time', value: entities.time_mentioned });
+        rows.push({ icon: '🕐', label: t('timeLabel') || 'Time', value: entities.time_mentioned });
     }
     if (entities.date_mentioned) {
-        rows.push({ icon: '📅', label: 'Date', value: entities.date_mentioned });
+        rows.push({ icon: '📅', label: t('dateLabel') || 'Date', value: entities.date_mentioned });
     }
     if (entities.additional_details) {
-        rows.push({ icon: '📝', label: 'Additional Details', value: entities.additional_details });
+        rows.push({ icon: '📝', label: t('additionalDetailsLabel') || 'Additional Details', value: entities.additional_details });
     }
 
     if (rows.length === 0) return null;
@@ -91,7 +93,7 @@ export default function ExtractedEntitiesCard({ entities }: Props) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 18 }}>🔍</span>
                     <span style={{ fontWeight: 700, color: '#1a3a6b', fontSize: 15 }}>
-                        Key Information Extracted
+                        {t('extractedInfo') || 'Key Information Extracted'}
                     </span>
                 </div>
 
@@ -107,7 +109,7 @@ export default function ExtractedEntitiesCard({ entities }: Props) {
                             fontSize: 12,
                             fontWeight: 600,
                         }}>
-                            {confidence}% confidence
+                            {confidence}% {t('confidenceLevel') || 'confidence'}
                         </span>
                     )}
 
@@ -141,7 +143,7 @@ export default function ExtractedEntitiesCard({ entities }: Props) {
                     <span style={{ fontSize: 20 }}>{severityCfg.dot}</span>
                     <div>
                         <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', letterSpacing: '0.5px' }}>
-                            SEVERITY LEVEL
+                            {t('severityLevel') || 'SEVERITY LEVEL'}
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: severityCfg.color }}>
                             {severityCfg.label}

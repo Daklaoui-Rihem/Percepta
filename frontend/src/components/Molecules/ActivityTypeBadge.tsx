@@ -1,6 +1,9 @@
 import { useTranslation } from '../../context/TranslationContext';
 
-type Props = { type: string }
+type Props = { 
+  type: string;
+  overrideLabel?: string;
+}
 
 const colors: Record<string, { bg: string; color: string }> = {
   upload:        { bg: '#e0f0ff', color: '#3b82f6' },
@@ -10,9 +13,12 @@ const colors: Record<string, { bg: string; color: string }> = {
   error:         { bg: '#fee2e2', color: '#dc2626' },
 };
 
-export default function ActivityTypeBadge({ type }: Props) {
+export default function ActivityTypeBadge({ type, overrideLabel }: Props) {
   const { t } = useTranslation();
   const style = colors[type] || { bg: '#f3f4f6', color: '#555' };
+  
+  const label = overrideLabel ? (t(overrideLabel as any) || overrideLabel) : (t(type as any) || type);
+
   return (
     <span style={{
       background: style.bg,
@@ -21,8 +27,9 @@ export default function ActivityTypeBadge({ type }: Props) {
       borderRadius: 20,
       fontSize: 12,
       fontWeight: 600,
+      textTransform: 'capitalize'
     }}>
-      {t(type as any) || type}
+      {label}
     </span>
   );
 }
