@@ -20,8 +20,11 @@ def main():
         _fail(f"File not found: {file_path}")
 
     try:
+        import torch
         import whisper
-        model = whisper.load_model("large-v3-turbo")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"DEBUG: Whisper is running on: {device.upper()}", file=sys.stderr)
+        model = whisper.load_model("large-v3-turbo", device=device)
     except Exception as e:
         _fail(f"Failed to load Whisper model: {e}")
 
@@ -65,10 +68,15 @@ def main():
     except Exception as e:
         _fail(f"Transcription failed: {e}")
 
+    # Compute duration: prefer result_raw, fall back to last segment end
+    raw_duration = result_raw.get("duration", 0) or 0
+    if raw_duration == 0 and segments:
+        raw_duration = segments[-1]["end"]
+
     result = {
         "text":     full_text,
         "language": result_raw.get("language", "fr"),
-        "duration": round(result_raw.get("duration", 0), 1),
+        "duration": round(raw_duration, 1),
         "confidence": avg_confidence,
         "segments": segments,
     }

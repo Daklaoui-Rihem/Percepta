@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import SuperAdminTemplate from '../components/Templates/SuperAdminTemplate';
 import SuperStatsRow from '../components/Organisms/SuperStatsRow';
-import RealTimeChart from '../components/Organisms/RealTimeChart';
 import ActiveTenantsList from '../components/Organisms/ActiveTenantsList';
 import RecentActivityList from '../components/Organisms/RecentActivityList';
 import { dashboardApi } from '../services/api';
@@ -41,7 +40,6 @@ export default function SuperAdminDashboardPage() {
   return (
     <SuperAdminTemplate>
       <SuperStatsRow stats={stats} />
-      <RealTimeChart />
       <ActiveTenantsList tenants={stats?.activeTenants || []} />
       <RecentActivityList activities={stats?.recentActivities || []} />
     </SuperAdminTemplate>

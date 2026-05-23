@@ -131,11 +131,12 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
         console.log(`ℹ️  [AudioProcessor] Source and target language are the same (${result.language}), skipping translation.`);
     }
 
-    // ── Step 3.5: Translate Extracted Entities ───────────────
+    // Step 3.5: Translate Extracted Entities separately to translatedExtractedEntities
+    let translatedExtractedEntities = null;
     if (translateTo && translateTo !== result.language && extractedEntities) {
         console.log(`🌐 [AudioProcessor] Translating extracted entities to: ${translateTo}`);
         try {
-            extractedEntities = await translateEntities(extractedEntities, result.language, translateTo);
+            translatedExtractedEntities = await translateEntities(extractedEntities, result.language, translateTo);
             console.log(`✅ [AudioProcessor] Entities translated.`);
         } catch (translErr) {
             console.error(`⚠️  [AudioProcessor] Entities translation failed:`, translErr.message);
@@ -176,7 +177,8 @@ async function processAudio({ analysisId, filePath, job, userId, userName, userE
         pdfPath,
         translatedText,
         translationLang,
-        extractedEntities,              // ← Return to worker/controller
+        extractedEntities,              // ← Return original to worker/controller
+        translatedExtractedEntities,    // ← Return translated to worker/controller
     };
 }
 

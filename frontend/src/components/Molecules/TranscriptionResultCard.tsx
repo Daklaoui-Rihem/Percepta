@@ -1,18 +1,14 @@
 /**
- * TranscriptionResultCard.tsx — Updated with Smart Suggestions panel
+ * TranscriptionResultCard.tsx — Smart Suggestions as third tab
  *
- * When analysis is done, shows:
- *   1. ExtractedEntitiesCard  (incident type, severity, location, phones…)
- *   2. SmartSuggestionsCard   (priority actions, resources, dispatcher notes, checklist)
- *   3. Metrics column + Full transcription / translation tabs
- *   4. PDF download
+ * Tabs: Original | Translation (if available) | Suggestions (if available)
  */
 
 import { useState, useEffect, useRef } from 'react';
 import {
     CheckCircle, XCircle, Clock, Copy,
     RefreshCw, Globe, FileText,
-    Download, Loader2, Target, Hash, Languages
+    Download, Loader2, Target, Hash, Languages, Zap
 } from 'lucide-react';
 import { analysisApi } from '../../services/api';
 import type { ExtractedEntities } from '../../services/api';
@@ -41,6 +37,8 @@ type Props = {
     onReset?: () => void;
 };
 
+type ActiveTab = 'original' | 'translation' | 'suggestions';
+
 const LANG_NAMES: Record<string, string> = {
     fr: 'French', en: 'English', ar: 'Arabic',
 };
@@ -61,7 +59,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
     const [copiedTranslation, setCopiedTranslation] = useState(false);
     const [pdfLoading, setPdfLoading] = useState(false);
     const [pdfError, setPdfError] = useState('');
-    const [activeTab, setActiveTab] = useState<'original' | 'translation'>('original');
+    const [activeTab, setActiveTab] = useState<ActiveTab>('original');
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const detectedLang = data?.language
@@ -170,6 +168,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
     const status = data?.status ?? 'pending';
     const hasTranslation = !!(data?.translatedText && data?.translationLang);
+    const hasSuggestions = !!(data?.extractedEntities?.smart_suggestions);
     const translationLang = data?.translationLang || '';
     const translationDir = LANG_DIR[translationLang] || 'ltr';
 
@@ -207,6 +206,27 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
     // ── DONE STATE ─────────────────────────────────────────────
     if (status === 'done') {
+        // Build tab list dynamically
+        type TabDef = { key: ActiveTab; label: React.ReactNode };
+        const tabs: TabDef[] = [
+            {
+                key: 'original',
+                label: <><FileText size={15} /> {t('originalTranscription') || 'Original'}</>,
+            },
+        ];
+        if (hasTranslation) {
+            tabs.push({
+                key: 'translation',
+                label: <><Languages size={15} /> {LANG_NAMES[translationLang] || 'Translation'}</>,
+            });
+        }
+        if (hasSuggestions) {
+            tabs.push({
+                key: 'suggestions',
+                label: <><Zap size={15} /> Smart Suggestions</>,
+            });
+        }
+
         return (
             <div style={{ direction: isRTL ? 'rtl' : 'ltr', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -231,49 +251,24 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                 {t('translationAvailable') || 'Translation available:'} {LANG_NAMES[translationLang] || translationLang}
                             </div>
                         )}
+                        {hasSuggestions && (
+                            <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, color: '#d97706', fontSize: 12 }}>
+                                <Zap size={14} />
+                                Smart emergency suggestions available
+                            </div>
+                        )}
                     </div>
                     <div style={{ background: '#dcfce7', color: '#16a34a', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <CheckCircle size={15} /> {t('completed')}
                     </div>
                 </div>
 
-                {/* ── Extracted Entities ── */}
+                {/* ── Extracted Entities (always visible above tabs) ── */}
                 {data?.extractedEntities && (
                     <ExtractedEntitiesCard entities={data.extractedEntities} />
                 )}
 
-                {/* ── Smart Suggestions (NEW) ── */}
-                {data?.extractedEntities?.smart_suggestions && (
-                    <div style={{
-                        background: 'white',
-                        border: '1.5px solid #fde68a',
-                        borderRadius: 14,
-                        overflow: 'hidden',
-                    }}>
-                        {/* Card header bar */}
-                        <div style={{
-                            padding: '14px 20px',
-                            background: '#fffbeb',
-                            borderBottom: '1px solid #fde68a',
-                            display: 'flex', alignItems: 'center', gap: 10,
-                        }}>
-                            <span style={{ fontSize: 18 }}>⚡</span>
-                            <div>
-                                <div style={{ fontWeight: 700, color: '#1a3a6b', fontSize: 15 }}>
-                                    Smart Emergency Suggestions
-                                </div>
-                                <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                                    Auto-generated locally · rule-based · 100% free · no API
-                                </div>
-                            </div>
-                        </div>
-                        <div style={{ padding: '16px 20px' }}>
-                            <SmartSuggestionsCard suggestions={data.extractedEntities.smart_suggestions} />
-                        </div>
-                    </div>
-                )}
-
-                {/* 2-column: metrics + transcription */}
+                {/* 2-column: metrics + tabbed content */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 320px) 1fr', gap: 24, alignItems: 'start' }}>
 
                     {/* Left: Metrics */}
@@ -292,59 +287,62 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                 </div>
                             </div>
                         )}
+                        {hasSuggestions && (
+                            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                                <div style={{ background: '#fef3c7', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <Zap size={20} color="#d97706" />
+                                </div>
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 3 }}>Response Level</div>
+                                    <div style={{ color: '#92400e', fontSize: 14, fontWeight: 700, textTransform: 'uppercase' }}>
+                                        {data?.extractedEntities?.smart_suggestions?.estimated_response_level || 'standard'}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Right: Transcription */}
+                    {/* Right: Tabbed content */}
                     <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-                        {hasTranslation && (
-                            <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', padding: '0 24px' }}>
-                                <TabButton active={activeTab === 'original'} onClick={() => setActiveTab('original')}>
-                                    <FileText size={15} /> {t('originalTranscription') || 'Original'}
-                                </TabButton>
-                                <TabButton active={activeTab === 'translation'} onClick={() => setActiveTab('translation')}>
-                                    <Languages size={15} /> {LANG_NAMES[translationLang] || 'Translation'}
-                                </TabButton>
+
+                        {/* Tab bar — always shown if there are 2+ tabs */}
+                        {tabs.length > 1 && (
+                            <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', padding: '0 24px', overflowX: 'auto' }}>
+                                {tabs.map(tab => (
+                                    <TabButton
+                                        key={tab.key}
+                                        active={activeTab === tab.key}
+                                        onClick={() => setActiveTab(tab.key)}
+                                    >
+                                        {tab.label}
+                                    </TabButton>
+                                ))}
                             </div>
                         )}
 
-                        {/* Action buttons */}
-                        <div style={{ padding: '16px 24px', display: 'flex', gap: 12, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
-                            {activeTab === 'original' ? (
-                                <>
+                        {/* ── Original tab ── */}
+                        {activeTab === 'original' && (
+                            <>
+                                <div style={{ padding: '16px 24px', display: 'flex', gap: 12, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
                                     <button onClick={() => handleCopy(data?.transcription || '', setCopied)} style={actionBtnStyle}>
                                         {copied ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy
                                     </button>
                                     <button onClick={() => handleDownloadTxt(data?.transcription || '')} style={actionBtnStyle}>
                                         <Download size={15} /> Download TXT
                                     </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button onClick={() => handleCopy(data?.translatedText || '', setCopiedTranslation)} style={actionBtnStyle}>
-                                        {copiedTranslation ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy
-                                    </button>
-                                    <button onClick={() => handleDownloadTxt(data?.translatedText || '', `_${translationLang}`)} style={actionBtnStyle}>
-                                        <Download size={15} /> Download TXT
-                                    </button>
-                                </>
-                            )}
-                            {data?.hasPdf ? (
-                                <button onClick={handleDownloadPDF} disabled={pdfLoading} style={{ ...actionBtnStyle, opacity: pdfLoading ? 0.6 : 1 }}>
-                                    {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
-                                    Download PDF
-                                </button>
-                            ) : (
-                                <button onClick={handleGeneratePDF} disabled={pdfLoading} style={{ ...actionBtnStyle, opacity: pdfLoading ? 0.6 : 1 }}>
-                                    {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
-                                    Generate PDF
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Content */}
-                        <div style={{ padding: '24px' }}>
-                            {activeTab === 'original' ? (
-                                <>
+                                    {data?.hasPdf ? (
+                                        <button onClick={handleDownloadPDF} disabled={pdfLoading} style={{ ...actionBtnStyle, opacity: pdfLoading ? 0.6 : 1 }}>
+                                            {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
+                                            Download PDF
+                                        </button>
+                                    ) : (
+                                        <button onClick={handleGeneratePDF} disabled={pdfLoading} style={{ ...actionBtnStyle, opacity: pdfLoading ? 0.6 : 1 }}>
+                                            {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
+                                            Generate PDF
+                                        </button>
+                                    )}
+                                </div>
+                                <div style={{ padding: '24px' }}>
                                     <h4 style={{ color: '#1a3a6b', margin: '0 0 24px', fontSize: 16, fontWeight: 700 }}>
                                         {t('fullTranscription') || 'Full Transcription'}
                                     </h4>
@@ -360,9 +358,22 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                             </div>
                                         ))}
                                     </div>
-                                </>
-                            ) : (
-                                <>
+                                </div>
+                            </>
+                        )}
+
+                        {/* ── Translation tab ── */}
+                        {activeTab === 'translation' && hasTranslation && (
+                            <>
+                                <div style={{ padding: '16px 24px', display: 'flex', gap: 12, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+                                    <button onClick={() => handleCopy(data?.translatedText || '', setCopiedTranslation)} style={actionBtnStyle}>
+                                        {copiedTranslation ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy
+                                    </button>
+                                    <button onClick={() => handleDownloadTxt(data?.translatedText || '', `_${translationLang}`)} style={actionBtnStyle}>
+                                        <Download size={15} /> Download TXT
+                                    </button>
+                                </div>
+                                <div style={{ padding: '24px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                                         <Languages size={18} color="#1d4ed8" />
                                         <h4 style={{ color: '#1a3a6b', margin: 0, fontSize: 16, fontWeight: 700 }}>
@@ -388,9 +399,25 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                     >
                                         {data?.translatedText}
                                     </div>
-                                </>
-                            )}
-                        </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* ── Suggestions tab ── */}
+                        {activeTab === 'suggestions' && hasSuggestions && (
+                            <div style={{ padding: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                                    <Zap size={18} color="#d97706" />
+                                    <h4 style={{ color: '#1a3a6b', margin: 0, fontSize: 16, fontWeight: 700 }}>
+                                        Smart Emergency Suggestions
+                                    </h4>
+                                    <span style={{ background: '#fef3c7', color: '#92400e', fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600, border: '1px solid #fde68a' }}>
+                                        Auto-generated · local · free
+                                    </span>
+                                </div>
+                                <SmartSuggestionsCard suggestions={data!.extractedEntities!.smart_suggestions!} />
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -496,7 +523,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
                 color: active ? '#1a3a6b' : '#94a3b8',
                 borderBottom: active ? '2px solid #1a3a6b' : '2px solid transparent',
                 marginBottom: -2, display: 'flex', alignItems: 'center', gap: 6,
-                transition: 'all 0.2s',
+                transition: 'all 0.2s', whiteSpace: 'nowrap',
             }}
         >
             {children}

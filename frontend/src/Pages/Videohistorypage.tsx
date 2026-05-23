@@ -9,7 +9,7 @@ import {
     Film, Download, Trash2, RefreshCw, Search,
     FileText, Clock, CheckCircle,
     XCircle, Loader2, AlertTriangle,
-    Filter
+    Filter, AlertOctagon, ShieldCheck, Globe, Calendar, HardDrive, Activity
 } from 'lucide-react';
 import ClientTemplate from '../components/Templates/ClientTemplate';
 import { analysisApi, type AnalysisRecord } from '../services/api';
@@ -194,13 +194,48 @@ function AnalysisRow({
                                 <FileText size={12} /> PDF Ready
                             </span>
                         )}
+
+                        {/* Severity badge */}
+                        {record.extractedEntities?.severity && (() => {
+                            const sev = record.extractedEntities!.severity!;
+                            const cfg: Record<string, { bg: string; color: string; border: string; icon: React.ReactNode }> = {
+                                critical: { bg: '#fff1f2', color: '#dc2626', border: '#fecaca', icon: <AlertOctagon size={12} /> },
+                                high:     { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa', icon: <AlertTriangle size={12} /> },
+                                medium:   { bg: '#fefce8', color: '#ca8a04', border: '#fde68a', icon: <Activity size={12} /> },
+                                low:      { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', icon: <ShieldCheck size={12} /> },
+                            };
+                            const s = cfg[sev];
+                            return s ? (
+                                <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    background: s.bg, color: s.color,
+                                    border: `1px solid ${s.border}`,
+                                    padding: '3px 10px', borderRadius: 20,
+                                    fontSize: 11, fontWeight: 700,
+                                }}>
+                                    {s.icon} {sev.toUpperCase()}
+                                </span>
+                            ) : null;
+                        })()}
                     </div>
 
-                    <div style={{ display: 'flex', gap: 14, fontSize: 13, color: '#64748b' }}>
-                        <span>{sizeMB} MB</span>
+                    <div style={{ display: 'flex', gap: 16, color: '#94a3b8', fontSize: 13, alignItems: 'center', flexWrap: 'wrap' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {dateStr} {timeStr}
+                            <Calendar size={13} /> {dateStr} · {timeStr}
                         </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <HardDrive size={13} /> {sizeMB} MB
+                        </span>
+                        {record.duration != null && record.duration > 0 && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Clock size={13} /> {Math.floor(record.duration / 60)}:{(Math.round(record.duration % 60)).toString().padStart(2, '0')}
+                            </span>
+                        )}
+                        {record.language && record.status === 'done' && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Globe size={13} /> {record.language.toUpperCase()}
+                            </span>
+                        )}
                     </div>
 
                     {/* Error detail */}

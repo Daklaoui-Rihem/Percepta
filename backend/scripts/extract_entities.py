@@ -145,12 +145,19 @@ def run_hf_analysis(text):
     snippet = text[:512]
 
     try:
+        import torch
+        device_id = 0 if torch.cuda.is_available() else -1
+    except Exception:
+        device_id = -1
+
+    try:
         from transformers import pipeline
         emotion_pipe = pipeline(
             "text-classification",
             model=EMOTION_MODEL,
             top_k=None,
             truncation=True,
+            device=device_id,
         )
         scores = emotion_pipe(snippet)
         if scores and scores[0]:
@@ -169,6 +176,7 @@ def run_hf_analysis(text):
             "text-classification",
             model=SENTIMENT_MODEL,
             truncation=True,
+            device=device_id,
         )
         result = sentiment_pipe(snippet)
         if result:
@@ -181,6 +189,13 @@ def run_hf_analysis(text):
 
 # ══════════════════════════════════════════════════════════════
 # STEP 3 — Deep heuristic analysis
+#
+# FIX: Incident classification now requires a MINIMUM SCORE
+# of 2 keyword matches before assigning an incident type.
+# Single-word matches no longer classify a call.
+# Each keyword is also more specific to avoid false positives
+# (e.g. "accident" alone is too generic and appears in many
+# unrelated sentences — now requires 2+ hits from the list).
 # ══════════════════════════════════════════════════════════════
 def run_deep_heuristics(text, language):
     text_lower = text.lower()
@@ -211,41 +226,70 @@ def run_deep_heuristics(text, language):
     }
 
     incidents = {
-        'fr': {
-            'accident de voiture' : ['accident', 'collision', 'voiture', 'renversé'],
-            'incendie'            : ['feu', 'incendie', 'flamme', 'fumée'],
-            'agression'           : ['agression', 'attaque', 'frappe', 'coups', 'bagarre'],
-            'malaise médical'     : ['malaise', 'inconscient', 'douleur', 'crise', 'respire'],
-            'violence domestique' : ['mari', 'conjoint', 'frappe', 'violence', 'menace chez'],
-            'vol / cambriolage'   : ['vol', 'cambriolage', 'voleur'],
-            'personne disparue'   : ['disparu', 'introuvable', 'fugue'],
-        },
-        'en': {
-            'car accident'      : ['accident', 'crash', 'collision', 'vehicle'],
-            'fire'              : ['fire', 'burning', 'smoke', 'flames'],
-            'assault'           : ['assault', 'attack', 'fight', 'stabbed', 'shot'],
-            'medical emergency' : ['unconscious', 'breathing', 'chest pain', 'heart', 'seizure'],
-            'domestic violence' : ['husband', 'wife', 'partner', 'hitting', 'scared home'],
-            'robbery'           : ['robbery', 'theft', 'stolen', 'burglar'],
-            'missing person'    : ['missing', 'disappeared', 'lost', 'cannot find'],
-        },
-        'ar': {
-            'حادث سيارة'  : ['حادث', 'تصادم', 'سيارة'],
-            'حريق'        : ['حريق', 'نار', 'دخان'],
-            'اعتداء'      : ['اعتداء', 'ضرب', 'هجوم'],
-            'طوارئ طبية'  : ['إغماء', 'تنفس', 'ألم'],
-            'عنف أسري'    : ['زوج', 'يضرب', 'خائف', 'أمان'],
-            'سرقة'        : ['سرقة', 'لص', 'سرق'],
-        },
+        'fr': [
+            ('fusillade / tirs',      ['fusillade','coup de feu','coups de feu','tirs','a tiré','ouvrir le feu','tireur actif','arme à feu','pistolet','fusil'], 1),
+            ('accident de voiture',   ['collision','percuté','renversé','choc','carambolage','voiture accidentée','véhicule accidenté'], 1),
+            ('accident de voiture',   ['accident','voiture'],  2),   # needs BOTH words
+            ('incendie',              ['incendie','flammes','brûle','brûler','fumée épaisse'],        1),
+            ('incendie',              ['feu','brûle'],                                                     2),
+            ('incendie',              ['feu','fumée'],                                                     2),
+            ('agression physique',    ['agression','attaque','frappe','coups','blessé','couteau','arme'],   1),
+            ('urgence médicale',      ['malaise','inconscient','ne respire','crise cardiaque','douleur thoracique','ambulance'], 1),
+            ('violence domestique',   ['conjoint frappe','mari frappe','violence conjugale','femme battue','enfant battu'], 1),
+            ('violence domestique',   ['violence','maison','mari','femme'],                                3),
+            ('vol / cambriolage',     ['cambriolage','voleur','vol à main armée','braquage','effraction'], 1),
+            ('vol / cambriolage',     ['volé','vol'],                                                     2),
+            ('personne disparue',     ['disparu','introuvable','enfant perdu','fugue'],                    1),
+            ('noyade',                ['noyade','se noie','noyé','eau','piscine'],                         2),
+        ],
+        'en': [
+            ('shooting',              ['shooting','gunshot','gunshots','shots fired','opened fire','active shooter','gunman','pistol','rifle'], 1),
+            ('car accident',          ['collision','crashed','crash','rear-ended','overturned','rollover','vehicle accident'], 1),
+            ('car accident',          ['accident','car'],                                                  2),
+            ('car accident',          ['accident','vehicle'],                                              2),
+            ('car accident',          ['accident','highway'],                                              2),
+            ('fire',                  ['burning','flames','smoke','arson','fire alarm'],                   1),
+            ('fire',                  ['fire','burning'],                                                  2),
+            ('fire',                  ['fire','smoke'],                                                    2),
+            ('fire',                  ['fire','flames'],                                                   2),
+            ('assault',               ['stabbed','shot','gunshot','attacked','beaten','assault','weapon'], 1),
+            ('medical emergency',     ['unconscious','not breathing','chest pain','heart attack','seizure','overdose'], 1),
+            ('domestic violence',     ['hitting me','beating me','hurting me','domestic violence','abuse'],1),
+            ('domestic violence',     ['husband','hitting','scared'],                                      3),
+            ('robbery',               ['robbery','armed robbery','mugged','held up','thief'],              1),
+            ('robbery',               ['stolen','robbed'],                                                 2),
+            ('missing person',        ['missing','disappeared','can\'t find','lost child'],                1),
+            ('drowning',              ['drowning','can\'t swim','underwater'],                             1),
+        ],
+        'ar': [
+            ('إطلاق نار',             ['إطلاق نار','طلق ناري','إطلاق رصاص','مطلق النار','مسدس','بندقية'],  1),
+            ('حادث سيارة',            ['تصادم','اصطدام','حادث سيارة','حادث طريق'],                       1),
+            ('حادث سيارة',            ['حادث','سيارة'],                                                   2),
+            ('حريق',                  ['حريق','اشتعال','نار','دخان كثيف'],                               1),
+            ('حريق',                  ['نار','اشتعال'],                                                   2),
+            ('اعتداء',                ['اعتداء','يضربني','ضرب','سكين','سلاح'],                           1),
+            ('طوارئ طبية',            ['لا يتنفس','نوبة قلبية','إغماء','سقط مغشياً'],                    1),
+            ('عنف أسري',              ['زوجي يضربني','عنف أسري','زوج عنيف'],                             1),
+            ('سرقة',                  ['سرقة','يسرقني','مسلح','اختطاف'],                                  1),
+            ('غرق',                   ['يغرق','لا يسبح','غرق','بحر','نهر'],                               2),
+        ],
     }
-    lang_inc = incidents.get(language, incidents['en'])
-    best, best_score = None, 0
-    for inc, kws in lang_inc.items():
-        sc = sum(1 for kw in kws if kw in text_lower)
-        if sc > best_score:
-            best_score, best = sc, inc
-    result['incident_type'] = best
 
+    lang_list = incidents.get(language, incidents['en'])
+
+    best_type  = None
+    best_score = 0
+
+    for entry in lang_list:
+        inc_name, kws, min_hits = entry
+        score = sum(1 for kw in kws if re.search(r'\b' + re.escape(kw) + r'\b', text_lower))
+        if score >= min_hits and score > best_score:
+            best_score = score
+            best_type  = inc_name
+
+    result['incident_type'] = best_type
+
+    # ── People count ───────────────────────────────────────────
     word_nums = {'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,
                  'one':1,'two':2,'three':3,'four':4,'five':5}
     cpat = r'(\d+|un|une|deux|trois|quatre|cinq|one|two|three|four|five)\s*(?:personne|blessé|victime|mort|person|victim|injured|dead|شخص|ضحية)'
@@ -254,6 +298,7 @@ def run_deep_heuristics(text, language):
         n = m.group(1)
         result['people_count'] = word_nums.get(n, int(n) if n.isdigit() else None)
 
+    # ── Time / date ────────────────────────────────────────────
     tm = re.search(r'\b\d{1,2}[h:]\d{2}\b|\b\d{1,2}\s*(?:heures?|h|am|pm)\b', text_lower)
     if tm:
         result['time_mentioned'] = tm.group(0)
@@ -265,7 +310,8 @@ def run_deep_heuristics(text, language):
     if dm:
         result['date_mentioned'] = dm.group(0)
 
-    crit_kws = ['mort','dead','dying','ne respire','not breathing','inconscient','unconscious','sang','blood','arme','weapon','قتل','ميت']
+    # ── Severity ───────────────────────────────────────────────
+    crit_kws = ['mort','dead','dying','ne respire','not breathing','inconscient','unconscious','sang','blood','arme','weapon','قتل','ميت','لا يتنفس']
     high_kws = ['blessé grave','seriously injured','fracture','beaucoup de sang','heart attack','crise cardiaque','نوبة']
     if any(w in text_lower for w in crit_kws):
         result['severity'] = 'critical'
@@ -273,7 +319,11 @@ def run_deep_heuristics(text, language):
         result['severity'] = 'high'
     elif result['people_count'] and result['people_count'] > 3:
         result['severity'] = 'high'
+    elif result['incident_type'] is None:
+        # No incident detected → low severity by default
+        result['severity'] = 'low'
 
+    # ── Hidden distress signals ────────────────────────────────
     signals, anomalies, emo_markers = [], [], []
     score = 0.0
 
@@ -396,9 +446,16 @@ def run_deep_heuristics(text, language):
         result['hidden_distress']['confidence'] = round(score, 2)
         result['hidden_distress']['signals']    = signals
 
-    result['anomalies']       = anomalies
+    result['anomalies']         = anomalies
     result['emotional_markers'] = list(set(emo_markers))
-    result['confidence']      = 0.70 if result['incident_type'] else 0.45
+
+    # Confidence: higher when we actually identified something
+    if result['incident_type']:
+        result['confidence'] = 0.70
+    elif result['hidden_distress']['detected']:
+        result['confidence'] = 0.55
+    else:
+        result['confidence'] = 0.35
 
     return result
 
@@ -407,10 +464,6 @@ def run_deep_heuristics(text, language):
 # STEP 4 — Smart Suggestion Engine (free, rule-based)
 # ══════════════════════════════════════════════════════════════
 def generate_suggestions(result: dict, language: str) -> dict:
-    """
-    Generate actionable emergency response suggestions based on extracted entities.
-    100% local, zero API calls, zero cost.
-    """
     severity        = result.get('severity', 'medium')
     incident_type   = (result.get('incident_type') or '').lower()
     people_count    = result.get('people_count')
@@ -428,16 +481,23 @@ def generate_suggestions(result: dict, language: str) -> dict:
     if distress_detected and response_level != 'critical':
         response_level = 'elevated'
 
+    # No incident detected → standard response
+    if not incident_type and not distress_detected:
+        response_level = 'standard'
+
     # ── Resources to dispatch ──────────────────────────────────
     INCIDENT_RESOURCES = {
         # French incidents
         'incendie':             ['Pompiers (18)', 'SAMU si blessés (15)', 'Police (17)'],
         'accident de voiture':  ['SAMU (15)', 'Pompiers (18)', 'Police (17)', 'Dépanneuse'],
         'agression':            ['Police (17)', 'SAMU si blessés (15)'],
+        'agression physique':   ['Police (17)', 'SAMU si blessés (15)'],
+        'urgence médicale':     ['SAMU (15)', 'Pompiers (18)'],
         'malaise médical':      ['SAMU (15)', 'Pompiers (18)'],
         'violence domestique':  ['Police (17)', 'SAMU si blessés (15)', 'Travailleurs sociaux'],
         'vol / cambriolage':    ['Police (17)'],
         'personne disparue':    ['Police (17)', 'Gendarmerie'],
+        'noyade':               ['SAMU (15)', 'Pompiers (18)', 'SNSM si zone côtière'],
         # English incidents
         'fire':                 ['Fire Brigade (999)', 'Ambulance if injured', 'Police'],
         'car accident':         ['Ambulance (999)', 'Fire Brigade', 'Police', 'Traffic control'],
@@ -446,6 +506,7 @@ def generate_suggestions(result: dict, language: str) -> dict:
         'domestic violence':    ['Police (999)', 'Ambulance if injured', 'Social services'],
         'robbery':              ['Police (999)'],
         'missing person':       ['Police (999)'],
+        'drowning':             ['Ambulance (999)', 'Coastguard/Lifeguard', 'Fire Brigade'],
         # Arabic incidents
         'حادث سيارة':           ['الإسعاف (1021)', 'الإطفاء', 'الشرطة (1717)'],
         'حريق':                 ['الإطفاء (1020)', 'الإسعاف (1021)', 'الشرطة (1717)'],
@@ -453,14 +514,20 @@ def generate_suggestions(result: dict, language: str) -> dict:
         'طوارئ طبية':           ['الإسعاف (1021)', 'الإطفاء'],
         'عنف أسري':             ['الشرطة (1717)', 'الإسعاف', 'الخدمات الاجتماعية'],
         'سرقة':                 ['الشرطة (1717)'],
+        'غرق':                  ['الإسعاف (1021)', 'الإطفاء', 'حرس السواحل'],
     }
+
     resources = []
     for key, res_list in INCIDENT_RESOURCES.items():
         if key in incident_type:
             resources = list(res_list)
             break
-    if not resources:
+
+    # Generic fallback only if something is actually wrong
+    if not resources and (incident_type or distress_detected or severity in ('high', 'critical')):
         resources = ['Emergency services (112)', 'Police if needed', 'Medical services if injured']
+    elif not resources:
+        resources = ['Emergency services (112) — if situation escalates']
 
     if people_count and people_count > 5:
         resources.append('Mass casualty / CUMP support')
@@ -473,7 +540,7 @@ def generate_suggestions(result: dict, language: str) -> dict:
     if distress_detected:
         conf = round(hidden_distress.get('confidence', 0) * 100)
         msg  = hidden_distress.get('covert_message', 'Caller may not be speaking freely')
-        priority_actions.append(f"⚠️  COVERT DISTRESS DETECTED ({conf}% confidence) — {msg}")
+        priority_actions.append(f"COVERT DISTRESS DETECTED ({conf}% confidence) — {msg}")
         priority_actions.append("Send silent dispatch immediately without confirming over phone")
         priority_actions.append("Use yes/no questions only: 'Is someone with you right now?'")
         priority_actions.append("Do NOT mention police or emergency dispatch explicitly on call")
@@ -483,10 +550,13 @@ def generate_suggestions(result: dict, language: str) -> dict:
     elif severity == 'high':
         priority_actions.append("HIGH priority — Begin dispatch while gathering additional information")
 
-    if location:
-        priority_actions.append(f"Confirm exact location: '{location}' — verify street/building/floor")
-    elif incident_type:
-        priority_actions.append("⚠️  Location NOT detected — ask caller for precise address immediately")
+    if incident_type:
+        if location:
+            priority_actions.append(f"Confirm exact location: '{location}' — verify street/building/floor")
+        else:
+            priority_actions.append("Location NOT detected — ask caller for precise address immediately")
+    elif not distress_detected:
+        priority_actions.append("Gather more information — incident type unclear from transcript")
 
     if victim_names:
         priority_actions.append(f"Note victim name(s): {', '.join(victim_names)}")
@@ -498,7 +568,8 @@ def generate_suggestions(result: dict, language: str) -> dict:
 
     MEDICAL_KEYWORDS = [
         'mort','dead','inconscient','unconscious','ne respire','not breathing',
-        'bleeding','sang','crise','seizure','infarctus','heart attack','cardiac'
+        'bleeding','sang','crise','seizure','infarctus','heart attack','cardiac',
+        'لا يتنفس','نوبة قلبية'
     ]
     text_blob = (str(result.get('additional_details') or '') + incident_type).lower()
     if any(kw in text_blob for kw in MEDICAL_KEYWORDS):
@@ -513,16 +584,21 @@ def generate_suggestions(result: dict, language: str) -> dict:
 
     if dominant_emotion in ('fear', 'anger') or severity in ('high', 'critical'):
         priority_actions.append("Keep caller calm — speak slowly, clearly, and reassuringly")
-        priority_actions.append("Confirm units are on the way — avoid revealing exact ETA if caller may be watched")
+        if distress_detected:
+            priority_actions.append("Confirm units are on the way — avoid revealing exact ETA if caller may be watched")
 
     if phones:
         priority_actions.append(f"Callback number(s) logged: {', '.join(phones[:3])}")
     else:
         priority_actions.append("No phone number detected in transcript — trace call if possible")
 
+    # If nothing urgent was found, provide a neutral assessment note
+    if not priority_actions or (len(priority_actions) == 1 and 'phone' in priority_actions[0].lower()):
+        priority_actions.insert(0, "No critical emergency indicators detected — verify caller situation verbally")
+
     # ── Dispatcher notes ───────────────────────────────────────
     dispatcher_notes = []
-    dispatcher_notes.append(f"Incident type: {result.get('incident_type') or 'Unknown — use context'}")
+    dispatcher_notes.append(f"Incident type: {result.get('incident_type') or 'Not identified — requires clarification'}")
     dispatcher_notes.append(f"Severity assessed: {severity.upper()}")
     dispatcher_notes.append(f"Response level: {response_level.upper()}")
     if caller_name:
@@ -535,26 +611,13 @@ def generate_suggestions(result: dict, language: str) -> dict:
     dispatcher_notes.append(f"Entity extraction confidence: {conf_pct}%")
     if result.get('narrative_coherence') not in ('coherent', None):
         dispatcher_notes.append(
-            f"⚠️  Narrative coherence: {result.get('narrative_coherence')} — cross-check caller statements"
+            f"Narrative coherence: {result.get('narrative_coherence')} — cross-check caller statements"
         )
     for a in (result.get('anomalies') or [])[:3]:
         dispatcher_notes.append(f"Anomaly flagged: {a}")
 
     # ── Follow-up checklist ────────────────────────────────────
-    follow_up = [
-        "Log full call transcript in incident management system",
-        "Confirm units arrived on scene and update status",
-        "Update incident record: resolved / ongoing / escalated",
-    ]
-    if distress_detected:
-        follow_up.append("Flag call for supervisor review — potential covert emergency pattern")
-    if severity == 'critical':
-        follow_up.append("Brief responding units on caller's exact statements before arrival")
-        follow_up.append("Coordinate with hospital or trauma center if casualties are reported")
-    if victim_names:
-        follow_up.append(f"Notify next of kin if required: {', '.join(victim_names)}")
-    follow_up.append("Archive audio recording linked to this incident report")
-    follow_up.append("Offer dispatcher debrief if call involved traumatic or distressing content")
+    follow_up = []
 
     return {
         'priority_actions':         priority_actions,

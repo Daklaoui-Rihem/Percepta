@@ -110,7 +110,7 @@ async function generateVideoReportPDF(opts) {
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({
             size: 'A4',
-            margins: { top: 0, bottom: 40, left: 0, right: 0 },
+            margins: { top: 0, bottom: 15, left: 0, right: 0 },
             bufferPages: true,
         });
 

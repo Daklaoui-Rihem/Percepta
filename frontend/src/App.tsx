@@ -6,6 +6,7 @@ import DashboardPage from './Pages/DashboardPage';
 import UsersPage from './Pages/UsersPage';
 import ReportsPage from './Pages/ReportsPage';
 import AnalysesPage from './Pages/AnalysesPage';
+import SeverityStatsPage from './Pages/SeverityStatsPage';
 import ClientDashboardPage from './Pages/ClientDashboardPage';
 import NewTranscriptionPage from './Pages/NewTranscriptionPage';
 import NewVideoAnalysisPage from './Pages/NewVideoAnalysisPage';
@@ -59,6 +60,11 @@ export default function App() {
         <Route path="/analyses" element={
           <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
             <AnalysesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/analytics" element={
+          <ProtectedRoute allowedRoles={['Admin', 'SuperAdmin']}>
+            <SeverityStatsPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/profile" element={

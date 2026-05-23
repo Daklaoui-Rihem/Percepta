@@ -87,6 +87,10 @@ const analysisSchema = new mongoose.Schema({
         type: extractedEntitiesSchema,
         default: null,
     },
+    translatedExtractedEntities: {
+        type: extractedEntitiesSchema,
+        default: null,
+    },
     pdfPath: { type: String, default: '' },
     pdfGeneratedAt: { type: Date, default: null },
 }, { timestamps: true });

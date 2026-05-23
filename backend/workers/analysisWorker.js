@@ -108,6 +108,7 @@ const worker = new Worker(
                 translatedText: result.translatedText || '',
                 translationLang: result.translationLang || '',
                 extractedEntities: result.extractedEntities || null,
+                translatedExtractedEntities: result.translatedExtractedEntities || null,
                 videoAnalysisData: result.videoResult || null,
                 videoFramesDir: result.videoFramesDir || '',
                 pdfPath: result.pdfPath || '',

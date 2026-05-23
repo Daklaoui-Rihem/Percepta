@@ -231,7 +231,7 @@ exports.getAnalysisById = async (req, res) => {
 exports.getAnalysisStatus = async (req, res) => {
     try {
         const analysis = await Analysis.findById(req.params.id)
-            .select('status errorMessage transcription language duration translatedText translationLang pdfPath pdfGeneratedAt extractedEntities');
+            .select('status errorMessage transcription language duration translatedText translationLang pdfPath pdfGeneratedAt extractedEntities translatedExtractedEntities');
 
         if (!analysis) return res.status(404).json({ message: 'Analysis not found' });
 
@@ -248,6 +248,7 @@ exports.getAnalysisStatus = async (req, res) => {
             translationLang: analysis.status === 'done' ? (analysis.translationLang || null) : null,
             // ── NEW: extracted entities ──────────────────────────
             extractedEntities: analysis.status === 'done' ? (analysis.extractedEntities || null) : null,
+            translatedExtractedEntities: analysis.status === 'done' ? (analysis.translatedExtractedEntities || null) : null,
             hasPdf: analysis.status === 'done' ? hasPdf : false,
             pdfGeneratedAt: analysis.pdfGeneratedAt || null,
         });

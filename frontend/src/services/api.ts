@@ -171,6 +171,7 @@ export interface AnalysisRecord {
     translatedText?: string; translationLang?: string;
     errorMessage?: string; hasPdf?: boolean; pdfGeneratedAt?: string | null;
     extractedEntities?: ExtractedEntities | null;
+    translatedExtractedEntities?: ExtractedEntities | null;
     language?: string | null;
     duration?: number | null;
     userId?: { _id: string; name: string; email?: string };
@@ -218,14 +219,15 @@ export const analysisApi = {
             translatedText: string | null;
             translationLang: string | null;
             extractedEntities: ExtractedEntities | null;
+            translatedExtractedEntities: ExtractedEntities | null;
             hasPdf: boolean;
             pdfGeneratedAt: string | null;
         }>('GET', `/analyses/${id}/status`),
     retryAnalysis: (id: string) =>
         request<{ message: string; queue: { jobId: string } }>('POST', `/analyses/${id}/retry`),
-    downloadReport: async (id: string, originalName?: string): Promise<void> => {
+    downloadReport: async (id: string, originalName?: string, lang?: string): Promise<void> => {
         const token = getToken();
-        const res = await fetch(`${BASE_URL}/analyses/${id}/report`, {
+        const res = await fetch(`${BASE_URL}/analyses/${id}/report?lang=${lang || ''}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
@@ -244,8 +246,8 @@ export const analysisApi = {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     },
-    generateReport: (id: string) =>
-        request<{ message: string; hasPdf: boolean }>('POST', `/analyses/${id}/report/generate`),
+    generateReport: (id: string, lang?: string) =>
+        request<{ message: string; hasPdf: boolean }>('POST', `/analyses/${id}/report/generate?lang=${lang || ''}`),
     getAllAnalyses: () => request<AnalysisRecord[]>('GET', '/analyses/admin/all'),
     getUserAnalyses: (userId: string) =>
         request<AnalysisRecord[]>('GET', `/analyses/user/${userId}`),
@@ -259,6 +261,14 @@ export const analysisApi = {
     },
 };
 
+export interface SeverityStats {
+    severityBreakdown: { critical: number; high: number; medium: number; low: number; unknown: number };
+    incidentTypes: Array<{ type: string; count: number }>;
+    severityByType: Record<string, { critical: number; high: number; medium: number; low: number; unknown: number }>;
+    recentSevere: AnalysisRecord[];
+    timeline: Array<{ date: string; critical: number; high: number; medium: number; low: number; unknown: number }>;
+}
+
 export interface DashboardStats {
     totalTenants: number; totalUsers: number; activeAnalysesCount: number;
     totalAnalysesCount: number; errorRate: number; reportsCount: number;
@@ -268,6 +278,7 @@ export interface DashboardStats {
 
 export const dashboardApi = {
     getStats: () => request<DashboardStats>('GET', '/dashboard/stats'),
+    getSeverityStats: () => request<SeverityStats>('GET', '/dashboard/severity-stats'),
     getHistory: (filters?: { dateFrom?: string; dateTo?: string; type?: string; status?: string }) => {
         const params = new URLSearchParams();
         if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);

@@ -152,6 +152,7 @@ const translations = {
 
   // ── Users Page ────────────────────────────────────────────────
   fullName: { fr: 'Nom complet', en: 'Full Name', ar: 'الاسم الكامل' },
+  name: { fr: 'Nom', en: 'Name', ar: 'الاسم' },
   department: { fr: 'Département', en: 'Department', ar: 'القسم' },
   phone: { fr: 'Téléphone', en: 'Phone', ar: 'الهاتف' },
   adminLevel: { fr: 'Niveau admin', en: 'Admin Level', ar: 'مستوى المسؤول' },
@@ -422,6 +423,24 @@ const translations = {
   confidenceLevel: { fr: 'confiance', en: 'confidence', ar: 'ثقة' },
   severityLevel: { fr: 'NIVEAU DE SÉVÉRITÉ', en: 'SEVERITY LEVEL', ar: 'مستوى الخطورة' },
   responseLevel: { fr: 'NIVEAU DE RÉPONSE', en: 'RESPONSE LEVEL', ar: 'مستوى الاستجابة' },
+
+  // ── Severity Stats Page ──────────────────────────────────────
+  severityStats: { fr: 'Statistiques', en: 'Analytics', ar: 'الإحصائيات' },
+  severityStatsTitle: { fr: 'Statistiques de Sévérité', en: 'Severity Statistics', ar: 'إحصائيات الخطورة' },
+  severityStatsDesc: { fr: 'Vue d\'ensemble des niveaux de sévérité des analyses', en: 'Overview of analysis severity levels', ar: 'نظرة عامة على مستويات خطورة التحليلات' },
+  severityBreakdown: { fr: 'Répartition par sévérité', en: 'Severity Breakdown', ar: 'التوزيع حسب الخطورة' },
+  incidentTypeBreakdown: { fr: 'Types d\'incidents', en: 'Incident Types', ar: 'أنواع الحوادث' },
+  severityByAnalysisType: { fr: 'Sévérité par type d\'analyse', en: 'Severity by Analysis Type', ar: 'الخطورة حسب نوع التحليل' },
+  recentSevereIncidents: { fr: 'Incidents récents graves', en: 'Recent Severe Incidents', ar: 'الحوادث الخطيرة الأخيرة' },
+  severityTimeline: { fr: 'Évolution temporelle', en: 'Severity Timeline', ar: 'التطور الزمني للخطورة' },
+  critical: { fr: 'Critique', en: 'Critical', ar: 'حرج' },
+  high: { fr: 'Élevé', en: 'High', ar: 'مرتفع' },
+  medium: { fr: 'Moyen', en: 'Medium', ar: 'متوسط' },
+  low: { fr: 'Faible', en: 'Low', ar: 'منخفض' },
+  unknownSeverity: { fr: 'Non classé', en: 'Unclassified', ar: 'غير مصنف' },
+  totalAnalyzed: { fr: 'Total analysé', en: 'Total Analyzed', ar: 'إجمالي المحلل' },
+  noSeverityData: { fr: 'Aucune donnée de sévérité disponible.', en: 'No severity data available yet.', ar: 'لا توجد بيانات خطورة متاحة بعد.' },
+  incidentCount: { fr: 'Nombre d\'incidents', en: 'Incident Count', ar: 'عدد الحوادث' },
 
 } as const;
 

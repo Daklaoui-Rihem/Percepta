@@ -70,14 +70,38 @@ async function processVideo({ analysisId, filePath, job, userId, userName, userE
         console.error(`⚠️  [VideoProcessor] PDF generation failed:`, err.message);
     }
 
-    await job.updateProgress(95);
+    // Compute overall severity from incidents
+    const severityOrder = ['critical', 'high', 'medium', 'low'];
+    let overallSeverity = null;
+    let primaryIncidentType = null;
+    if (videoResult.incidents && videoResult.incidents.length > 0) {
+        for (const sev of severityOrder) {
+            const match = videoResult.incidents.find(i => i.severity === sev);
+            if (match) {
+                overallSeverity = sev;
+                primaryIncidentType = match.type || 'motion_anomaly';
+                break;
+            }
+        }
+    }
+
+    const extractedEntities = overallSeverity ? {
+        severity: overallSeverity,
+        incident_type: primaryIncidentType,
+        people_count: videoResult.avg_people ? Math.round(videoResult.avg_people) : null,
+        extraction_method: 'rule_based',
+        additional_details: summary,
+    } : null;
 
     return {
         transcription,
         summary,
         pdfPath,
-        videoResult,   // stored on Analysis doc as videoAnalysisData
-        videoFramesDir: framesDir,  // stored on Analysis doc for keyframe serving
+        videoResult,
+        videoFramesDir: framesDir,
+        duration: videoResult.duration || 0,
+        language: 'N/A',
+        extractedEntities,
     };
 }
 
