@@ -33,18 +33,18 @@ function detectScript(text) {
 }
 
 // ── Brand colors ───────────────────────────────────────────────
-const DARK_BLUE   = '#1a3f5f';
-const MID_BLUE    = '#00338e';
-const LIGHT_BLUE  = '#3b82f6';
-const WHITE       = '#ffffff';
-const GRAY_700    = '#374151';
-const GRAY_400    = '#9ca3af';
-const SUCCESS     = '#16a34a';
+const DARK_BLUE = '#1a3f5f';
+const MID_BLUE = '#00338e';
+const LIGHT_BLUE = '#3b82f6';
+const WHITE = '#ffffff';
+const GRAY_700 = '#374151';
+const GRAY_400 = '#9ca3af';
+const SUCCESS = '#16a34a';
 
 const SEVERITY_COLORS = {
-    low:      { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', label: 'LOW' },
-    medium:   { bg: '#fefce8', text: '#ca8a04', border: '#fde68a', label: 'MEDIUM' },
-    high:     { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', label: 'HIGH' },
+    low: { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', label: 'LOW' },
+    medium: { bg: '#fefce8', text: '#ca8a04', border: '#fde68a', label: 'MEDIUM' },
+    high: { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', label: 'HIGH' },
     critical: { bg: '#fff1f2', text: '#dc2626', border: '#fecaca', label: 'CRITICAL' },
 };
 
@@ -83,7 +83,7 @@ async function generateTranscriptionPDF(opts) {
     const wordCount = transcription
         ? String(transcription.split(/\s+/).filter(Boolean).length.toLocaleString())
         : '—';
-    
+
     // Format duration as M:SS
     let durationStr = '—';
     if (duration) {
@@ -99,7 +99,7 @@ async function generateTranscriptionPDF(opts) {
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({
             size: 'A4',
-            margins: { top: 0, bottom: 15, left: 0, right: 0 },
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
             bufferPages: true,
             info: {
                 Title: `Transcription Report — ${originalName}`,
@@ -110,18 +110,18 @@ async function generateTranscriptionPDF(opts) {
         });
 
         const fontPaths = {
-            latin:  resolveFontPath('latin'),
+            latin: resolveFontPath('latin'),
             arabic: resolveFontPath('arabic'),
-            cjk:    resolveFontPath('cjk'),
+            cjk: resolveFontPath('cjk'),
         };
 
-        if (fontPaths.latin)  doc.registerFont('Latin',  fontPaths.latin);
+        if (fontPaths.latin) doc.registerFont('Latin', fontPaths.latin);
         if (fontPaths.arabic) doc.registerFont('Arabic', fontPaths.arabic);
-        if (fontPaths.cjk)    doc.registerFont('CJK',    fontPaths.cjk);
+        if (fontPaths.cjk) doc.registerFont('CJK', fontPaths.cjk);
 
         const fontFor = (script) => {
             if (script === 'arabic' && fontPaths.arabic) return 'Arabic';
-            if (script === 'cjk'    && fontPaths.cjk)   return 'CJK';
+            if (script === 'cjk' && fontPaths.cjk) return 'CJK';
             return fontPaths.latin ? 'Latin' : 'Helvetica';
         };
 
@@ -147,13 +147,13 @@ async function generateTranscriptionPDF(opts) {
         // ── META BAND ──────────────────────────────────────────
         doc.rect(0, 120, W, 90).fill('#f0f7ff');
 
-        const metaY  = 134;
-        const colW   = W / 4;
+        const metaY = 134;
+        const colW = W / 4;
         const metaItems = [
-            { label: 'FILE',     value: originalName.length > 22 ? originalName.substring(0, 22) + '…' : originalName },
+            { label: 'FILE', value: originalName.length > 22 ? originalName.substring(0, 22) + '…' : originalName },
             { label: 'LANGUAGE', value: languageStr },
             { label: 'DURATION', value: durationStr },
-            { label: 'WORDS',    value: wordCount },
+            { label: 'WORDS', value: wordCount },
         ];
 
         metaItems.forEach((item, i) => {
@@ -208,8 +208,8 @@ async function generateTranscriptionPDF(opts) {
         const statItems = [
             { label: 'Duration', value: durationStr },
             { label: 'Language', value: languageStr },
-            { label: 'Words',    value: wordCount },
-            { label: 'Status',   value: 'Completed' },
+            { label: 'Words', value: wordCount },
+            { label: 'Status', value: 'Completed' },
         ];
         const statW = contentW / 4;
 
@@ -277,7 +277,7 @@ function renderEntitiesSection(doc, entities, contentX, contentW, cursorY, H, W,
     cursorY += 12;
 
     if (entities.severity) {
-        const sev  = SEVERITY_COLORS[entities.severity] || SEVERITY_COLORS.medium;
+        const sev = SEVERITY_COLORS[entities.severity] || SEVERITY_COLORS.medium;
         const sevY = cursorY;
         doc.rect(contentX, sevY, contentW, 36).fill(sev.bg);
         doc.rect(contentX, sevY, 4, 36).fill(sev.text);
@@ -288,10 +288,10 @@ function renderEntitiesSection(doc, entities, contentX, contentW, cursorY, H, W,
 
         if (entities.extraction_method) {
             const methodLabel =
-                entities.extraction_method === 'rule_based'      ? 'Rule-based' :
-                entities.extraction_method === 'llm_anthropic'   ? 'AI (Claude)' :
-                entities.extraction_method === 'llm_openai'      ? 'AI (GPT)' :
-                entities.extraction_method;
+                entities.extraction_method === 'rule_based' ? 'Rule-based' :
+                    entities.extraction_method === 'llm_anthropic' ? 'AI (Claude)' :
+                        entities.extraction_method === 'llm_openai' ? 'AI (GPT)' :
+                            entities.extraction_method;
             doc.font(fontFor('latin')).fontSize(9).fillColor('#64748b')
                 .text(`Extracted via: ${methodLabel}`, contentX + contentW - 150, sevY + 13, { width: 140, align: 'right' });
         }
@@ -299,15 +299,15 @@ function renderEntitiesSection(doc, entities, contentX, contentW, cursorY, H, W,
     }
 
     const entityItems = [];
-    if (entities.incident_type)                           entityItems.push({ label: 'Incident Type',   value: entities.incident_type,                 icon: '[!]' });
-    if (entities.location)                                entityItems.push({ label: 'Location',         value: entities.location,                      icon: '[@]' });
-    if (entities.people_count != null)                    entityItems.push({ label: 'People Involved',  value: String(entities.people_count),          icon: '[P]' });
-    if (entities.phones?.length > 0)                      entityItems.push({ label: 'Phone Numbers',    value: entities.phones.join(', '),             icon: '[#]' });
-    if (entities.caller_name)                             entityItems.push({ label: 'Caller Name',      value: entities.caller_name,                   icon: '[N]' });
-    if (entities.victim_names?.length > 0)                entityItems.push({ label: 'Victim Names',     value: entities.victim_names.join(', '),       icon: '[V]' });
-    if (entities.time_mentioned)                          entityItems.push({ label: 'Time Mentioned',   value: entities.time_mentioned,                icon: '[T]' });
-    if (entities.date_mentioned)                          entityItems.push({ label: 'Date Mentioned',   value: entities.date_mentioned,                icon: '[D]' });
-    if (entities.additional_details)                      entityItems.push({ label: 'Additional Details', value: entities.additional_details,          icon: '[i]', fullWidth: true });
+    if (entities.incident_type) entityItems.push({ label: 'Incident Type', value: entities.incident_type, icon: '[!]' });
+    if (entities.location) entityItems.push({ label: 'Location', value: entities.location, icon: '[@]' });
+    if (entities.people_count != null) entityItems.push({ label: 'People Involved', value: String(entities.people_count), icon: '[P]' });
+    if (entities.phones?.length > 0) entityItems.push({ label: 'Phone Numbers', value: entities.phones.join(', '), icon: '[#]' });
+    if (entities.caller_name) entityItems.push({ label: 'Caller Name', value: entities.caller_name, icon: '[N]' });
+    if (entities.victim_names?.length > 0) entityItems.push({ label: 'Victim Names', value: entities.victim_names.join(', '), icon: '[V]' });
+    if (entities.time_mentioned) entityItems.push({ label: 'Time Mentioned', value: entities.time_mentioned, icon: '[T]' });
+    if (entities.date_mentioned) entityItems.push({ label: 'Date Mentioned', value: entities.date_mentioned, icon: '[D]' });
+    if (entities.additional_details) entityItems.push({ label: 'Additional Details', value: entities.additional_details, icon: '[i]', fullWidth: true });
 
     if (entityItems.length === 0) {
         doc.font(fontFor('latin')).fontSize(11).fillColor('#94a3b8')
@@ -373,7 +373,7 @@ function renderSuggestionsSection(doc, suggestions, contentX, contentW, cursorY,
 
     // Response level banner
     const level = suggestions.estimated_response_level || 'standard';
-    const rc    = RESPONSE_COLORS[level] || RESPONSE_COLORS.standard;
+    const rc = RESPONSE_COLORS[level] || RESPONSE_COLORS.standard;
 
     if (cursorY > H - 80) {
         doc.addPage();
@@ -410,8 +410,8 @@ function renderSuggestionsSection(doc, suggestions, contentX, contentW, cursorY,
                 cursorY = 40;
             }
             const isWarn = item.startsWith('⚠️') || item.startsWith('CRITICAL') || item.startsWith('HIGH');
-            const rowBg  = isWarn ? '#fffbeb' : idx % 2 === 0 ? '#f8fafc' : '#ffffff';
-            const rowH   = 22;
+            const rowBg = isWarn ? '#fffbeb' : idx % 2 === 0 ? '#f8fafc' : '#ffffff';
+            const rowH = 22;
 
             doc.rect(contentX, cursorY, contentW, rowH).fill(rowBg);
             doc.rect(contentX + 4, cursorY + 4, 14, 14).fill(isWarn ? '#f59e0b' : accentColor);
@@ -449,9 +449,9 @@ function renderSuggestionsSection(doc, suggestions, contentX, contentW, cursorY,
         cursorY += 8;
 
         const resources = suggestions.resources_to_dispatch;
-        const rColW     = (contentW - 8) / 2;
-        let   rCol      = 0;
-        let   rRowStart = cursorY;
+        const rColW = (contentW - 8) / 2;
+        let rCol = 0;
+        let rRowStart = cursorY;
 
         resources.forEach((res) => {
             if (rRowStart > H - 50) {
@@ -459,10 +459,10 @@ function renderSuggestionsSection(doc, suggestions, contentX, contentW, cursorY,
                 addContinuationHeader(doc, W, MID_BLUE, LIGHT_BLUE);
                 rRowStart = 40; rCol = 0;
             }
-            const bx       = contentX + rCol * (rColW + 8);
-            const isMed    = /samu|ambulance|medical|إسعاف/i.test(res);
-            const isPol    = /police|gendarmerie|شرطة/i.test(res);
-            const isFire   = /pompier|fire|إطفاء/i.test(res);
+            const bx = contentX + rCol * (rColW + 8);
+            const isMed = /samu|ambulance|medical|إسعاف/i.test(res);
+            const isPol = /police|gendarmerie|شرطة/i.test(res);
+            const isFire = /pompier|fire|إطفاء/i.test(res);
             const boxColor = isMed ? '#f0fdf4' : isPol ? '#eff6ff' : isFire ? '#fff1f2' : '#f8fafc';
             const txtColor = isMed ? '#166534' : isPol ? '#1d4ed8' : isFire ? '#dc2626' : '#374151';
             const brdColor = isMed ? '#a7f3d0' : isPol ? '#bfdbfe' : isFire ? '#fecaca' : '#e2e8f0';
@@ -546,8 +546,8 @@ function renderSection(doc, title, text, contentX, contentW, cursorY, H, W, MID_
 function renderMixedText(doc, text, x, y, width, fontSize, color, fontFor, justify) {
     if (!text) return;
     const script = detectScript(text);
-    const isRTL  = script === 'arabic';
-    const align  = isRTL ? 'right' : (justify ? 'justify' : 'left');
+    const isRTL = script === 'arabic';
+    const align = isRTL ? 'right' : (justify ? 'justify' : 'left');
     const options = { width, lineGap: 3, paragraphGap: 6, align };
     if (isRTL) { options.features = ['rtla']; options.textDirection = 'rtl'; }
     doc.font(fontFor(script)).fontSize(fontSize).fillColor(color).text(text, x, y, options);
