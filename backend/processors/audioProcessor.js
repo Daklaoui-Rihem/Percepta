@@ -326,6 +326,7 @@ async function runEntityExtraction(text, language) {
                 // Pass API keys so the Python script can use them
                 ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
                 OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+                GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY || '',
             },
         });
 

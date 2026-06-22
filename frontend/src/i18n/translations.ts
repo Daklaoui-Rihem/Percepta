@@ -88,6 +88,7 @@ const translations = {
   videoAnalysisType: { fr: 'Analyse Vidéo', en: 'Video Analysis', ar: 'تحليل فيديو' },
   groupActivityType: { fr: 'Activité de Groupe', en: 'Group Activity', ar: 'نشاط جماعي' },
   groupActivities: { fr: 'Activités de Groupe', en: 'Group Activities', ar: 'نشاطات جماعية' },
+  duration: { fr: 'Durée', en: 'Duration', ar: 'المدة' },
 
   // ── Admin Dashboard ───────────────────────────────────────────
   activeUsers: { fr: 'Utilisateurs actifs', en: 'Active Users', ar: 'المستخدمون النشطون' },
@@ -266,7 +267,6 @@ const translations = {
   viewAll: { fr: 'Voir tout', en: 'View All', ar: 'عرض الكل' },
   timestamp: { fr: 'Horodatage', en: 'Timestamp', ar: 'الطابع الزمني' },
 
-
   // ── New Transcription / Video Analysis ───────────────────────
   newAudioTranscription: { fr: 'Nouvelle Transcription Audio', en: 'New Audio Transcription', ar: 'نص صوتي جديد' },
   newVideoAnalysis: { fr: 'Nouvelle Analyse Vidéo', en: 'New Video Analysis', ar: 'تحليل فيديو جديد' },
@@ -347,7 +347,7 @@ const translations = {
 
   // ── Transcription Result Card ─────────────────────────────────
   waitingWorker: { fr: 'En attente du worker…', en: 'Waiting for worker…', ar: 'في انتظار المعالج…' },
-  Running: { fr: 'Le modèle est en cours d’exécution…', en: 'The model is running…', ar: 'يتم تشغيل النموذج…' },
+  Running: { fr: 'Le modèle est en cours d exécution…', en: 'The model is running…', ar: 'يتم تشغيل النموذج…' },
   summary: { fr: 'Résumé', en: 'Summary', ar: 'ملخص' },
   fullTranscription: { fr: 'Transcription Complète', en: 'Full Transcription', ar: 'النص الكامل' },
   collapse: { fr: 'Réduire', en: 'Collapse', ar: 'طي' },
@@ -357,7 +357,6 @@ const translations = {
   retry: { fr: 'Réessayer', en: 'Retry', ar: 'إعادة المحاولة' },
   characters: { fr: 'caractères', en: 'characters', ar: 'حروف' },
   wordsLabel: { fr: 'mots', en: 'words', ar: 'كلمات' },
-
 
   // ── PDF Report ───────────────────────────────────────────────
   pdfReportReady: { fr: 'Rapport PDF prêt', en: 'PDF Report Ready', ar: 'تقرير PDF جاهز' },
@@ -403,7 +402,7 @@ const translations = {
   videoProcessingAnalysis: { fr: "Analyse vidéo en cours...", en: "Video analysis in progress...", ar: "تحليل الفيديو قيد التقدم..." },
   youCanClosePage: { fr: "Vous pouvez fermer cette page. Le résultat sera disponible dans votre historique.", en: "You can close this page. The result will be available in your history.", ar: "يمكنك إغلاق هذه الصفحة. ستكون النتيجة متاحة في السجل." },
   videoAnalysisDoneAlert: { fr: "Analyse vidéo terminée !", en: "Video analysis completed!", ar: "اكتمل تحليل الفيديو!" },
-  
+
   // ── New Transcription Labels ──
   extractedInfo: { fr: 'Informations Clés Extraites', en: 'Key Information Extracted', ar: 'المعلومات الرئيسية المستخرجة' },
   incidentTypeLabel: { fr: 'Type d\'incident', en: 'Incident Type', ar: 'نوع الحادث' },
@@ -416,6 +415,7 @@ const translations = {
   dateLabel: { fr: 'Date', en: 'Date', ar: 'التاريخ' },
   additionalDetailsLabel: { fr: 'Détails supplémentaires', en: 'Additional Details', ar: 'تفاصيل إضافية' },
   smartSuggestionsLabel: { fr: 'Suggestions d\'urgence intelligentes', en: 'Smart Emergency Suggestions', ar: 'اقتراحات الطوارئ الذكية' },
+  specializedRecommendationsLabel: { fr: 'Recommandations spécialisées', en: 'Specialized Recommendations', ar: 'التوصيات المتخصصة' },
   priorityActionsLabel: { fr: 'Actions prioritaires', en: 'Priority Actions', ar: 'الإجراءات الأولية' },
   resourcesToDispatchLabel: { fr: 'Ressources à déployer', en: 'Resources to Dispatch', ar: 'الموارد المراد إرسالها' },
   dispatcherNotesLabel: { fr: 'Notes du répartiteur', en: 'Dispatcher Notes', ar: 'ملاحظات الموزع' },

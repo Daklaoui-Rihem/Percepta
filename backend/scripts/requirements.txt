@@ -4,3 +4,4 @@ torchvision
 torchaudio
 deep-translator
 mistralai
+google-genai

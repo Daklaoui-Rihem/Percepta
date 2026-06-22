@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Zap, BarChart3, Monitor, Settings, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Users, Zap, BarChart3, ShieldAlert } from 'lucide-react';
 
 import NavItem from '../Atoms/NavItem';
 import Logo from '../Atoms/Logo';
@@ -17,8 +17,6 @@ export default function Sidebar({ active, onNavigate }: { active: string; onNavi
     { icon: Zap, label: t('analyses'), path: '/analyses' },
     { icon: BarChart3, label: t('reports'), path: '/reports' },
     { icon: ShieldAlert, label: t('severityStats'), path: '/analytics' },
-    { icon: Monitor, label: t('system'), path: '/system' },
-    { icon: Settings, label: t('settings'), path: '/settings' },
   ];
 
 

@@ -41,6 +41,7 @@ const extractedEntitiesSchema = new mongoose.Schema({
             resources_to_dispatch:     { type: [String], default: [] },
             estimated_response_level:  { type: String, default: 'standard' },
             follow_up_checklist:       { type: [String], default: [] },
+            ai_recommendations:        { type: [String], default: [] },
         }, { _id: false }),
         default: null,
     },

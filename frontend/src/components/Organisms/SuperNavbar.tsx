@@ -2,9 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Settings,
   Building2,
-  ClipboardList,
   LogOut,
-  Bell,
   Database
 } from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
@@ -65,9 +63,6 @@ export default function SuperNavbar() {
         <button onClick={handleQueueDashboard} style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
           <Database size={16} color="#38bdf8" /> <span style={{ color: '#e0f2fe' }}>Queues</span>
         </button>
-        <button style={{ ...navBtnStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ClipboardList size={16} /> {t('viewSystemLogs')}
-        </button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -94,16 +89,6 @@ export default function SuperNavbar() {
             )}
           </div>
         </div>
-
-        <button
-          style={{
-            background: 'transparent', border: 'none', color: '#93c5fd',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}
-          title="Notifications"
-        >
-          <Bell size={20} />
-        </button>
 
         <div style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 700, border: '1px solid rgba(255,255,255,0.2)' }}>
           SUPERADMIN

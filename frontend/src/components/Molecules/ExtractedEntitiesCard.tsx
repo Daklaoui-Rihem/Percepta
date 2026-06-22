@@ -10,6 +10,21 @@
 
 import { useTranslation } from '../../context/TranslationContext';
 import type { ExtractedEntities } from '../../services/api';
+import { 
+    Search, 
+    ShieldAlert, 
+    MapPin, 
+    Users, 
+    Phone, 
+    User, 
+    Heart, 
+    Clock, 
+    Calendar, 
+    FileText,
+    AlertOctagon,
+    AlertTriangle,
+    Info
+} from 'lucide-react';
 
 type Props = {
     entities: ExtractedEntities;
@@ -17,54 +32,45 @@ type Props = {
 
 // ── Severity config ────────────────────────────────────────────
 const SEVERITY_CFG = {
-    low:      { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', dot: '🟢', label: 'LOW' },
-    medium:   { bg: '#fefce8', color: '#ca8a04', border: '#fde68a', dot: '🟡', label: 'MEDIUM' },
-    high:     { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa', dot: '🟠', label: 'HIGH' },
-    critical: { bg: '#fff1f2', color: '#dc2626', border: '#fecaca', dot: '🔴', label: 'CRITICAL' },
-};
-
-// ── Extraction method badge ────────────────────────────────────
-const METHOD_CFG: Record<string, { label: string; bg: string; color: string }> = {
-    llm_anthropic:  { label: 'AI · Claude',    bg: '#f5f3ff', color: '#7c3aed' },
-    llm_openai:     { label: 'AI · GPT',       bg: '#f0fdf4', color: '#16a34a' },
-    rule_based:     { label: 'Rule-based',    bg: '#f8fafc', color: '#64748b' },
-    'spacy+hf_local': { label: 'NLP · spaCy+AI', bg: '#eff6ff', color: '#1d4ed8' },
+    low:      { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0', icon: Info, label: 'LOW' },
+    medium:   { bg: '#fefce8', color: '#ca8a04', border: '#fde68a', icon: AlertTriangle, label: 'MEDIUM' },
+    high:     { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa', icon: ShieldAlert, label: 'HIGH' },
+    critical: { bg: '#fff1f2', color: '#dc2626', border: '#fecaca', icon: AlertOctagon, label: 'CRITICAL' },
 };
 
 export default function ExtractedEntitiesCard({ entities }: Props) {
     const { t } = useTranslation();
     const severityCfg = entities.severity ? SEVERITY_CFG[entities.severity] : null;
-    const methodCfg = entities.extraction_method ? METHOD_CFG[entities.extraction_method] : null;
 
     // Build entity rows to display
-    const rows: { icon: string; label: string; value: string; highlight?: boolean }[] = [];
+    const rows: { icon: React.ReactNode; label: string; value: string; highlight?: boolean }[] = [];
 
     if (entities.incident_type) {
-        rows.push({ icon: '🚨', label: t('incidentTypeLabel') || 'Incident Type', value: entities.incident_type, highlight: true });
+        rows.push({ icon: <ShieldAlert size={14} />, label: t('incidentTypeLabel') || 'Incident Type', value: entities.incident_type, highlight: true });
     }
     if (entities.location) {
-        rows.push({ icon: '📍', label: t('locationLabel') || 'Location', value: entities.location });
+        rows.push({ icon: <MapPin size={14} />, label: t('locationLabel') || 'Location', value: entities.location });
     }
     if (entities.people_count !== null && entities.people_count !== undefined) {
-        rows.push({ icon: '👥', label: t('peopleInvolvedLabel') || 'People Involved', value: String(entities.people_count) });
+        rows.push({ icon: <Users size={14} />, label: t('peopleInvolvedLabel') || 'People Involved', value: String(entities.people_count) });
     }
     if (entities.phones && entities.phones.length > 0) {
-        rows.push({ icon: '📞', label: t('phoneNumbersLabel') || 'Phone Numbers', value: entities.phones.join('  ·  ') });
+        rows.push({ icon: <Phone size={14} />, label: t('phoneNumbersLabel') || 'Phone Numbers', value: entities.phones.join('  ·  ') });
     }
     if (entities.caller_name) {
-        rows.push({ icon: '🧑', label: t('callerLabel') || 'Caller', value: entities.caller_name });
+        rows.push({ icon: <User size={14} />, label: t('callerLabel') || 'Caller', value: entities.caller_name });
     }
     if (entities.victim_names && entities.victim_names.length > 0) {
-        rows.push({ icon: '🏥', label: t('victimsLabel') || 'Victims', value: entities.victim_names.join(', ') });
+        rows.push({ icon: <Heart size={14} />, label: t('victimsLabel') || 'Victims', value: entities.victim_names.join(', ') });
     }
     if (entities.time_mentioned) {
-        rows.push({ icon: '🕐', label: t('timeLabel') || 'Time', value: entities.time_mentioned });
+        rows.push({ icon: <Clock size={14} />, label: t('timeLabel') || 'Time', value: entities.time_mentioned });
     }
     if (entities.date_mentioned) {
-        rows.push({ icon: '📅', label: t('dateLabel') || 'Date', value: entities.date_mentioned });
+        rows.push({ icon: <Calendar size={14} />, label: t('dateLabel') || 'Date', value: entities.date_mentioned });
     }
     if (entities.additional_details) {
-        rows.push({ icon: '📝', label: t('additionalDetailsLabel') || 'Additional Details', value: entities.additional_details });
+        rows.push({ icon: <FileText size={14} />, label: t('additionalDetailsLabel') || 'Additional Details', value: entities.additional_details });
     }
 
     if (rows.length === 0) return null;
@@ -91,7 +97,7 @@ export default function ExtractedEntitiesCard({ entities }: Props) {
                 borderBottom: '1px solid #e2e8f0',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 18 }}>🔍</span>
+                    <Search size={16} color="#1a3a6b" />
                     <span style={{ fontWeight: 700, color: '#1a3a6b', fontSize: 15 }}>
                         {t('extractedInfo') || 'Key Information Extracted'}
                     </span>
@@ -112,21 +118,6 @@ export default function ExtractedEntitiesCard({ entities }: Props) {
                             {confidence}% {t('confidenceLevel') || 'confidence'}
                         </span>
                     )}
-
-                    {/* Extraction method */}
-                    {methodCfg && (
-                        <span style={{
-                            background: methodCfg.bg,
-                            color: methodCfg.color,
-                            border: `1px solid ${methodCfg.color}30`,
-                            padding: '3px 10px',
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 600,
-                        }}>
-                            {methodCfg.label}
-                        </span>
-                    )}
                 </div>
             </div>
 
@@ -140,7 +131,7 @@ export default function ExtractedEntitiesCard({ entities }: Props) {
                     background: severityCfg.bg,
                     borderBottom: `2px solid ${severityCfg.border}`,
                 }}>
-                    <span style={{ fontSize: 20 }}>{severityCfg.dot}</span>
+                    <severityCfg.icon size={20} color={severityCfg.color} />
                     <div>
                         <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', letterSpacing: '0.5px' }}>
                             {t('severityLevel') || 'SEVERITY LEVEL'}

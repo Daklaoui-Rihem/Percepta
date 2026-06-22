@@ -1,7 +1,5 @@
 /**
- * TranscriptionResultCard.tsx — Smart Suggestions as third tab
- *
- * Tabs: Original | Translation (if available) | Suggestions (if available)
+ * TranscriptionResultCard.tsx — Smart Suggestions in original language + i18n
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -51,7 +49,7 @@ const POLL_INTERVAL = 3000;
 
 // ── Component ──────────────────────────────────────────────────
 export default function TranscriptionResultCard({ analysisId, originalName, onReset }: Props) {
-    const { t, isRTL } = useTranslation();
+    const { t, isRTL, lang } = useTranslation();
 
     const [data, setData] = useState<StatusData | null>(null);
     const [fetchError, setFetchError] = useState('');
@@ -172,6 +170,11 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
     const translationLang = data?.translationLang || '';
     const translationDir = LANG_DIR[translationLang] || 'ltr';
 
+    // ── Smart Suggestions label (always in UI language, content stays original) ──
+    const suggestionsTabLabel = lang === 'fr' ? 'Suggestions Intelligentes'
+        : lang === 'ar' ? 'اقتراحات ذكية'
+        : 'Smart Suggestions';
+
     const STATUS_CFG = {
         pending: {
             label: `${t('pending')} — ${t('waitingWorker')}`,
@@ -206,7 +209,6 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
     // ── DONE STATE ─────────────────────────────────────────────
     if (status === 'done') {
-        // Build tab list dynamically
         type TabDef = { key: ActiveTab; label: React.ReactNode };
         const tabs: TabDef[] = [
             {
@@ -223,7 +225,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         if (hasSuggestions) {
             tabs.push({
                 key: 'suggestions',
-                label: <><Zap size={15} /> Smart Suggestions</>,
+                label: <><Zap size={15} /> {suggestionsTabLabel}</>,
             });
         }
 
@@ -232,18 +234,13 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
                 {/* Header */}
-                <div style={{
-                    background: 'white', border: '1px solid #e2e8f0', borderRadius: 12,
-                    padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                }}>
+                <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <h3 style={{ margin: '0 0 10px', color: '#1a3a6b', fontSize: 20, fontWeight: 700 }}>
-                            {originalName}
-                        </h3>
+                        <h3 style={{ margin: '0 0 10px', color: '#1a3a6b', fontSize: 20, fontWeight: 700 }}>{originalName}</h3>
                         <div style={{ color: '#64748b', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <Clock size={14} />
                             {new Date().toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                            &nbsp;·&nbsp; Duration: {durationStr}
+                            &nbsp;·&nbsp; {t('duration') || 'Duration'}: {durationStr}
                         </div>
                         {hasTranslation && (
                             <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, color: '#60a5fa', fontSize: 12 }}>
@@ -254,7 +251,9 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                         {hasSuggestions && (
                             <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, color: '#d97706', fontSize: 12 }}>
                                 <Zap size={14} />
-                                Smart emergency suggestions available
+                                {lang === 'fr' ? 'Suggestions d\'urgence intelligentes disponibles'
+                                    : lang === 'ar' ? 'اقتراحات الطوارئ الذكية متاحة'
+                                    : 'Smart emergency suggestions available'}
                             </div>
                         )}
                     </div>
@@ -263,7 +262,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                     </div>
                 </div>
 
-                {/* ── Extracted Entities (always visible above tabs) ── */}
+                {/* ── Extracted Entities ── */}
                 {data?.extractedEntities && (
                     <ExtractedEntitiesCard entities={data.extractedEntities} />
                 )}
@@ -273,16 +272,18 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
 
                     {/* Left: Metrics */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <MetricCard icon={<Globe size={20} color="#1d4ed8" />} title="Detected Language" value={detectedLang} />
-                        <MetricCard icon={<Target size={20} color="#1d4ed8" />} title="Average Confidence" value={confidence} />
-                        <MetricCard icon={<Hash size={20} color="#1d4ed8" />} title="Word Count" value={wordCount} />
+                        <MetricCard icon={<Globe size={20} color="#1d4ed8" />} title={lang === 'fr' ? 'Langue détectée' : lang === 'ar' ? 'اللغة المكتشفة' : 'Detected Language'} value={detectedLang} />
+                        <MetricCard icon={<Target size={20} color="#1d4ed8" />} title={lang === 'fr' ? 'Confiance moyenne' : lang === 'ar' ? 'الثقة المتوسطة' : 'Average Confidence'} value={confidence} />
+                        <MetricCard icon={<Hash size={20} color="#1d4ed8" />} title={lang === 'fr' ? 'Nombre de mots' : lang === 'ar' ? 'عدد الكلمات' : 'Word Count'} value={wordCount} />
                         {hasTranslation && (
                             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
                                 <div style={{ background: '#dbeafe', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <Languages size={20} color="#1d4ed8" />
                                 </div>
                                 <div>
-                                    <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 3 }}>Translation</div>
+                                    <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 3 }}>
+                                        {lang === 'fr' ? 'Traduction' : lang === 'ar' ? 'ترجمة' : 'Translation'}
+                                    </div>
                                     <div style={{ color: '#1a3a6b', fontSize: 16, fontWeight: 700 }}>{LANG_NAMES[translationLang] || translationLang}</div>
                                 </div>
                             </div>
@@ -293,7 +294,9 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                     <Zap size={20} color="#d97706" />
                                 </div>
                                 <div>
-                                    <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 3 }}>Response Level</div>
+                                    <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 3 }}>
+                                        {lang === 'fr' ? 'Niveau de réponse' : lang === 'ar' ? 'مستوى الاستجابة' : 'Response Level'}
+                                    </div>
                                     <div style={{ color: '#92400e', fontSize: 14, fontWeight: 700, textTransform: 'uppercase' }}>
                                         {data?.extractedEntities?.smart_suggestions?.estimated_response_level || 'standard'}
                                     </div>
@@ -305,15 +308,10 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                     {/* Right: Tabbed content */}
                     <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
 
-                        {/* Tab bar — always shown if there are 2+ tabs */}
                         {tabs.length > 1 && (
                             <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', padding: '0 24px', overflowX: 'auto' }}>
                                 {tabs.map(tab => (
-                                    <TabButton
-                                        key={tab.key}
-                                        active={activeTab === tab.key}
-                                        onClick={() => setActiveTab(tab.key)}
-                                    >
+                                    <TabButton key={tab.key} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key)}>
                                         {tab.label}
                                     </TabButton>
                                 ))}
@@ -325,20 +323,22 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                             <>
                                 <div style={{ padding: '16px 24px', display: 'flex', gap: 12, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
                                     <button onClick={() => handleCopy(data?.transcription || '', setCopied)} style={actionBtnStyle}>
-                                        {copied ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy
+                                        {copied ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />}
+                                        {lang === 'fr' ? 'Copier' : lang === 'ar' ? 'نسخ' : 'Copy'}
                                     </button>
                                     <button onClick={() => handleDownloadTxt(data?.transcription || '')} style={actionBtnStyle}>
-                                        <Download size={15} /> Download TXT
+                                        <Download size={15} />
+                                        {lang === 'fr' ? 'Télécharger TXT' : lang === 'ar' ? 'تحميل TXT' : 'Download TXT'}
                                     </button>
                                     {data?.hasPdf ? (
                                         <button onClick={handleDownloadPDF} disabled={pdfLoading} style={{ ...actionBtnStyle, opacity: pdfLoading ? 0.6 : 1 }}>
                                             {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
-                                            Download PDF
+                                            {lang === 'fr' ? 'Télécharger PDF' : lang === 'ar' ? 'تحميل PDF' : 'Download PDF'}
                                         </button>
                                     ) : (
                                         <button onClick={handleGeneratePDF} disabled={pdfLoading} style={{ ...actionBtnStyle, opacity: pdfLoading ? 0.6 : 1 }}>
                                             {pdfLoading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <FileText size={15} />}
-                                            Generate PDF
+                                            {lang === 'fr' ? 'Générer PDF' : lang === 'ar' ? 'إنشاء PDF' : 'Generate PDF'}
                                         </button>
                                     )}
                                 </div>
@@ -352,9 +352,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                                 <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, height: 'fit-content', flexShrink: 0 }}>
                                                     {seg.time}
                                                 </div>
-                                                <div style={{ color: '#334155', fontSize: 14, lineHeight: 1.7, marginTop: 1 }}>
-                                                    {seg.text}
-                                                </div>
+                                                <div style={{ color: '#334155', fontSize: 14, lineHeight: 1.7, marginTop: 1 }}>{seg.text}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -367,10 +365,12 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                             <>
                                 <div style={{ padding: '16px 24px', display: 'flex', gap: 12, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
                                     <button onClick={() => handleCopy(data?.translatedText || '', setCopiedTranslation)} style={actionBtnStyle}>
-                                        {copiedTranslation ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />} Copy
+                                        {copiedTranslation ? <CheckCircle size={15} color="#16a34a" /> : <Copy size={15} />}
+                                        {lang === 'fr' ? 'Copier' : lang === 'ar' ? 'نسخ' : 'Copy'}
                                     </button>
                                     <button onClick={() => handleDownloadTxt(data?.translatedText || '', `_${translationLang}`)} style={actionBtnStyle}>
-                                        <Download size={15} /> Download TXT
+                                        <Download size={15} />
+                                        {lang === 'fr' ? 'Télécharger TXT' : lang === 'ar' ? 'تحميل TXT' : 'Download TXT'}
                                     </button>
                                 </div>
                                 <div style={{ padding: '24px' }}>
@@ -380,7 +380,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                             {LANG_NAMES[translationLang] || 'Translation'}
                                         </h4>
                                         <span style={{ background: '#dbeafe', color: '#1d4ed8', fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
-                                            AI Translated
+                                            {lang === 'fr' ? 'Traduit par IA' : lang === 'ar' ? 'مترجم بالذكاء الاصطناعي' : 'AI Translated'}
                                         </span>
                                     </div>
                                     <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400e', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -389,13 +389,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                                     </div>
                                     <div
                                         dir={translationDir}
-                                        style={{
-                                            background: '#f8fafc', border: '1px solid #e2e8f0',
-                                            borderRadius: 10, padding: '20px',
-                                            fontSize: 14.5, lineHeight: 1.9, color: '#334155',
-                                            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                                            textAlign: translationDir === 'rtl' ? 'right' : 'left',
-                                        }}
+                                        style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '20px', fontSize: 14.5, lineHeight: 1.9, color: '#334155', whiteSpace: 'pre-wrap', wordBreak: 'break-word', textAlign: translationDir === 'rtl' ? 'right' : 'left' }}
                                     >
                                         {data?.translatedText}
                                     </div>
@@ -403,18 +397,27 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                             </>
                         )}
 
-                        {/* ── Suggestions tab ── */}
+                        {/* ── Suggestions tab — content stays in original audio language ── */}
                         {activeTab === 'suggestions' && hasSuggestions && (
                             <div style={{ padding: '24px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                                     <Zap size={18} color="#d97706" />
                                     <h4 style={{ color: '#1a3a6b', margin: 0, fontSize: 16, fontWeight: 700 }}>
-                                        Smart Emergency Suggestions
+                                        {suggestionsTabLabel}
                                     </h4>
-                                    <span style={{ background: '#fef3c7', color: '#92400e', fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600, border: '1px solid #fde68a' }}>
-                                        Auto-generated · local · free
-                                    </span>
                                 </div>
+
+                                {/* Note: suggestions content is in the original audio language */}
+                                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Globe size={14} />
+                                    {lang === 'fr'
+                                        ? `Les suggestions sont générées dans la langue originale de l'audio (${detectedLang}).`
+                                        : lang === 'ar'
+                                        ? `يتم إنشاء الاقتراحات بلغة الصوت الأصلية (${detectedLang}).`
+                                        : `Suggestions are generated in the original audio language (${detectedLang}).`}
+                                </div>
+
+                                {/* SmartSuggestionsCard renders the raw AI output — language comes from the audio */}
                                 <SmartSuggestionsCard suggestions={data!.extractedEntities!.smart_suggestions!} />
                             </div>
                         )}
@@ -426,17 +429,12 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
                     <button
                         onClick={data?.hasPdf ? handleDownloadPDF : handleGeneratePDF}
                         disabled={pdfLoading}
-                        style={{
-                            background: '#0047ff', color: 'white', border: 'none',
-                            padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600,
-                            display: 'flex', gap: 8, alignItems: 'center',
-                            cursor: pdfLoading ? 'not-allowed' : 'pointer',
-                            boxShadow: '0 4px 12px rgba(0,71,255,0.2)',
-                            opacity: pdfLoading ? 0.8 : 1,
-                        }}
+                        style={{ background: '#0047ff', color: 'white', border: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 600, display: 'flex', gap: 8, alignItems: 'center', cursor: pdfLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(0,71,255,0.2)', opacity: pdfLoading ? 0.8 : 1 }}
                     >
                         {pdfLoading ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Download size={18} />}
-                        {data?.hasPdf ? 'Download PDF Report' : 'Generate PDF Report'}
+                        {data?.hasPdf
+                            ? (lang === 'fr' ? 'Télécharger le rapport PDF' : lang === 'ar' ? 'تحميل تقرير PDF' : 'Download PDF Report')
+                            : (lang === 'fr' ? 'Générer le rapport PDF' : lang === 'ar' ? 'إنشاء تقرير PDF' : 'Generate PDF Report')}
                     </button>
                     {pdfError && <div style={{ color: '#dc2626', fontSize: 13, marginTop: 8 }}>{pdfError}</div>}
                 </div>
@@ -455,12 +453,7 @@ export default function TranscriptionResultCard({ analysisId, originalName, onRe
         <div style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
 
-            <div style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '14px 18px',
-                background: cfg.bg, border: `1px solid ${cfg.border}`,
-                borderRadius: 12, marginBottom: 16,
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 12, marginBottom: 16 }}>
                 {cfg.icon}
                 <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: cfg.color }}>{cfg.label}</div>
@@ -517,14 +510,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
     return (
         <button
             onClick={onClick}
-            style={{
-                padding: '14px 20px', border: 'none', background: 'none',
-                cursor: 'pointer', fontSize: 14, fontWeight: active ? 700 : 500,
-                color: active ? '#1a3a6b' : '#94a3b8',
-                borderBottom: active ? '2px solid #1a3a6b' : '2px solid transparent',
-                marginBottom: -2, display: 'flex', alignItems: 'center', gap: 6,
-                transition: 'all 0.2s', whiteSpace: 'nowrap',
-            }}
+            style={{ padding: '14px 20px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, fontWeight: active ? 700 : 500, color: active ? '#1a3a6b' : '#94a3b8', borderBottom: active ? '2px solid #1a3a6b' : '2px solid transparent', marginBottom: -2, display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s', whiteSpace: 'nowrap' }}
         >
             {children}
         </button>
@@ -532,7 +518,5 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 }
 
 function SpinnerIcon() {
-    return (
-        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2.5px solid #bfdbfe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
-    );
+    return <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2.5px solid #bfdbfe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />;
 }

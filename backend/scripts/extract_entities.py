@@ -79,6 +79,11 @@ def main():
     # ── Step 4: Smart Suggestions ──────────────────────────────
     result['smart_suggestions'] = generate_suggestions(result, language)
 
+    # ── Step 5: Gemma AI Specialized Recommendations ──────────
+    result['smart_suggestions']['ai_recommendations'] = generate_ai_recommendations(
+        result, text[:1000], language
+    )
+
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0)
 
@@ -626,6 +631,118 @@ def generate_suggestions(result: dict, language: str) -> dict:
         'estimated_response_level': response_level,
         'follow_up_checklist':      follow_up,
     }
+
+
+# ══════════════════════════════════════════════════════════════
+# STEP 5 — Gemma AI Specialized Recommendations
+#
+# Calls Google Gemini API with the gemma-3n-e4b-it model to
+# generate context-aware emergency recommendations.
+# Completely non-fatal: returns [] on any failure.
+# ══════════════════════════════════════════════════════════════
+def generate_ai_recommendations(result: dict, transcript_snippet: str, language: str) -> list:
+    api_key = os.environ.get('GOOGLE_AI_API_KEY', '').strip()
+    if not api_key:
+        return []
+
+    try:
+        from google import genai
+    except ImportError:
+        print("WARNING: google-genai not installed. Skipping AI recommendations.", file=sys.stderr)
+        return []
+
+    # ── Build context summary for the prompt ───────────────────
+    incident_type   = result.get('incident_type') or 'unknown'
+    severity        = result.get('severity', 'medium')
+    people_count    = result.get('people_count')
+    location        = result.get('location')
+    emotion         = result.get('dominant_emotion', 'neutral')
+    distress        = result.get('hidden_distress', {})
+    distress_det    = distress.get('detected', False)
+    distress_msg    = distress.get('covert_message', '')
+    anomalies       = result.get('anomalies', [])
+    emotional_markers = result.get('emotional_markers', [])
+
+    lang_names = {'fr': 'French', 'en': 'English', 'ar': 'Arabic'}
+    lang_label = lang_names.get(language, 'English')
+
+    context_parts = [
+        f"Incident type: {incident_type}",
+        f"Severity: {severity}",
+        f"Caller emotion: {emotion}",
+    ]
+    if people_count:
+        context_parts.append(f"People involved: {people_count}")
+    if location:
+        context_parts.append(f"Location mentioned: {location}")
+    if distress_det:
+        context_parts.append(f"HIDDEN DISTRESS DETECTED: {distress_msg}")
+    if anomalies:
+        context_parts.append(f"Anomalies: {'; '.join(anomalies[:3])}")
+    if emotional_markers:
+        context_parts.append(f"Emotional markers: {', '.join(emotional_markers[:5])}")
+
+    context_block = '\n'.join(context_parts)
+
+    prompt = f"""You are an expert emergency dispatch advisor for a 911/emergency call center.
+
+Below is the analysis of an emergency call transcription:
+
+--- SITUATION CONTEXT ---
+{context_block}
+
+--- TRANSCRIPT EXCERPT ---
+{transcript_snippet}
+--- END ---
+
+Based on this specific situation, provide exactly 5 specialized, actionable recommendations for the emergency dispatcher.
+
+Rules:
+- Each recommendation must be specific to THIS situation (not generic advice).
+- Include tactical details: what to tell the caller, what to prepare for first responders, what dangers to anticipate.
+- If hidden distress is detected, include covert response strategies.
+- Respond in {lang_label}.
+- Format: Return ONLY a JSON array of 5 strings. No markdown, no explanation.
+
+Example format: ["recommendation 1", "recommendation 2", "recommendation 3", "recommendation 4", "recommendation 5"]"""
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model='gemma-4-26b-a4b-it',
+            contents=prompt,
+        )
+
+        raw = (response.text or '').strip()
+
+        # Parse JSON array from response
+        # Handle cases where the model wraps output in ```json ... ```
+        cleaned = raw
+        if '```' in cleaned:
+            # Extract content between code fences
+            import re as _re
+            fence_match = _re.search(r'```(?:json)?\s*(.+?)\s*```', cleaned, _re.DOTALL)
+            if fence_match:
+                cleaned = fence_match.group(1).strip()
+
+        parsed = json.loads(cleaned)
+
+        if isinstance(parsed, list):
+            # Ensure all items are strings, take at most 5
+            recommendations = [str(item).strip() for item in parsed if item][:5]
+            if recommendations:
+                print(f"✅ [Gemma] Generated {len(recommendations)} AI recommendations.", file=sys.stderr)
+                return recommendations
+
+        print(f"WARNING: Gemma returned unexpected format: {raw[:200]}", file=sys.stderr)
+        return []
+
+    except json.JSONDecodeError as e:
+        print(f"WARNING: Failed to parse Gemma JSON response: {e}", file=sys.stderr)
+        return []
+    except Exception as e:
+        print(f"WARNING: Gemma AI recommendation failed: {e}", file=sys.stderr)
+        return []
 
 
 # ── Language detection ─────────────────────────────────────────

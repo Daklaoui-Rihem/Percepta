@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, User, Monitor, LogOut } from 'lucide-react';
+import { ChevronDown, User, LogOut } from 'lucide-react';
 import { clearSession, getSession } from '../../services/api';
 import { useTranslation } from '../../context/TranslationContext';
 
@@ -66,14 +66,7 @@ export default function AdminProfile() {
           >
             <User size={16} /> {t('myProfileMenu')}
           </div>
-          <div
-            onClick={() => setOpen(false)}
-            style={{ padding: '14px 20px', fontSize: 14, color: '#1a3a6b', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 10 }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'white')}
-          >
-            <Monitor size={16} /> {t('viewSystemLogs')}
-          </div>
+
           <div
             onClick={handleLogout}
             style={{ padding: '14px 20px', fontSize: 14, color: '#dc2626', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}

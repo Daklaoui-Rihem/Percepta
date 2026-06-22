@@ -104,6 +104,7 @@ export interface SmartSuggestions {
     resources_to_dispatch: string[];
     estimated_response_level: 'standard' | 'elevated' | 'critical';
     follow_up_checklist: string[];
+    ai_recommendations?: string[];
 }
 
 // ── Extracted Entities ─────────────────────────────────────────

@@ -210,9 +210,6 @@ export default function SmartSuggestionsCard({ suggestions }: Props) {
                     <div style={{ fontWeight: 800, color: '#1a3a6b', fontSize: 15 }}>
                         {t('smartSuggestionsLabel') || 'Smart Emergency Suggestions'}
                     </div>
-                    <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                        Generated locally — no API · 100% free
-                    </div>
                 </div>
             </div>
 
@@ -243,18 +240,40 @@ export default function SmartSuggestionsCard({ suggestions }: Props) {
                 </div>
             </div>
 
-            {/* ── Priority Actions ── */}
-            {suggestions.priority_actions?.length > 0 && (
+            {/* ── Specialized Recommendations (Gemma AI) ── */}
+            {suggestions.ai_recommendations && suggestions.ai_recommendations.length > 0 && (
                 <Section
-                    icon={<AlertTriangle size={16} />}
-                    title={`${t('priorityActionsLabel') || 'Priority Actions'} (${suggestions.priority_actions.length})`}
-                    color="#92400e"
-                    bg="#fffbeb"
-                    border="#fde68a"
+                    icon={<Zap size={16} />}
+                    title={`${t('specializedRecommendationsLabel') || 'Specialized Recommendations'} (${suggestions.ai_recommendations.length})`}
+                    color="#1a3a6b"
+                    bg="#eff6ff"
+                    border="#bfdbfe"
                     defaultOpen={true}
                 >
-                    {suggestions.priority_actions.map((action, i) => (
-                        <ActionItem key={i} text={action} index={i} />
+                    {suggestions.ai_recommendations.map((rec, i) => (
+                        <div key={i} style={{
+                            display: 'flex', gap: 12, alignItems: 'flex-start',
+                            padding: '10px 14px',
+                            background: i % 2 === 0 ? '#f8fafc' : 'white',
+                            borderRadius: 8,
+                            border: '1px solid #bfdbfe',
+                            marginBottom: 6,
+                        }}>
+                            <div style={{
+                                width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                                background: 'linear-gradient(135deg, #1a3a6b, #3b82f6)',
+                                color: 'white', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', fontSize: 12, fontWeight: 700, marginTop: 1,
+                            }}>
+                                {i + 1}
+                            </div>
+                            <span style={{
+                                fontSize: 13.5, color: '#1e293b',
+                                lineHeight: 1.6, fontWeight: 400,
+                            }}>
+                                {rec}
+                            </span>
+                        </div>
                     ))}
                 </Section>
             )}

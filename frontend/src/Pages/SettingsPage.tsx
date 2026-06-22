@@ -10,10 +10,8 @@ export default function SettingsPage() {
     const { t } = useTranslation();
 
     const TABS = [
-        { id: 'general', label: t('tabGeneral') },
         { id: 'smtp', label: t('tabSmtp') },
-        { id: 'ai', label: 'AI Models' },
-        { id: 'security', label: t('tabSecurity') }
+        { id: 'ai', label: 'AI Models' }
     ];
 
     const [activeTab, setActiveTab] = useState('smtp');
@@ -443,29 +441,7 @@ export default function SettingsPage() {
                     </div>
                 )}
 
-                {/* ── General Tab ── */}
-                {activeTab === 'general' && (
-                    <div style={{
-                        background: 'white', borderRadius: 16, padding: '40px',
-                        textAlign: 'center', color: '#888',
-                        boxShadow: '0 4px 15px rgba(26, 63, 95, 0.05)',
-                        border: '1px solid rgba(198, 234, 255, 0.4)',
-                    }}>
-                        {t('comingSoonGeneral')}
-                    </div>
-                )}
 
-                {/* ── Security Tab ── */}
-                {activeTab === 'security' && (
-                    <div style={{
-                        background: 'white', borderRadius: 16, padding: '40px',
-                        textAlign: 'center', color: '#888',
-                        boxShadow: '0 4px 15px rgba(26, 63, 95, 0.05)',
-                        border: '1px solid rgba(198, 234, 255, 0.4)',
-                    }}>
-                        {t('comingSoonSecurity')}
-                    </div>
-                )}
             </div>
         </SuperAdminTemplate>
     );
